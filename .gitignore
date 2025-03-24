@@ -31,6 +31,11 @@ out/
 Debug/
 Release/
 
+*.dat
+
+# Box Matrix Sources
+source/twohadronsinbox/box_matrix_*.cc
+
 # System-specific files
 ._*
 *.swp
