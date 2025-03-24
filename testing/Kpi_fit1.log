@@ -1,0 +1,249 @@
+<LogKBFit>
+ <ProjectName>KPiFit</ProjectName>
+ <StartDateTime>Fri_May_17_13:31:51_2019</StartDateTime>
+ <InputXML>
+  <Initialize>
+      <ProjectName>KPiFit</ProjectName>
+      <LogFile>Kpi_fit1.log</LogFile>
+      <EchoXML/>
+      <MCSamplingInfo>
+         <Bootstrapper>
+            <NumberResamplings>1024</NumberResamplings>
+            <Seed>6754</Seed>
+            <BootSkip>64</BootSkip>
+         </Bootstrapper>
+      </MCSamplingInfo>
+   </Initialize>
+   <TaskSequence>
+      <Task>
+         <Action>DoFit</Action>
+         <Type>DeterminantResidualFit</Type>
+         <MinimizerInfo>
+            <Method>NL2Sno</Method>
+            <ParameterRelTol>1e-6</ParameterRelTol>
+            <ChiSquareRelTol>1e-4</ChiSquareRelTol>
+            <MaximumIterations>4096</MaximumIterations>
+            <Verbosity>High</Verbosity>
+         </MinimizerInfo>
+         <OutSamplingsFile>KPioutsamplings</OutSamplingsFile>
+         <DeterminantResidualFit>
+            <OmegaMu>8.0</OmegaMu>
+            <Verbose/>
+            <KtildeMatrixInverse>
+               <Element>
+                  <KElementInfo>
+                     <JTimesTwo>0</JTimesTwo>
+                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                  </KElementInfo>
+                  <FitForm>
+                     <Polynomial>
+                        <Powers>0 2</Powers>
+                     </Polynomial>
+                  </FitForm>
+               </Element>
+               <Element>
+                  <KElementInfo>
+                     <JTimesTwo>2</JTimesTwo>
+                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                  </KElementInfo>
+                  <FitForm>
+                     <Polynomial>
+                        <Powers>1 3</Powers>
+                     </Polynomial>
+                  </FitForm>
+               </Element>
+               <DecayChannels>
+                  <DecayChannelInfo>
+                     <Particle1Name>kaon</Particle1Name>
+                     <Spin1TimesTwo>0</Spin1TimesTwo>
+                     <Particle2Name>pion</Particle2Name>
+                     <Spin2TimesTwo>0</Spin2TimesTwo>
+                     <IntrinsicParities>same</IntrinsicParities>
+                  </DecayChannelInfo>
+               </DecayChannels>
+               <StartingValues>
+                  <KFitParamInfo>
+                     <PolynomialTerm>
+                        <Power>0</Power>
+                        <KElementInfo>
+                           <JTimesTwo>0</JTimesTwo>
+                           <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                           <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                        </KElementInfo>
+                     </PolynomialTerm>
+                     <StartingValue>5.1</StartingValue>
+                  </KFitParamInfo>
+                  <KFitParamInfo>
+                     <PolynomialTerm>
+                        <Power>2</Power>
+                        <KElementInfo>
+                           <JTimesTwo>0</JTimesTwo>
+                           <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                           <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                        </KElementInfo>
+                     </PolynomialTerm>
+                     <StartingValue>-1.6</StartingValue>
+                  </KFitParamInfo>
+                  <KFitParamInfo>
+                     <PolynomialTerm>
+                        <Power>1</Power>
+                        <KElementInfo>
+                           <JTimesTwo>2</JTimesTwo>
+                           <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                           <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                        </KElementInfo>
+                     </PolynomialTerm>
+                     <StartingValue>11.2</StartingValue>
+                  </KFitParamInfo>
+                  <KFitParamInfo>
+                     <PolynomialTerm>
+                        <Power>3</Power>
+                        <KElementInfo>
+                           <JTimesTwo>2</JTimesTwo>
+                           <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                           <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                        </KElementInfo>
+                     </PolynomialTerm>
+                     <StartingValue>-3.7</StartingValue>
+                  </KFitParamInfo>
+               </StartingValues>
+            </KtildeMatrixInverse>
+            <DefaultEnergyFormat>time_spacing_product</DefaultEnergyFormat>
+            <MCEnsembleParameters>
+               <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+               <ReferenceMassTimeSpacingProduct>
+                  <MCObs>ka000A1u1SS0T29-38 1</MCObs>
+               </ReferenceMassTimeSpacingProduct>
+               <LatticeAnisotropy>
+                  <FixedValue>3.451</FixedValue>
+               </LatticeAnisotropy>
+               <ParticleMass>
+                  <Name>kaon</Name>
+                  <MCObs>ka000A1u1SS0T29-38 1</MCObs>
+               </ParticleMass>
+               <ParticleMass>
+                  <Name>pion</Name>
+                  <MCObs>pi000A1um1SS0T22-38 0</MCObs>
+               </ParticleMass>
+            </MCEnsembleParameters>
+            <KBBlock>
+               <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+               <BoxQuantization>
+                  <TotalMomentumRay>oa</TotalMomentumRay>
+                  <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
+                  <LGIrrep>A1</LGIrrep>
+                  <LmaxValues>1</LmaxValues>
+               </BoxQuantization>
+               <EnergyLevels>
+                  <LabFrameEnergy>
+                     <MCObs>2+00A1_1rotated_0T7-35 4</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2+00A1_1rotated_1T7-35 8</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2+00A1_1rotated_2T9-35 4</MCObs>
+                  </LabFrameEnergy>
+               </EnergyLevels>
+            </KBBlock>
+            <KBBlock>
+               <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+               <BoxQuantization>
+                  <TotalMomentumRay>pd</TotalMomentumRay>
+                  <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
+                  <LGIrrep>A1</LGIrrep>
+                  <LmaxValues>1</LmaxValues>
+               </BoxQuantization>
+               <EnergyLevels>
+                  <LabFrameEnergy>
+                     <MCObs>2++0A1_1rotated_0T5-35 8</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2++0A1_1rotated_1T9-35 8</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2++0A1_1rotated_2T9-35 4</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2++0A1_1rotated_3T8-35 8</MCObs>
+                  </LabFrameEnergy>
+               </EnergyLevels>
+            </KBBlock>
+            <KBBlock>
+               <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+               <BoxQuantization>
+                  <TotalMomentumRay>cd</TotalMomentumRay>
+                  <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
+                  <LGIrrep>A1</LGIrrep>
+                  <LmaxValues>1</LmaxValues>
+               </BoxQuantization>
+               <EnergyLevels>
+                  <LabFrameEnergy>
+                     <MCObs>2+++A1_1rotated_0T7-35 8</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2+++A1_1rotated_1T8-35 4</MCObs>
+                  </LabFrameEnergy>
+                  <LabFrameEnergy>
+                     <MCObs>2+++A1_1rotated_2T7-35 8</MCObs>
+                  </LabFrameEnergy>
+               </EnergyLevels>
+            </KBBlock>
+            <KBObservables>
+               <MCSamplingInfo>
+                  <Bootstrapper>
+                     <NumberResamplings>1000</NumberResamplings>
+                     <Seed>6754</Seed>
+                     <BootSkip>64</BootSkip>
+                  </Bootstrapper>
+               </MCSamplingInfo>
+               <Verbose/>
+               <SamplingData>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_kaon_I1h_S1_special/fits/B_I1h_S1_special/Bootstrap/kaon_P000_A1u_1_SS_0_Bootstrap_2.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_pion_I1_S0_special/fits/B_I1_S0_special/Bootstrap/pion_P000_A1um_1_SS_0_Bootstrap_3.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ1_A1/fits/I1h_P100_A1_1_rotated_KBFit_tests_o3_io0_c0.002_am0.01_n3_m15_d21_1/Bootstrap/I1h_P100_A1_1_rotated_0_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ1_A1/fits/I1h_P100_A1_1_rotated_KBFit_tests_o3_io0_c0.002_am0.01_n3_m15_d21_1/Bootstrap/I1h_P100_A1_1_rotated_1_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ1_A1/fits/I1h_P100_A1_1_rotated_KBFit_tests_o3_io0_c0.002_am0.01_n3_m15_d21_1/Bootstrap/I1h_P100_A1_1_rotated_2_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ2_A1/fits/I1h_P110_A1_1_rotated_KBFit_tests_o4_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P110_A1_1_rotated_0_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ2_A1/fits/I1h_P110_A1_1_rotated_KBFit_tests_o4_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P110_A1_1_rotated_1_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ2_A1/fits/I1h_P110_A1_1_rotated_KBFit_tests_o4_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P110_A1_1_rotated_2_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ2_A1/fits/I1h_P110_A1_1_rotated_KBFit_tests_o4_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P110_A1_1_rotated_3_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_0_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_1_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_2_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_3_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_4_Bootstrap_1.smp</FileName>
+                  <FileName>/latticeQCD/raid6/ruairi/analysis/phase_shift/clover_s32_t256_ud860_s743_rebin2/B_I1h_S1_PSQ3_A1/fits/I1h_P111_A1_1_rotated_KBFit_tests_o6_io0_c0.01_am0.01_n3_m15_d21_1/Bootstrap/I1h_P111_A1_1_rotated_5_Bootstrap_1.smp</FileName>
+               </SamplingData>
+            </KBObservables>
+         </DeterminantResidualFit>
+      </Task>
+   </TaskSequence>
+</InputXML>
+
+<BeginTasks>****************************************</BeginTasks>
+
+<Task>
+ <Count>0</Count>
+
+<DoFit>
+   <MinimizerInfo>
+      <Method>NL2Sno</Method>
+      <ParameterRelTol>1e-06</ParameterRelTol>
+      <ChiSquareRelTol>0.0001</ChiSquareRelTol>
+      <MaximumIterations>4096</MaximumIterations>
+      <Verbosity>High</Verbosity>
+   </MinimizerInfo>
+   <Type>DeterminantResidualFit</Type>
+   <OutSamplingsFile>KPioutsamplings</OutSamplingsFile>
+   <Error>DetRes fit failed: Construction of DeterminantResidualFit failed: KBObservables MCSamplingInfo does not match that of the KBObsHandler</Error>
+   <Error>DetRes fit failed: Construction of DeterminantResidualFit failed: KBObservables MCSamplingInfo does not match that of the KBObsHandler</Error>
+</DoFit>
+
+<RunTimeInSeconds>0.000379</RunTimeInSeconds>
+</Task>
+ <FinishDateTime>Fri_May_17_13:31:51_2019</FinishDateTime>
+</KBFit>
+

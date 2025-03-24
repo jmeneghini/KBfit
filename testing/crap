@@ -1,0 +1,69 @@
+
+Starting KBFit tests
+  Current date/time: Fri Mar 13 16:13:06 2020
+  Name of input XML file: input_matinv.xml
+
+  Number of tasks is 1
+
+
+Starting Task 1
+
+Input XML for this task:
+
+<Task>
+   <Name>KBFIT_TEST</Name>
+   <TestMatrixInverse/>
+</Task>
+
+  Task name = KBFIT_TEST
+TestMatrixInverse
+One-dimensional test:
+
+Dimension of matrix = 1
+SUCCESS
+
+Two-dimensional test:
+
+Dimension of matrix = 2
+SUCCESS
+
+Three-dimensional test:
+
+Dimension of matrix = 3
+SUCCESS
+
+
+Dimension of matrix = 4
+SUCCESS
+
+
+Dimension of matrix = 9
+SUCCESS
+
+
+Dimension of matrix = 14
+SUCCESS
+
+
+Dimension of matrix = 19
+SUCCESS
+
+
+Dimension of matrix = 24
+SUCCESS
+
+
+Dimension of matrix = 29
+SUCCESS
+
+
+Dimension of matrix = 34
+SUCCESS
+
+ALL SUCCESS
+Task 1 done using time = 0.004126 secs
+
+
+KBFit testing: total time = 0.004274 secs
+KBFit testing: completion
+  Current date/time: Fri Mar 13 16:13:06 2020

@@ -1,0 +1,381 @@
+<KBFit>
+   <Initialize>
+     <ProjectName>KPiFit</ProjectName>
+     <LogFile>Kpi_fit2C.log</LogFile>
+     <EchoXML/>
+     <MCSamplingInfo>
+       <Bootstrapper>
+          <NumberResamplings>1000</NumberResamplings>
+          <Seed>6754</Seed>
+          <BootSkip>0</BootSkip>
+       </Bootstrapper>
+     </MCSamplingInfo>
+   </Initialize>
+
+   <TaskSequence>
+      <Task>
+      <Action>DoFit</Action>
+      <Type>DeterminantResidualFit</Type>
+
+      <MinimizerInfo>
+    <!--    <Method>Minuit2Migrad</Method> -->
+    <!--    <Method>Minuit2Simplex</Method> -->
+        <Method>NL2Sno</Method>
+        <ParameterRelTol>1e-8</ParameterRelTol>
+        <ChiSquareRelTol>1e-8</ChiSquareRelTol>
+        <MaximumIterations>4096</MaximumIterations>
+        <Verbosity>High</Verbosity>
+      </MinimizerInfo>
+
+      <OutSamplingsFile>KPi2outsamplingsB</OutSamplingsFile>
+      <EcmQcmBoxSamplingsStub>KPi2outEcmB</EcmQcmBoxSamplingsStub>
+
+      <DeterminantResidualFit>
+
+        <OmegaMu>30.0</OmegaMu>
+        <Verbose/>
+
+        <KtildeMatrixInverse>
+          <Element>
+            <KElementInfo>
+              <JTimesTwo>0</JTimesTwo>
+              <KIndex>L(0) 2S(0) chan(0)</KIndex>
+              <KIndex>L(0) 2S(0) chan(0)</KIndex>
+            </KElementInfo>
+            <FitForm>
+              <Polynomial>
+                <Powers>0 2</Powers>
+              </Polynomial>
+            </FitForm> <!-- quad fn of Ecm for l=0 -->
+          </Element>
+          <Element>
+            <KElementInfo>
+              <JTimesTwo>2</JTimesTwo>
+              <KIndex>L(1) 2S(0) chan(0)</KIndex>
+              <KIndex>L(1) 2S(0) chan(0)</KIndex>
+            </KElementInfo>
+            <FitForm>
+              <Polynomial>
+                <Powers>1 3</Powers>
+              </Polynomial>
+            </FitForm> <!-- Breit Wigner for l=0 -->
+          </Element>
+
+          <DecayChannels>
+            <DecayChannelInfo>
+              <Particle1Name>kaon</Particle1Name>
+              <Spin1TimesTwo>0</Spin1TimesTwo>
+              <Particle2Name>pion</Particle2Name>
+              <Spin2TimesTwo>0</Spin2TimesTwo>
+              <IntrinsicParities>same</IntrinsicParities>
+            </DecayChannelInfo>
+          </DecayChannels>
+
+          <StartingValues>
+            <KFitParamInfo>
+              <PolynomialTerm>
+                <Power>0</Power>
+                <KElementInfo>
+                  <JTimesTwo>0</JTimesTwo>
+                  <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                  <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                </KElementInfo>
+              </PolynomialTerm>
+              <StartingValue>3.9</StartingValue>
+            </KFitParamInfo>
+
+            <KFitParamInfo>
+              <PolynomialTerm>
+                <Power>2</Power>
+                <KElementInfo>
+                  <JTimesTwo>0</JTimesTwo>
+                  <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                  <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                </KElementInfo>
+              </PolynomialTerm>
+              <StartingValue>-0.15</StartingValue>
+            </KFitParamInfo>
+
+            <KFitParamInfo>
+              <PolynomialTerm>
+                <Power>1</Power>
+                <KElementInfo>
+                  <JTimesTwo>2</JTimesTwo>
+                  <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                  <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                </KElementInfo>
+              </PolynomialTerm>
+              <StartingValue>8.3</StartingValue>
+            </KFitParamInfo>
+
+            <KFitParamInfo>
+              <PolynomialTerm>
+                <Power>3</Power>
+                <KElementInfo>
+                  <JTimesTwo>2</JTimesTwo>
+                  <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                  <KIndex>L(1) 2S(0) chan(0)</KIndex>
+                </KElementInfo>
+              </PolynomialTerm>
+              <StartingValue>-0.53</StartingValue>
+            </KFitParamInfo>
+          </StartingValues>
+
+        </KtildeMatrixInverse>
+
+<DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
+
+<MCEnsembleParameters>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <ReferenceMassTimeSpacingProduct>
+    <MCObs>pion 0</MCObs>
+  </ReferenceMassTimeSpacingProduct>
+  <LatticeAnisotropy>
+    <MCObs>xi_pion 0</MCObs>
+  </LatticeAnisotropy>
+  <ParticleMass>
+    <Name>pion</Name>
+    <FixedValue>1.0</FixedValue>
+  </ParticleMass>
+  <ParticleMass>
+    <Name>kaon</Name>
+    <MCObs>kaon_mpi 0</MCObs>
+  </ParticleMass>
+</MCEnsembleParameters>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>ar</TotalMomentumRay>
+    <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
+    <LGIrrep>A1g</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>A1g_P0_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+ <!--   <LabFrameEnergy>
+      <MCObs>A1g_P0_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>  -->
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1g_P0_Elab_mpi 2</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>ar</TotalMomentumRay>
+    <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
+    <LGIrrep>T1u</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>T1u_P0_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>T1u_P0_Elab_mpi 1</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>oa</TotalMomentumRay>
+    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
+    <LGIrrep>A1</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>A1_P1_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P1_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P1_Elab_mpi 2</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1_P1_Elab_mpi 3</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1_P1_Elab_mpi 4</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>oa</TotalMomentumRay>
+    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
+    <LGIrrep>E</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>E_P1_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>E_P1_Elab_mpi 1</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>E_P1_Elab_mpi 2</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>pd</TotalMomentumRay>
+    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
+    <LGIrrep>A1</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>A1_P2_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P2_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P2_Elab_mpi 2</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P2_Elab_mpi 3</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1_P2_Elab_mpi 4</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>pd</TotalMomentumRay>
+    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
+    <LGIrrep>B1</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>B1_P2_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>pd</TotalMomentumRay>
+    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
+    <LGIrrep>B2</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>B2_P2_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>B2_P2_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>cd</TotalMomentumRay>
+    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
+    <LGIrrep>A1</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>A1_P3_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P3_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P3_Elab_mpi 2</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1_P3_Elab_mpi 3</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>A1_P3_Elab_mpi 4</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>cd</TotalMomentumRay>
+    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
+    <LGIrrep>E</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>E_P3_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>E_P3_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+    <!-- <LabFrameEnergy> -->
+    <!--   <MCObs>E_P3_Elab_mpi 2</MCObs> -->
+    <!-- </LabFrameEnergy> -->
+  </EnergyLevels>
+</KBBlock>
+
+<KBBlock>
+  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+  <BoxQuantization>
+    <TotalMomentumRay>oa</TotalMomentumRay>
+    <TotalMomentumIntSquared>4</TotalMomentumIntSquared>
+    <LGIrrep>A1</LGIrrep>
+    <LmaxValues>1</LmaxValues>
+  </BoxQuantization>
+  <EnergyLevels>
+    <LabFrameEnergy>
+      <MCObs>A1_P4_Elab_mpi 0</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P4_Elab_mpi 1</MCObs>
+    </LabFrameEnergy>
+    <LabFrameEnergy>
+      <MCObs>A1_P4_Elab_mpi 2</MCObs>
+    </LabFrameEnergy>
+  </EnergyLevels>
+</KBBlock>
+
+<KBObservables>
+  <MCSamplingInfo>
+    <Bootstrapper>
+      <NumberResamplings>1000</NumberResamplings>
+      <Seed>6754</Seed>
+      <BootSkip>0</BootSkip>
+    </Bootstrapper>
+  </MCSamplingInfo>
+  <Verbose />
+  <SamplingData>
+    <FileName>/latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp</FileName>
+  </SamplingData>
+</KBObservables>
+
+
+      </DeterminantResidualFit>
+
+      </Task>
+   </TaskSequence>
+ </KBFit>

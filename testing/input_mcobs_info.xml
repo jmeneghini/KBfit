@@ -1,0 +1,72 @@
+<KBFit>
+  <EchoXML/>
+  <Task>
+     <Name>KBFIT_TEST</Name>
+ <TestMCObsInfo>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>EffectiveEnergy</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Simple/>
+    <Index>45</Index>
+    </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>GoderichTownOntario</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Simple/>
+    <Index>13</Index>
+    </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>GoderichTownOntario</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Index>14</Index>
+    </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Frick</ObsName>
+    <Description>Not much to say</Description>
+    <Index>2</Index>
+    </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Glick$%2351</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Index>22</Index>
+    </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Fantasma782aaf</ObsName>
+    </MCObservable>
+
+    <MCObservable>
+    <ObsName>KermitFrog</ObsName>
+    </MCObservable>
+
+    <MCObs>MissPiggy</MCObs>
+
+    <MCObs>DogBarker FFF</MCObs>
+
+    <MCObs>DogBarker 6</MCObs>
+
+    <MCObs>Dolphin 6 s im</MCObs>
+
+    <MCObs>Golfer 67 n re</MCObs>
+
+    <MCObs>Golfer 67 a re</MCObs>
+
+    <MCObs>Golfer 67 s bb</MCObs>
+
+    <MCObs>Dunker 67 s</MCObs>
+
+</TestMCObsInfo>
+
+  </Task>
+</KBFit>

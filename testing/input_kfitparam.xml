@@ -1,0 +1,207 @@
+<KBFit>
+  <EchoXML/>
+  <Task>
+     <Name>KBFIT_TEST</Name>
+ <TestKFitParamInfo>
+
+<TestA>
+  <!--<KIndex><Chan>2</Chan><Sx2>4</Sx2><L>5</L></KIndex>-->
+  <KIndex>  L(5)  2S(4)  chan(2)</KIndex>
+</TestA>
+<TestB>
+   <KElementInfo>
+     <JTimesTwo>6</JTimesTwo>
+     <KIndex>L(5) 2S(4) chan(1)</KIndex>
+     <KIndex>L(4) 2S(2) chan(1)</KIndex>
+   </KElementInfo>
+</TestB>
+<TestC>
+<KFitParamInfo>
+  <PolynomialTerm>
+     <Power>3</Power>
+   <KElementInfo>
+     <JTimesTwo>7</JTimesTwo>
+     <KIndex>L(5) 2S(5) chan(1)</KIndex>
+     <KIndex>L(4) 2S(3) chan(2)</KIndex>
+   </KElementInfo>
+  </PolynomialTerm>
+</KFitParamInfo>
+<!--
+<KFitParamInfo>
+  <PoleEnergy>
+     <Index>3</Index>
+     <JTimesTwo>2</JTimesTwo>
+  </PoleEnergy>
+</KFitParamInfo>
+-->
+<!--
+<KFitParamInfo>
+  <PoleCoupling>
+     <Index>3</Index>
+     <JTimesTwo>2</JTimesTwo>
+     <KIndex>...</KIndex>
+  </PoleCoupling>
+</KFitParamInfo>
+-->
+</TestC>
+
+<TestD>
+
+<KtildeMatrix>
+<Element>
+  <KElementInfo>
+     <JTimesTwo>0</JTimesTwo>
+     <KIndex>L(0) 2S(0) chan(0)</KIndex>
+     <KIndex>L(0) 2S(0) chan(0)</KIndex>
+  </KElementInfo>
+  <FitForm><SumOfPoles><PoleIndices>1 </PoleIndices></SumOfPoles></FitForm>
+</Element>
+<Element>
+  <KElementInfo>
+     <JTimesTwo>2</JTimesTwo>
+     <KIndex>L(1) 2S(0) chan(0)</KIndex>
+     <KIndex>L(1) 2S(0) chan(0)</KIndex>
+  </KElementInfo>
+  <FitForm><SumOfPoles><PoleIndices>1 </PoleIndices></SumOfPoles></FitForm>
+</Element>
+<Element>
+  <KElementInfo>
+     <JTimesTwo>4</JTimesTwo>
+     <KIndex>L(2) 2S(0) chan(0)</KIndex>
+     <KIndex>L(2) 2S(0) chan(0)</KIndex>
+  </KElementInfo>
+  <FitForm><SumOfPoles><PoleIndices>0 3 </PoleIndices></SumOfPoles></FitForm>
+</Element>
+<Element>
+  <KElementInfo>
+     <JTimesTwo>6</JTimesTwo>
+     <KIndex>L(3) 2S(0) chan(0)</KIndex>
+     <KIndex>L(3) 2S(0) chan(0)</KIndex>
+  </KElementInfo>
+  <FitForm><SumOfPoles><NumberOfPoles>2</NumberOfPoles></SumOfPoles></FitForm>
+</Element>
+</KtildeMatrix>
+
+
+<FitParameterValues>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>1</Index>
+     <JTimesTwo>0</JTimesTwo>
+     <KIndex>L(0) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>4.762000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>1</Index>
+     <JTimesTwo>2</JTimesTwo>
+     <KIndex>L(1) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>-3.616000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>0</Index>
+     <JTimesTwo>4</JTimesTwo>
+     <KIndex>L(2) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>4.586000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>3</Index>
+     <JTimesTwo>4</JTimesTwo>
+     <KIndex>L(2) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>-6.203000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>0</Index>
+     <JTimesTwo>6</JTimesTwo>
+     <KIndex>L(3) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>7.728000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleCoupling>
+     <Index>1</Index>
+     <JTimesTwo>6</JTimesTwo>
+     <KIndex>L(3) 2S(0) chan(0)</KIndex>
+   </PoleCoupling>
+ </KFitParamInfo>
+ <Value>-9.070000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>1</Index>
+     <JTimesTwo>0</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>2.922000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>1</Index>
+     <JTimesTwo>2</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>1.695000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>0</Index>
+     <JTimesTwo>4</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>4.777000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>3</Index>
+     <JTimesTwo>4</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>6.147000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>0</Index>
+     <JTimesTwo>6</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>5.712000</Value>
+</KFitParam>
+<KFitParam>
+ <KFitParamInfo>
+   <PoleEnergy>
+     <Index>1</Index>
+     <JTimesTwo>6</JTimesTwo>
+   </PoleEnergy>
+ </KFitParamInfo>
+ <Value>-2.843000</Value>
+</KFitParam>
+</FitParameterValues>
+
+</TestD>
+
+ </TestKFitParamInfo>
+  </Task>
+</KBFit>

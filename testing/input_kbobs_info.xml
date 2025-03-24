@@ -1,0 +1,60 @@
+<KBFit>
+  <EchoXML/>
+  <Task>
+     <Name>KBFIT_TEST</Name>
+ <TestKBObsInfo>
+
+    <KBObservable>
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>EffectiveEnergy</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Simple/>
+    <Index>45</Index>
+    </MCObservable>
+    <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+   </KBObservable>
+
+    <KBObservable>
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>GoderichTownOntario</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Simple/>
+    <Index>13</Index>
+   </MCObservable>
+    <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+   </KBObservable>
+
+    <KBObservable>
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>GoderichTownOntario</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Index>14</Index>
+   </MCObservable>
+ <!--   <MCEnsembleInfo>clover_s24_t128_ud840_s743</MCEnsembleInfo> -->
+   </KBObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Frick</ObsName>
+    <Description>Not much to say</Description>
+    <Index>2</Index>
+   </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Glick$%2351</ObsName>
+    <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+    <Index>22</Index>
+   </MCObservable>
+
+    <MCObservable>
+    <Arg>ImaginaryPart</Arg>
+    <ObsName>Fantasma782aaf</ObsName>
+   </MCObservable>
+
+</TestKBObsInfo>
+  </Task>
+</KBFit>

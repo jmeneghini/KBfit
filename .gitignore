@@ -1,0 +1,48 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+
+# Build Folders
+build/
+bin/
+out/
+Debug/
+Release/
+
+# System-specific files
+._*
+*.swp
+*.swo
+*.DS_Store
+ehthumbs.db
+Thumbs.db
+
+# IDE specific files
+.vscode/
+.idea/
+*.vcxproj
+*.sln
+*.suo
+*.user

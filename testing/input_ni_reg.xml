@@ -1,0 +1,9 @@
+<KBFit>
+  <EchoXML/>
+  <Task>
+     <Name>KBFIT_TEST</Name>
+     <TestNonIntRegulator>
+
+     </TestNonIntRegulator>
+  </Task>
+</KBFit>

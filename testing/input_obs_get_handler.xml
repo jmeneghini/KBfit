@@ -1,0 +1,95 @@
+<KBFit>
+  <EchoXML/>
+  <Task>
+     <Name>KBFIT_TEST</Name>
+    <TestMCObsGetHandler>
+   <MCSamplingInfo>
+       <Bootstrapper>                                
+          <NumberResamplings>2048</NumberResamplings>
+          <Seed>6754</Seed>                          
+          <BootSkip>127</BootSkip>                   
+       </Bootstrapper>                               
+    <!-- <Jackknife/> -->
+   </MCSamplingInfo> 
+
+  <KBObservables>
+   <MCSamplingInfo>
+       <Bootstrapper>                                
+          <NumberResamplings>2048</NumberResamplings>
+          <Seed>6754</Seed>                          
+          <BootSkip>127</BootSkip>                   
+       </Bootstrapper>                               
+    <!-- <Jackknife/> -->
+   </MCSamplingInfo> 
+     <Verbose/>
+     <SamplingData>              
+        <FileName>sampfile.0</FileName> 
+        <FileName>sampfile.1</FileName> 
+        <FileName>sampfile.2</FileName> 
+     </SamplingData>             
+  <Specifications>
+   <ObsSamplings>                           
+     <MCEnsembleInfo>clover_s24_t128_ud840_s743</MCEnsembleInfo>
+     <MCObservable>
+       <Arg>ImaginaryPart</Arg>
+       <ObsName>EffectiveEnergy</ObsName>
+       <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+       <Simple/>
+       <Index>45</Index>
+     </MCObservable>
+     <MCObservable>
+       <Arg>ImaginaryPart</Arg>
+       <ObsName>GoderichTownOntario</ObsName>
+       <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+       <Simple/>
+       <Index>13</Index>
+     </MCObservable>
+     <MCObservable>
+       <ObsName>GoderichTownOntario</ObsName>
+       <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+       <Index>14</Index>
+     </MCObservable>
+   <!--  <MCObservable>
+       <ObsName>GoderichTownOntario</ObsName>
+       <Description><Fart>Smelly</Fart><Cat>Black</Cat></Description>
+       <Index>24</Index>
+     </MCObservable>  -->
+   </ObsSamplings>                           
+   <ObsSamplings>                           
+     <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+     <All/>
+   </ObsSamplings>                           
+  </Specifications> 
+  </KBObservables>
+
+ <GetTests>
+
+     <KBObservable>
+        <MCObs>EffectiveEnergy 45 s im</MCObs>
+     </KBObservable>
+
+     <KBObservable>
+        <MCEnsembleInfo>clover_s24_t128_ud840_s743</MCEnsembleInfo>
+        <MCObs>EffectiveEnergy 45 s im</MCObs>
+     </KBObservable>
+
+     <KBObservable>
+        <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+        <MCObs>EffectiveEnergy 45 s</MCObs>
+     </KBObservable>
+
+     <KBObservable>
+        <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+        <MCObs>EffectiveEnergy 22 s</MCObs>
+     </KBObservable>
+
+     <KBObservable>
+        <MCEnsembleInfo>clover_s16_t128_ud840_s743</MCEnsembleInfo>
+        <MCObs>EffectiveEnergy 22 s im</MCObs>
+     </KBObservable>
+
+ </GetTests>
+
+  </TestMCObsGetHandler>
+  </Task>
+</KBFit>
