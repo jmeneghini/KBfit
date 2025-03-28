@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Mon_Mar_24_19:36:57_2025</StartDateTime>
+ <StartDateTime>Fri_Mar_28_19:55:35_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -17,9 +17,10 @@
    <TaskSequence>
       <Task>
          <Action>DoPrint</Action>
-         <OutputStub>KPiPrintOmega</OutputStub>
+         <OutputStub>KPiPrint</OutputStub>
          <OutputMode>full</OutputMode>
          <OmegaMu>30.0</OmegaMu>
+         <PrintEigenvalues>true</PrintEigenvalues>
          <KtildeMatrixInverse>
             <Element>
                <KElementInfo>
@@ -296,23 +297,26 @@
          </Key>
       </AvailableKeys>
       <o>:                                                                                                                :</o>
-      <o>: Filename = KPiPrintOmega.0                                                                                     :</o>
+      <o>: Filename = KPiPrint_Omega.0                                                                                    :</o>
+      <o>: Filename = KPiPrint_Eigenvals.0                                                                                :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                                                                                :</o>
       <o>: MomRay ar   P^2 = 0 Box Irrep T1u                                                                              :</o>
-      <o>: Filename = KPiPrintOmega.1                                                                                     :</o>
+      <o>: Filename = KPiPrint_Omega.1                                                                                    :</o>
+      <o>: Filename = KPiPrint_Eigenvals.1                                                                                :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                                                                                :</o>
       <o>: MomRay oa   P^2 = 1 Box Irrep A1                                                                               :</o>
-      <o>: Filename = KPiPrintOmega.2                                                                                     :</o>
+      <o>: Filename = KPiPrint_Omega.2                                                                                    :</o>
+      <o>: Filename = KPiPrint_Eigenvals.2                                                                                :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                                                                                :</o>
       <o>: MomRay oa   P^2 = 1 Box Irrep E                                                                                :</o>
    </Logger>
 </PrintOmega>
 
-<RunTimeInSeconds>0.526253</RunTimeInSeconds>
+<RunTimeInSeconds>1.1982</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Mon_Mar_24_19:36:57_2025</FinishDateTime>
+ <FinishDateTime>Fri_Mar_28_19:55:36_2025</FinishDateTime>
 </KBFit>
 

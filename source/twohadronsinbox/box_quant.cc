@@ -1070,13 +1070,59 @@ double BoxQuantization::get_omega(double mu, uint N,
                                   const RealSymmetricMatrix& Kv,
                                   const ComplexHermitianMatrix& B) {
   RealDeterminantRoot DR;
-  if (m_Kinv != 0) { //   det( Kinv - B )
+  if (m_Kinv != 0 && !isBoxMatrixInverseRootMode()) { //   det( Kinv - B )
     ComplexHermitianMatrix Q(N);
     for (uint row = 0; row < N; row++)
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     return DR.getOmega(mu, Q);
-  } else { //  det( 1 - K*B ) = det( 1 - B*K )
+  }
+  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
+
+    ComplexHermitianMatrix Q(N);
+    ComplexHermitianMatrix B_copy = B;
+    ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
+
+    for (uint row=0; row<N; row++) {
+      for (uint col=row; col<N; col++) {
+        complex<double> sum = 0.0;
+        for (uint k=0; k<N; k++) {
+          sum += B_inv_root(row,k) * Kv(k,col);
+        }
+        // Only subtract 1 from diagonal entries
+        if (row == col) {
+          Q.put(row, col, sum - 1.0);
+        } else {
+          Q.put(row, col, sum);
+        }
+      }
+    }
+    return DR.getOmega(mu, Q);
+  }
+//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
+//    ComplexHermitianMatrix Q(N);
+//    ComplexHermitianMatrix B_copy = B;
+//    ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
+//
+//    for (uint row=0; row<N; row++) {
+//      for (uint col=row; col<N; col++) {
+//          complex<double> sum = 0.0;
+//          for (uint k=0; k<N; k++) {
+//              for (uint l=0; l<N; l++) {
+//                  sum += B_inv_root(row,k) * Kv(k,l) * B_inv_root(l,col);
+//              }
+//          }
+//          // Only subtract 1 from diagonal entries
+//          if (row == col) {
+//            Q.put(row, col, sum - 1.0);
+//          } else {
+//            Q.put(row, col, sum);
+//          }
+//      }
+//    }
+//    return DR.getOmega(mu, Q);
+//  }
+  else { //  det( 1 - K*B ) = det( 1 - B*K )
     return DR.getOmega(mu, Kv, B);
   }
 }

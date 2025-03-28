@@ -259,6 +259,8 @@ class BoxQuantization {
   BoxQuantization& operator=(const BoxQuantization&);
   BoxQuantization();
 
+  bool is_box_matrix_inverse_root = true;
+
 public:
   BoxQuantization(XMLHandler& xmlin, KtildeMatrixCalculator* Kmatptr);
 
@@ -333,6 +335,10 @@ public:
       return m_Kmat->getNumberOfParameters();
     else
       return m_Kinv->getNumberOfParameters();
+  }
+
+  bool isBoxMatrixInverseRootMode() const {
+    return is_box_matrix_inverse_root;
   }
 
   std::string output(int indent = 0) const; // XML output

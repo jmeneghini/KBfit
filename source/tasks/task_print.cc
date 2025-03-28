@@ -235,6 +235,17 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     string outstub;
     xmlread(xmltask, "OutputStub", outstub, "doPrint");
     outstub = tidyString(outstub);
+
+    // check if we're printing eigenvalues
+
+    string print_eigenvals;
+    bool do_print_eigenvals = xmlreadif(xmltask, "PrintEigenvalues", print_eigenvals, "doPrint");
+    std::istringstream is(print_eigenvals);
+    is >> boolalpha >> do_print_eigenvals;
+    if (is.fail()) {
+      throw std::invalid_argument("Invalid <PrintEigenvalues> boolean string");
+    }
+
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
     string outmode = "full";
@@ -524,9 +535,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
 
       const MCEnsembleInfo& mcens = blockens[blocknum];
-      string filename = outstub + "." + make_string(blocknum);
+      string omega_filename = outstub + "_Omega." + make_string(blocknum);
+      string eigenvals_filename = outstub + "_Eigenvals." + make_string(blocknum);
+
       BoxQuantization* bqptr = BQ[blocknum];
-      logger << "Filename = " << filename << endl;
+      logger << "Filename = " << omega_filename << endl;
+      if (do_print_eigenvals) {
+        logger << "Filename = " << eigenvals_filename << endl;
+      }
       logger << mcens.str() << endl;
       logger << "MomRay " << bqptr->getMomRay()
              << "   P^2 = " << bqptr->getTotalMomentumIntegerSquared()
@@ -564,6 +580,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       if (outmode == "full")
         nsamp = 0;
       vector<RVector> omegavals(nvals, RVector(nsamp + 1));
+      vector<vector<RVector>> eigenvals(bqptr->getBasisSize(),
+                                        vector<RVector>(nvals, RVector(nsamp + 1)));
 
       for (uint b = 0; b <= nsamp; ++b) {
         bqptr->setRefMassL(mrefL[b]);
@@ -571,26 +589,38 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           bqptr->setMassesOverRef(ci, (*(particlemass1[ci]))[b],
                                   (*(particlemass2[ci]))[b]);
         }
-        for (uint k = 0; k < nvals; ++k)
+
+        for (uint k = 0; k < nvals; ++k) {
           omegavals[k][b] = bqptr->getOmegaFromElab(omega_mu, elabvals[k]);
+          if (do_print_eigenvals) {
+            RVector ev_res = bqptr->getEigenvaluesFromElab(elabvals[k]);
+            for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+              eigenvals[dim][k][b] = ev_res[dim];
+            }
+          }
+        }
       }
 
-      ofstream fout(filename);
-      fout << "#" << mcens.str() << endl;
-      fout << "# MomRay " << bqptr->getMomRay()
-           << "   P^2 = " << bqptr->getTotalMomentumIntegerSquared()
-           << " Box Irrep " << bqptr->getLittleGroupBoxIrrep() << endl;
-      fout.precision(12);
-      fout.setf(ios::fixed, ios::floatfield);
+      ofstream fout_omega(omega_filename);
+
+      string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay()
+                      + " # P^2 = " + std::to_string(bqptr->getTotalMomentumIntegerSquared())
+                      + " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
+
+      fout_omega << header << "\n\n";
+
+      fout_omega.precision(12);
+      fout_omega.setf(ios::fixed, ios::floatfield);
+
+      fout_omega << "E_cm,Omega" << endl;
       if (nsamp == 0) {
         for (uint k = 0; k < nvals; ++k)
-          fout << "  " << setw(12) << elabvals[k] << " " << setw(20)
-               << omegavals[k][0] << endl;
+          fout_omega << elabvals[k] << "," << omegavals[k][0] << endl;
       } else if (m_obs->isJackknifeMode()) {
         MCEstimate mcest;
         for (uint k = 0; k < nvals; ++k) {
           m_obs->jack_analyze(omegavals[k], mcest);
-          fout << "  " << setw(12) << elabvals[k] << " " << setw(20)
+          fout_omega << "  " << setw(12) << elabvals[k] << " " << setw(20)
                << mcest.getAverageEstimate() << " " << setw(20)
                << mcest.getSymmetricError() << endl;
         }
@@ -601,12 +631,67 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           double avg = mcest.getAverageEstimate();
           double upperr = mcest.getUpperConfLimit() - avg;
           double dwnerr = mcest.getLowerConfLimit() - avg;
-          fout << "  " << setw(12) << elabvals[k] << " " << setw(20) << avg
+          fout_omega << "  " << setw(12) << elabvals[k] << " " << setw(20) << avg
                << " " << setw(20) << upperr << " " << setw(20) << dwnerr
                << endl;
         }
       }
-      fout.close();
+      fout_omega.close();
+
+      if (do_print_eigenvals) {
+        ofstream fout_eigenvals(eigenvals_filename);
+        fout_eigenvals << header << "\n\n";
+
+        fout_eigenvals.precision(12);
+        fout_eigenvals.setf(ios::fixed, ios::floatfield);
+
+        fout_eigenvals << "E_cm";
+        for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+          fout_eigenvals << ",ev" << dim;
+          if (m_obs->isJackknifeMode()) {
+            fout_eigenvals << "_AverageEstimate,ev" << dim << "_SymmetricError";
+          }
+          else if (m_obs->isBootstrapMode()) {
+            fout_eigenvals << "_AverageEstimate,ev" << dim << "_UpperError,ev"
+                           << dim << "_LowerError";
+          }
+        }
+        fout_eigenvals << endl;
+
+        if (nsamp == 0) {
+          for (uint k = 0; k < nvals; ++k) {
+            fout_eigenvals << elabvals[k];
+            for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+              fout_eigenvals << "," << eigenvals[dim][k][0];
+            }
+            fout_eigenvals << endl;
+          }
+        } else if (m_obs->isJackknifeMode()) {
+          MCEstimate mcest;
+          for (uint k = 0; k < nvals; ++k) {
+            for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+              m_obs->jack_analyze(eigenvals[dim][k], mcest);
+              fout_omega << "," << mcest.getAverageEstimate() << ","
+                         << mcest.getSymmetricError();
+            }
+            fout_omega << endl;
+          }
+        } else {
+          MCEstimate mcest;
+          for (uint k = 0; k < nvals; ++k) {
+            for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+              m_obs->boot_analyze(eigenvals[dim][k], mcest);
+              double avg = mcest.getAverageEstimate();
+              double upperr = mcest.getUpperConfLimit() - avg;
+              double dwnerr = mcest.getLowerConfLimit() - avg;
+              fout_omega << avg << "," << upperr << ","
+                         << dwnerr;
+            }
+            fout_omega << endl;
+          }
+        }
+        fout_omega.close();
+      }
     }
 
     m_obs->clearSamplings();

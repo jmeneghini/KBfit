@@ -1316,6 +1316,8 @@ public:
   ComplexHermitianMatrix& operator+=(const ComplexHermitianMatrix& incoming);
   ComplexHermitianMatrix& operator-=(const ComplexHermitianMatrix& incoming);
 
+  ComplexHermitianMatrix& invertRoot();
+
   const std::complex<double> operator()(int i0, int i1) const;
   const std::complex<double> operator()(uint i0, uint i1) const;
   const std::complex<double> operator()(int i0, uint i1) const {

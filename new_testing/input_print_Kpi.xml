@@ -16,10 +16,12 @@
       <Task>
       <Action>DoPrint</Action>
 
-      <OutputStub>KPiPrintOmega</OutputStub>
+      <OutputStub>KPiPrint</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>
+
+        <PrintEigenvalues>true</PrintEigenvalues>
 
         <KtildeMatrixInverse>
           <Element>
