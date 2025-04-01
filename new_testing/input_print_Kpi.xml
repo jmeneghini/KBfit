@@ -16,12 +16,19 @@
       <Task>
       <Action>DoPrint</Action>
 
-      <OutputStub>KPiPrint</OutputStub>
+      <OutputStub>KPiPrint_KinvB_Reg</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>
 
-        <PrintEigenvalues>true</PrintEigenvalues>
+        <PrintEigenvalues>
+<!--            <EigenvalueRegularizingInfo>-->
+<!--              <InScalar>1.0</InScalar>-->
+<!--              <OutScalar>5.0</OutScalar>-->
+<!--            </EigenvalueRegularizingInfo>-->
+        </PrintEigenvalues>
+
+
 
         <KtildeMatrixInverse>
           <Element>

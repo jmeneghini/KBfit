@@ -759,13 +759,13 @@ BoxQuantization::getDeterminantRoot(const RealSymmetricMatrix& KtildeOrInverse,
 //  for NxN matrices (depending on K or Kinv mode)
 
 std::vector<double>
-BoxQuantization::getEigenvaluesFromElab(double Elab_over_mref) {
-  return get_eigenvalues(Elab_over_mref, true);
+BoxQuantization::getEigenvaluesFromElab(double Elab_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
+  return get_eigenvalues(Elab_over_mref, true, ev_reg_info);
 }
 
 std::vector<double>
-BoxQuantization::getEigenvaluesFromEcm(double Ecm_over_mref) {
-  return get_eigenvalues(Ecm_over_mref, false);
+BoxQuantization::getEigenvaluesFromEcm(double Ecm_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
+  return get_eigenvalues(Ecm_over_mref, false, ev_reg_info);
 }
 
 double
@@ -1013,47 +1013,58 @@ double BoxQuantization::get_determinant(uint N, const RealSymmetricMatrix& Kv,
 }
 
 std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
-                                                     bool Elab) {
+                                                     bool Elab, EigenvalueRegularizingInfo* ev_reg_info) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   Diagonalizer D;
   vector<double> eigvals;
   assign_matrices(E_over_mref, Elab, B, Kv);
   uint N = B.size();
-  ComplexHermitianMatrix Q(N);
+  ComplexHermitianMatrix Q(N, N);
   if (m_Kinv != 0) { //   Q = Kinv - B
     for (uint row = 0; row < N; row++)
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     D.getEigenvalues(Q, eigvals);
-  } else { //  Q = B - B*K*B
-    CMatrix KB(N, N);
-    for (uint row = 0; row < N; row++)
-      for (uint col = 0; col < N; col++) {
-        cmplx elem(0.0, 0.0);
-        for (uint k = 0; k < N; k++)
-          elem += Kv(row, k) * B(k, col);
-        KB.put(row, col, elem);
-      }
+  }
+  else { //  Q = 1 - BK
     for (uint row = 0; row < N; row++)
       for (uint col = row; col < N; col++) {
         cmplx elem(0.0, 0.0);
         for (uint k = 0; k < N; k++)
-          elem += B(row, k) * KB(k, col);
-        if (row == col)
-          elem = cmplx(elem.real(), 0.0);
-        Q.put(row, col, B(row, col) - elem);
+          elem += Kv(row, k) * B(k, col);
+          if (col == row)
+            elem = 1.0 - elem;
+        Q.put(row, col, elem);
       }
-    vector<double> Beigvals;
-    D.getEigenvalues(B, Beigvals);
-    double rescale = 1.0;
-    double root = 1.0 / double(N);
-    for (uint k = 0; k < N; k++)
-      rescale *= std::pow(std::abs(Beigvals[k]), root);
-    rescale = 1.0 / rescale;
     D.getEigenvalues(Q, eigvals);
-    for (uint k = 0; k < N; k++)
-      eigvals[k] *= rescale;
+//    vector<double> Beigvals;
+//    D.getEigenvalues(B, Beigvals);
+//    double rescale = 1.0;
+//    double root = 1.0 / double(N);
+//    for (uint k = 0; k < N; k++)
+//      rescale *= std::pow(std::abs(Beigvals[k]), root);
+//    rescale = 1.0 / rescale;
+//    for (uint k = 0; k < N; k++)
+//      eigvals[k] *= rescale;
+  }
+  // eigenvalues regularized by Prod tanh(Ecm - E_noninteracting)
+  if (ev_reg_info != nullptr) {
+    std::list<double> non_interacting_energies =
+        m_boxes.front().first->getEcmTransform()
+            .getFreeTwoParticleEnergies(ev_reg_info->E_min,
+                                        ev_reg_info->E_max);
+    double alpha = ev_reg_info->in_scalar;
+    double beta = ev_reg_info->out_scalar;
+    double regulating_factor = 1;
+    for (const auto &NI_energy : non_interacting_energies) {
+      const double exp_2x = exp(2*alpha*(E_over_mref - NI_energy));
+      double tanh_Elab = (exp_2x - 1)/(exp_2x + 1);
+      regulating_factor *= tanh_Elab;
+    }
+    for (int i = 0; i < eigvals.size(); ++i) {
+      eigvals[i] *= regulating_factor*beta;
+    }
   }
   return eigvals;
 }
