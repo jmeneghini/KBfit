@@ -16,7 +16,7 @@
       <Task>
       <Action>DoPrint</Action>
 
-      <OutputStub>KPiPrint_KinvB_Reg</OutputStub>
+      <OutputStub>KPiPrint_Cayley</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>

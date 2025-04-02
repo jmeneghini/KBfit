@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Tue_Apr__1_12:42:56_2025</StartDateTime>
+ <StartDateTime>Tue_Apr__1_13:16:36_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -315,8 +315,8 @@
    </Logger>
 </PrintOmega>
 
-<RunTimeInSeconds>0.530949</RunTimeInSeconds>
+<RunTimeInSeconds>0.537487</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Tue_Apr__1_12:42:57_2025</FinishDateTime>
+ <FinishDateTime>Tue_Apr__1_13:16:37_2025</FinishDateTime>
 </KBFit>
 

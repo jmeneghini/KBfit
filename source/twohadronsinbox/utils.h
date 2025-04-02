@@ -33,7 +33,7 @@ public:
   void getEigenvalues(const ComplexHermitianMatrix& H, Rvector& eigvals);
   void getEigenvectors(const ComplexHermitianMatrix& H, Rvector& eigvals,
                        CMatrix& eigvecs);
-  void getEigenvalues(const CMatrix& M, Cvector& eigvals);
+  void getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& eigvecs);
 
 private:
   void diagonalize(const RealSymmetricMatrix& H, Rvector& eigvals,

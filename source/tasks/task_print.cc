@@ -237,14 +237,25 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     outstub = tidyString(outstub);
 
     // check if we're printing eigenvalues
-
-    string print_eigenvals;
-    bool do_print_eigenvals = xmlreadif(xmltask, "PrintEigenvalues", print_eigenvals, "doPrint");
-    std::istringstream is(print_eigenvals);
-    is >> boolalpha >> do_print_eigenvals;
-    if (is.fail()) {
-      throw std::invalid_argument("Invalid <PrintEigenvalues> boolean string");
+    double in_scalar = 1;
+    double out_scalar = 1;
+    int count_print_eigenvals =  xmltask.count_among_children("PrintEigenvalues");
+    if (count_print_eigenvals > 1) {
+      throw(std::invalid_argument(
+          "Multiple PrintEigenvalues tags cannot be present"));
     }
+    bool do_print_eigenvals = (count_print_eigenvals == 1);
+    bool regularize_eigenvals = false;
+    if (do_print_eigenvals) {
+      ArgsHandler xmlev(xmltask, "PrintEigenvalues");
+      regularize_eigenvals = xmlev.queryTag("EigenvalueRegularizingInfo");
+      if (regularize_eigenvals) {
+        ArgsHandler xmlreg(xmlev, "EigenvalueRegularizingInfo");
+        xmlreg.getReal("InScalar", in_scalar);
+        xmlreg.getReal("OutScalar", out_scalar);
+      }
+    }
+
 
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
@@ -593,7 +604,17 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         for (uint k = 0; k < nvals; ++k) {
           omegavals[k][b] = bqptr->getOmegaFromElab(omega_mu, elabvals[k]);
           if (do_print_eigenvals) {
-            RVector ev_res = bqptr->getEigenvaluesFromElab(elabvals[k]);
+            RVector ev_res;
+            if (regularize_eigenvals) {
+              BoxQuantization::EigenvalueRegularizingInfo ev_reg_info{};
+              ev_reg_info.in_scalar = in_scalar;
+              ev_reg_info.out_scalar = out_scalar;
+              ev_reg_info.E_min = emin;
+              ev_reg_info.E_max = emax;
+              ev_res = bqptr->getEigenvaluesFromElab(elabvals[k], &ev_reg_info);
+            }
+            else
+              ev_res = bqptr->getEigenvaluesFromElab(elabvals[k]);
             for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
               eigenvals[dim][k][b] = ev_res[dim];
             }
@@ -612,7 +633,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       fout_omega.precision(12);
       fout_omega.setf(ios::fixed, ios::floatfield);
 
-      fout_omega << "E_cm,Omega" << endl;
+      fout_omega << "E_lab,Omega" << endl;
       if (nsamp == 0) {
         for (uint k = 0; k < nvals; ++k)
           fout_omega << elabvals[k] << "," << omegavals[k][0] << endl;
@@ -645,13 +666,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         fout_eigenvals.precision(12);
         fout_eigenvals.setf(ios::fixed, ios::floatfield);
 
-        fout_eigenvals << "E_cm";
+        fout_eigenvals << "E_lab";
         for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
+
           fout_eigenvals << ",ev" << dim;
-          if (m_obs->isJackknifeMode()) {
+          if (m_obs->isJackknifeMode() && nsamp != 0) {
             fout_eigenvals << "_AverageEstimate,ev" << dim << "_SymmetricError";
           }
-          else if (m_obs->isBootstrapMode()) {
+          else if (m_obs->isBootstrapMode() && nsamp != 0) {
             fout_eigenvals << "_AverageEstimate,ev" << dim << "_UpperError,ev"
                            << dim << "_LowerError";
           }

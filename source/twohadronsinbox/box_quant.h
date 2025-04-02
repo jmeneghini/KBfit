@@ -493,6 +493,8 @@ private:
   void get_ktilde_matrix(double E_over_mref, RealSymmetricMatrix& Kh,
                          RMatrix& K, bool Elab, bool herm, T* evalptr);
 
+  void get_Vdiag_and_U(const ComplexHermitianMatrix& B, std::vector<double>& V_eigvals, CMatrix& U);
+
   template <typename T>
   std::set<BoxQuantBasisState> find_excluded_states_from_ktilde(T* evalptr);
 

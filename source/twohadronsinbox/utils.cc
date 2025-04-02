@@ -190,7 +190,7 @@ void Diagonalizer::getEigenvalues(const ComplexHermitianMatrix& H,
   diagonalize(H, eigvals, eigvecs, false);
 }
 
-void Diagonalizer::getEigenvalues(const CMatrix& M, Cvector& eigvals) {
+void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& eigvecs) {
   int n = M.size(0);
   if (int(M.size(1)) != n)
     throw(std::invalid_argument("Must be square matrix to get eigenvalues"));
@@ -220,7 +220,9 @@ void Diagonalizer::getEigenvalues(const CMatrix& M, Cvector& eigvals) {
       matf[index + 1] = z.imag();
     }
 
-  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n, null, &n,
+  vector<double> eigenvectors(2 * n * n);
+
+  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n, &eigenvectors[0], &n,
          &work[0], &lwork, &rwork[0], &info);
 
   if (info < 0) {
@@ -231,6 +233,12 @@ void Diagonalizer::getEigenvalues(const CMatrix& M, Cvector& eigvals) {
   eigvals.resize(n);
   for (int k = 0; k < n; k++)
     eigvals[k] = complex<double>(lambda[2 * k], lambda[2 * k + 1]);
+
+  for (int col = 0; col < n; col++)
+    for (int row = 0; row < n; row++) {
+      int index = 2 * (row + n * col);
+      eigvecs.put(row, col, complex<double>{eigenvectors[index], eigenvectors[index+1]});
+    }
 }
 
 // *********************************************************************
