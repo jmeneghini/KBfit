@@ -1,6 +1,10 @@
 #include "mc_estimate.h"
 using namespace std;
 
+#ifndef exp10
+#define exp10(x) std::pow(10.0, x)
+#endif
+
 MCEstimate::MCEstimate() : m_store(6), m_mode(Bootstrap) {}
 
 MCEstimate::MCEstimate(SamplingMode inmode)

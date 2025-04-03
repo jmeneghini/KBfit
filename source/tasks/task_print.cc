@@ -600,9 +600,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           }
         }
       }
-
       ofstream fout_omega(omega_filename);
-
+      
       string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay()
                       + " # P^2 = " + std::to_string(bqptr->getTotalMomentumIntegerSquared())
                       + " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();

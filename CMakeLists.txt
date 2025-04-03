@@ -1,4 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
+
+if(APPLE)
+    set(LLVM_DIR "/opt/homebrew/opt/llvm")
+    set(CMAKE_C_COMPILER "${LLVM_DIR}/bin/clang")
+    set(CMAKE_CXX_COMPILER "${LLVM_DIR}/bin/clang++")
+else()
+    set(CMAKE_C_COMPILER gcc)
+    set(CMAKE_CXX_COMPILER g++)
+endif()
+
 project(KBfit)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -67,21 +77,51 @@ foreach(subdir IN LISTS SUBDIRS)
     endif()
 endforeach()
 
+# set compiler to g++
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER gcc)
 
-# External libraries
-# OpenMP
-find_package(OpenMP REQUIRED)
+# External libraries (versions on cluster: LAPACK 3.9.0, Minuit2 6.34.04)
 # LAPACK
 find_package(LAPACK REQUIRED)
 # MINUIT2
-set(MINUIT2_INCDIR /usr/local/include)
-set(MINUIT2_LIBDIR /usr/local/lib)
+# if on linux, usr/local/, if on mac, opt/homebrew/
+if(APPLE)
+    # set(MINUIT2_INCDIR "/opt/homebrew/include")
+    # set(MINUIT2_LIBDIR "/opt/homebrew/lib")
+    # set(MINUIT2_LIB "libMinuit2.dylib")
+
+    # OpenMP is a major pain in the ass on mac
+    # For C
+    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
+    set(OpenMP_C_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
+
+    # For C++
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
+# else()
+#     set(MINUIT2_INCDIR /usr/local/include)
+#     set(MINUIT2_LIBDIR /usr/local/lib)
+#     set(MINUIT2_LIB "libMinuit2.a")
+endif()
+
+find_package(OpenMP REQUIRED)
+
+# Headers
 target_include_directories(KBfit PUBLIC ${MINUIT2_INCDIR})
+
+# Libraries
+target_link_directories(KBfit PUBLIC ${MINUIT2_LIBDIR})
+target_link_libraries(KBfit PUBLIC Minuit2)
+
+# target_include_directories(KBfit PUBLIC ${MINUIT2_INCDIR})
 
 target_link_libraries(KBfit PUBLIC
     OpenMP::OpenMP_CXX
     LAPACK::LAPACK
-    ${MINUIT2_LIBDIR}/libMinuit2.so
+    # ${MINUIT2_LIBDIR}/${MINUIT2_LIB}
 )
 
 # Put binary in my local bin directory

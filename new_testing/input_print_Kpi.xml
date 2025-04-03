@@ -261,7 +261,7 @@
   </MCSamplingInfo>
   <Verbose />
   <SamplingData>
-    <FileName>/latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp</FileName>
+    <FileName>../data/k-pi_scatteringDrew.smp</FileName>
   </SamplingData>
 </KBObservables>
 
