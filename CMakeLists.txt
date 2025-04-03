@@ -9,6 +9,14 @@ else()
     set(CMAKE_CXX_COMPILER g++)
 endif()
 
+# Check if lsb_release is available (it is not on the cluster, but is on my desktop)
+execute_process(
+    COMMAND which lsb_release
+    RESULT_VARIABLE LSB_RELEASE_EXISTS
+    OUTPUT_QUIET
+    ERROR_QUIET
+)
+
 project(KBfit)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -55,12 +63,56 @@ file(GLOB_RECURSE SOURCES ${SOURCE_DIR}/*.cc)
 list(REMOVE_ITEM SOURCES ${BOX_MATRIX_SOURCES})
 file(GLOB_RECURSE HEADERS ${SOURCE_DIR}/*.h)
 
+# External libraries (versions on cluster: LAPACK 3.9.0, Minuit2 6.34.04)
+# LAPACK
+# set(BLAS_DIR "/usr/lib/x86_64-linux-gnu")
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+# MINUIT2
+# if on linux, usr/local/, if on mac, opt/homebrew/
+
+set(USER_HOME $ENV{HOME})
+message(STATUS "User's home folder: ${USER_HOME}")
+
+set(CMAKE_INSTALL_PREFIX ${USER_HOME}/.local)
+
+if(APPLE)
+    message(STATUS "On MacOS")
+    set(MINUIT2_INCDIR "/opt/homebrew/include")
+    set(MINUIT2_LIBDIR "/opt/homebrew/lib")
+    set(MINUIT2_LIB "libMinuit2.dylib")
+
+    # OpenMP is a major pain in the ass on mac
+    # For C
+    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
+    set(OpenMP_C_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
+
+    # For C++
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
+elseif(LSB_RELEASE_EXISTS EQUAL 0)
+    message(STATUS "On Ubuntu Desktop")
+    set(MINUIT2_INCDIR "/usr/local/include/Minuit2")
+    set(MINUIT2_LIBDIR "/usr/local/lib")
+    set(MINUIT2_LIB "libMinuit2.a")
+else()
+    message(STATUS "On CMU QCD Cluster")
+    set(CMAKE_INSTALL_PREFIX /home/jmeneghini/latqcd_miniconda3)
+endif()
+
+find_package(OpenMP REQUIRED)
+
+
+# Create an object library for the main sources
+add_library(OptimizedSources OBJECT ${SOURCES} ${HEADERS})
+target_include_directories(OptimizedSources PUBLIC ${MINUIT2_INCDIR})
+
 # Create an object library for the box matrix sources (do not optimize)
 add_library(BoxMatrix OBJECT ${BOX_MATRIX_SOURCES})
 target_compile_options(BoxMatrix PRIVATE -O0)
 
-# Create an object library for the main sources
-add_library(OptimizedSources OBJECT ${SOURCES} ${HEADERS})
 
 # Create the executable
 add_executable(KBfit
@@ -77,55 +129,13 @@ foreach(subdir IN LISTS SUBDIRS)
     endif()
 endforeach()
 
-# set compiler to g++
-set(CMAKE_CXX_COMPILER g++)
-set(CMAKE_C_COMPILER gcc)
-
-# External libraries (versions on cluster: LAPACK 3.9.0, Minuit2 6.34.04)
-# LAPACK
-find_package(LAPACK REQUIRED)
-# MINUIT2
-# if on linux, usr/local/, if on mac, opt/homebrew/
-if(APPLE)
-    # set(MINUIT2_INCDIR "/opt/homebrew/include")
-    # set(MINUIT2_LIBDIR "/opt/homebrew/lib")
-    # set(MINUIT2_LIB "libMinuit2.dylib")
-
-    # OpenMP is a major pain in the ass on mac
-    # For C
-    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
-    set(OpenMP_C_LIB_NAMES "omp")
-    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
-
-    # For C++
-    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LLVM_DIR}/include")
-    set(OpenMP_CXX_LIB_NAMES "omp")
-    set(OpenMP_omp_LIBRARY "${LLVM_DIR}/lib/libomp.dylib")
-# else()
-#     set(MINUIT2_INCDIR /usr/local/include)
-#     set(MINUIT2_LIBDIR /usr/local/lib)
-#     set(MINUIT2_LIB "libMinuit2.a")
-endif()
-
-find_package(OpenMP REQUIRED)
-
-# Headers
-target_include_directories(KBfit PUBLIC ${MINUIT2_INCDIR})
-
-# Libraries
-target_link_directories(KBfit PUBLIC ${MINUIT2_LIBDIR})
-target_link_libraries(KBfit PUBLIC Minuit2)
-
-# target_include_directories(KBfit PUBLIC ${MINUIT2_INCDIR})
-
 target_link_libraries(KBfit PUBLIC
     OpenMP::OpenMP_CXX
     LAPACK::LAPACK
-    # ${MINUIT2_LIBDIR}/${MINUIT2_LIB}
+    ${MINUIT2_LIBDIR}/${MINUIT2_LIB} 
 )
 
-# Put binary in my local bin directory
-set(CMAKE_INSTALL_PREFIX /home/jmeneghini/latqcd_miniconda3)
+# Put binary in my conda bin directory if on AlmaLinux, else usr/local/bin
 
 install(TARGETS KBfit 
         RUNTIME DESTINATION bin)
