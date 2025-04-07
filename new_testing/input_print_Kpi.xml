@@ -16,7 +16,8 @@
       <Task>
       <Action>DoPrint</Action>
 
-      <OutputStub>KPiPrint_Kinv</OutputStub>
+      <!-- <OutputStub>KPiPrint_Kinv</OutputStub> -->
+      <OutputStub>test</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>
@@ -261,8 +262,7 @@
   </MCSamplingInfo>
   <Verbose />
   <SamplingData>
-<!--    <FileName>/latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp</FileName>-->
-    <FileName>/home/john/Documents/LatticeQCD/KBfit/data/k-pi_scatteringDrew.smp</FileName>
+    <FileName>../../data/k-pi_scatteringDrew.smp</FileName>
   </SamplingData>
 </KBObservables>
 
