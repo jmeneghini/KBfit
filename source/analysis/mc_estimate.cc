@@ -1,6 +1,10 @@
 #include "mc_estimate.h"
 using namespace std;
 
+#ifndef HAVE_EXP10
+inline double exp10(double x) { return pow(10.0, x); }
+#endif
+
 MCEstimate::MCEstimate() : m_store(6), m_mode(Bootstrap) {}
 
 MCEstimate::MCEstimate(SamplingMode inmode)
