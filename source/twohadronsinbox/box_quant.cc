@@ -1040,22 +1040,6 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
   std::vector<double> eigvals_real(N);
   CMatrix Q(N, N);
   if (m_Kinv != 0) {
-    //    std::vector<double> V_eigvals(N);
-    //    CMatrix U;
-    //    get_Vdiag_and_U(B, V_eigvals, U);  // V_eigvals = diag(sqrt func of B), U diagonalizes B
-    //
-    //    for (uint row = 0; row < N; ++row) {
-    //      for (uint col = 0; col < N; ++col) {
-    //        cmplx element(0.0, 0.0);
-    //        for (uint k = 0; k < N; ++k) {
-    //          for (uint l = 0; l < N; ++l) {
-    //            element += V_eigvals[row] * U(row, k) * (Kv(k, l) - B(k, l)) * std::conj(U(col, l)) * V_eigvals[col];
-    //          }
-    //        }
-    //        Q.put(row, col,element);
-    //      }
-    //    }
-    // define V = (1-iB)^{-1}
     auto compute_V_on_evs = [](double B_ev) {
       return 1.0 / complex<double>(1.0, -B_ev);
     };
@@ -1087,27 +1071,6 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
     for (int i = 0; i < N; ++i)
       eigvals_real[i] = eigvals[i].real();
   }
-//  else { //  Q = 1 - BK
-//    for (uint row = 0; row < N; row++)
-//      for (uint col = row; col < N; col++) {
-//        cmplx elem(0.0, 0.0);
-//        for (uint k = 0; k < N; k++)
-//          elem += Kv(row, k) * B(k, col);
-//          if (col == row)
-//            elem = 1.0 - elem;
-//        Q.put(row, col, elem);
-//      }
-//    D.getEigenvalues(Q, eigvals);
-//    vector<double> Beigvals;
-//    D.getEigenvalues(B, Beigvals);
-//    double rescale = 1.0;
-//    double root = 1.0 / double(N);
-//    for (uint k = 0; k < N; k++)
-//      rescale *= std::pow(std::abs(Beigvals[k]), root);
-//    rescale = 1.0 / rescale;
-//    for (uint k = 0; k < N; k++)
-//      eigvals[k] *= rescale;
-  // eigenvalues regularized by Prod tanh(Ecm - E_noninteracting)
   if (ev_reg_info != nullptr) {
     std::list<double> non_interacting_energies =
         m_boxes.front().first->getEcmTransform()
@@ -1132,21 +1095,47 @@ double BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   assign_matrices(E_over_mref, Elab, B, Kv);
-  uint N = B.size();
+  const uint N = B.size();
   return get_omega(mu, N, Kv, B);
 }
 
-double BoxQuantization::get_omega(double mu, uint N,
+double BoxQuantization::get_omega(const double mu, const uint N,
                                   const RealSymmetricMatrix& Kv,
                                   const ComplexHermitianMatrix& B) {
   RealDeterminantRoot DR;
-//  if (m_Kinv != 0 && !isBoxMatrixInverseRootMode()) { //   det( Kinv - B )
+  Diagonalizer D;
+  //  det((1+B^2)^{-1/4}(Ktildeinv-B)(1+B^2)^{-1/4}) = 0
+  //  det(Ktilde-B)/det(1+B^2)^{1/2} = 0
+  if (m_Kinv != 0) {
+    // ComplexHermitianMatrix top(N);
+    // Rvector top_eigvals(N);
+    // for (uint row = 0; row < N; row++) {
+    //   for (uint col = row; col < N; col++)
+    //     top.put(row, col, Kv(row, col) - B(row, col));
+    // }
+    // D.getEigenvalues(top, top_eigvals);
+    //
+    // Rvector bot_eigvals(N);
+    // Rvector B_eigvals(N);
+    // D.getEigenvalues(B, B_eigvals);
+    // for (uint i = 0; i < N; ++i) {
+    //   bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
+    // }
+    //
+    // double det = 1;
+    // for (uint i = 0; i < N; ++i) {
+    //   det *= top_eigvals[i] / bot_eigvals[i];
+    // }
+    //
+    // return det;
+
     ComplexHermitianMatrix Q(N);
     for (uint row = 0; row < N; row++)
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     return DR.getOmega(mu, Q);
-//  }
+  }
+  return 0.0;
 }
 //  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
 //

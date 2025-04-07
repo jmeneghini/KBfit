@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Tue_Apr__1_13:43:50_2025</StartDateTime>
+ <StartDateTime>Thu_Apr__3_16:09:34_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -17,15 +17,10 @@
    <TaskSequence>
       <Task>
          <Action>DoPrint</Action>
-         <OutputStub>KPiPrint_KinvB_Reg</OutputStub>
+         <OutputStub>KPiPrint_Kinv</OutputStub>
          <OutputMode>full</OutputMode>
          <OmegaMu>30.0</OmegaMu>
-         <PrintEigenvalues>
-            <EigenvalueRegularizingInfo>
-               <InScalar>1.0</InScalar>
-               <OutScalar>5.0</OutScalar>
-            </EigenvalueRegularizingInfo>
-         </PrintEigenvalues>
+         <PrintEigenvalues/>
          <KtildeMatrixInverse>
             <Element>
                <KElementInfo>
@@ -171,7 +166,7 @@
             </MCSamplingInfo>
             <Verbose/>
             <SamplingData>
-               <FileName>/latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp</FileName>
+               <FileName>/home/john/Documents/LatticeQCD/KBfit/data/k-pi_scatteringDrew.smp</FileName>
             </SamplingData>
          </KBObservables>
       </Task>
@@ -272,24 +267,24 @@
       </FitParameterInfos>
    </KtildeInverseCalculator>
    <Logger>
-      <o>: Omega mu = 30                                                                                                  :</o>
-      <o>:                                                                                                                :</o>
-      <o>: Observable get handler connecting to files:                                                                    :</o>
-      <o>: Now connecting file /latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp:</o>
-      <o>:                                                                                                                :</o>
-      <o>: File map:                                                                                                      :</o>
+      <o>: Omega mu = 30                                                                         :</o>
+      <o>:                                                                                       :</o>
+      <o>: Observable get handler connecting to files:                                           :</o>
+      <o>: Now connecting file /home/john/Documents/LatticeQCD/KBfit/data/k-pi_scatteringDrew.smp:</o>
+      <o>:                                                                                       :</o>
+      <o>: File map:                                                                             :</o>
       <FileMap>
          <EnsembleMapping>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-            <FileName>/latticeQCD/raid6/ruairi/analysis/tests/KBfit/convertChimeraResults/k-pi_scatteringDrew.smp</FileName>
+            <FileName>/home/john/Documents/LatticeQCD/KBfit/data/k-pi_scatteringDrew.smp</FileName>
          </EnsembleMapping>
       </FileMap>
-      <o>:                                                                                                                :</o>
-      <o>: MCEnsemble connection:                                                                                         :</o>
+      <o>:                                                                                       :</o>
+      <o>: MCEnsemble connection:                                                                :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:  Size = 3                                                                                                      :</o>
-      <o>: Keys:                                                                                                          :</o>
-      <o>:                                                                                                                :</o>
+      <o>:  Size = 3                                                                             :</o>
+      <o>: Keys:                                                                                 :</o>
+      <o>:                                                                                       :</o>
       <AvailableKeys>
          <Key>
             <MCObs>pion 0 n re</MCObs>
@@ -301,27 +296,27 @@
             <MCObs>xi_pion 0 n re</MCObs>
          </Key>
       </AvailableKeys>
-      <o>:                                                                                                                :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Omega.0                                                                          :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Eigenvals.0                                                                      :</o>
+      <o>:                                                                                       :</o>
+      <o>: Filename = KPiPrint_Kinv_Omega.0                                                      :</o>
+      <o>: Filename = KPiPrint_Kinv_Eigenvals.0                                                  :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                                                                :</o>
-      <o>: MomRay ar   P^2 = 0 Box Irrep T1u                                                                              :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Omega.1                                                                          :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Eigenvals.1                                                                      :</o>
+      <o>:                                                                                       :</o>
+      <o>: MomRay ar   P^2 = 0 Box Irrep T1u                                                     :</o>
+      <o>: Filename = KPiPrint_Kinv_Omega.1                                                      :</o>
+      <o>: Filename = KPiPrint_Kinv_Eigenvals.1                                                  :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                                                                :</o>
-      <o>: MomRay oa   P^2 = 1 Box Irrep A1                                                                               :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Omega.2                                                                          :</o>
-      <o>: Filename = KPiPrint_KinvB_Reg_Eigenvals.2                                                                      :</o>
+      <o>:                                                                                       :</o>
+      <o>: MomRay oa   P^2 = 1 Box Irrep A1                                                      :</o>
+      <o>: Filename = KPiPrint_Kinv_Omega.2                                                      :</o>
+      <o>: Filename = KPiPrint_Kinv_Eigenvals.2                                                  :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                                                                :</o>
-      <o>: MomRay oa   P^2 = 1 Box Irrep E                                                                                :</o>
+      <o>:                                                                                       :</o>
+      <o>: MomRay oa   P^2 = 1 Box Irrep E                                                       :</o>
    </Logger>
 </PrintOmega>
 
-<RunTimeInSeconds>0.565363</RunTimeInSeconds>
+<RunTimeInSeconds>0.376315</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Tue_Apr__1_13:43:51_2025</FinishDateTime>
+ <FinishDateTime>Thu_Apr__3_16:09:34_2025</FinishDateTime>
 </KBFit>
 
