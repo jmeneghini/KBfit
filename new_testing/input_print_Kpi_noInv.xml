@@ -16,7 +16,8 @@
       <Task>
       <Action>DoPrint</Action>
 
-       <OutputStub>KPiPrint_Kinv</OutputStub>
+      <!-- <OutputStub>KPiPrint_Kinv</OutputStub> -->
+      <OutputStub>KPiPrint_Q2</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>
@@ -30,7 +31,7 @@
 
 
 
-        <KtildeMatrixInverse>
+        <KtildeMatrix>
           <Element>
             <KElementInfo>
               <JTimesTwo>0</JTimesTwo>
@@ -116,7 +117,7 @@
             </KFitParamInfo>
           </StartingValues>
 
-        </KtildeMatrixInverse>
+        </KtildeMatrix>
 
 <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
 

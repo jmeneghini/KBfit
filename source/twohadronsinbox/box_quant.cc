@@ -1134,8 +1134,34 @@ double BoxQuantization::get_omega(const double mu, const uint N,
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     return DR.getOmega(mu, Q);
+  } // det(1 - Ktilde B)
+  CMatrix top(N, N);
+  Cvector top_eigvals(N);
+  for (uint row = 0; row < N; row++) {
+    for (uint col = row; col < N; col++) {
+      complex elem = {0.0, 0.0};
+        for (uint k = 0; k < N; k++)
+          elem += Kv.get(row, k) * B.get(k, col);
+      if (row == col)
+        elem = elem - 1.0;
+      top.put(row, col, -elem);
+    }
   }
-  return 0.0;
+  D.getEigenvalues(top, top_eigvals);
+
+  Rvector bot_eigvals(N);
+  Rvector B_eigvals(N);
+  D.getEigenvalues(B, B_eigvals);
+  for (uint i = 0; i < N; ++i) {
+    bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
+  }
+
+  complex det = {1.0, 1.0};
+  for (uint i = 0; i < N; ++i) {
+    det *= top_eigvals[i] / bot_eigvals[i];
+  }
+
+  return det.real();
 }
 //  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
 //

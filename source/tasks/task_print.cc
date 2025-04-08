@@ -583,8 +583,10 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       double einc = elabs_inc[blocknum];
       double elab = emin;
       vector<double> elabvals;
+      vector<double> ecmvals;
       while (elab <= emax) {
         elabvals.push_back(elab);
+        ecmvals.push_back(bqptr->getEcmOverMrefFromElab(elab));
         elab += einc;
       }
       uint nvals = elabvals.size();
@@ -632,11 +634,10 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       fout_omega.precision(12);
       fout_omega.setf(ios::fixed, ios::floatfield);
-
-      fout_omega << "E_lab,Omega" << endl;
+      fout_omega << "E_lab,E_cm,Omega" << endl;
       if (nsamp == 0) {
         for (uint k = 0; k < nvals; ++k)
-          fout_omega << elabvals[k] << "," << omegavals[k][0] << endl;
+          fout_omega << elabvals[k] << "," << ecmvals[k] << "," << omegavals[k][0] << endl;
       } else if (m_obs->isJackknifeMode()) {
         MCEstimate mcest;
         for (uint k = 0; k < nvals; ++k) {
@@ -666,7 +667,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         fout_eigenvals.precision(12);
         fout_eigenvals.setf(ios::fixed, ios::floatfield);
 
-        fout_eigenvals << "E_lab";
+        fout_eigenvals << "E_lab,E_cm";
         for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
 
           fout_eigenvals << ",ev" << dim;
@@ -682,7 +683,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
         if (nsamp == 0) {
           for (uint k = 0; k < nvals; ++k) {
-            fout_eigenvals << elabvals[k];
+            fout_eigenvals << elabvals[k] << "," << ecmvals[k];
             for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
               fout_eigenvals << "," << eigenvals[dim][k][0];
             }

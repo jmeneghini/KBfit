@@ -241,6 +241,51 @@ void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& 
     }
 }
 
+void Diagonalizer::getEigenvalues(const CMatrix& M, Cvector& eigvals) {
+  int n = M.size(0);
+  if (int(M.size(1)) != n)
+    throw(std::invalid_argument("Must be square matrix to get eigenvalues"));
+  if (n == 0) {
+    eigvals.clear();
+    return;
+  }
+
+  int lwork = 4 * n;
+  Rvector work(2 * lwork);
+  Rvector rwork(2 * n);
+  Rvector lambda(2 * n);
+  int info;
+  char jobvl = 'N';
+  char jobvr = 'N';
+  double* null = 0;
+
+  // load M (entire matrix) into matf fortran format
+  //    (column major; row index changes fastest)
+  //    complex stored as real,imag contiguous in fortran
+  vector<double> matf(2 * n * n);
+  for (int col = 0; col < n; col++)
+    for (int row = 0; row < n; row++) {
+      int index = 2 * (row + n * col);
+      const complex<double>& z = M(row, col);
+      matf[index] = z.real();
+      matf[index + 1] = z.imag();
+    }
+
+  vector<double> eigenvectors(2 * n * n);
+
+  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n, &eigenvectors[0], &n,
+         &work[0], &lwork, &rwork[0], &info);
+
+  if (info < 0) {
+    throw(std::invalid_argument(" bad arguments in diagonalize"));
+  } else if (info > 0) {
+    throw(std::invalid_argument(" no convergence in diagonalize"));
+  }
+  eigvals.resize(n);
+  for (int k = 0; k < n; k++)
+    eigvals[k] = complex<double>(lambda[2 * k], lambda[2 * k + 1]);
+}
+
 // *********************************************************************
 
 //   returns  [det(M)]^(1/Ndet)   Ndet must be odd
