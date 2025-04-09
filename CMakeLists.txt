@@ -114,6 +114,12 @@ find_package(OpenMP REQUIRED)
 # Create an object library for the main sources
 add_library(OptimizedSources OBJECT ${SOURCES} ${HEADERS})
 target_include_directories(OptimizedSources PUBLIC ${MINUIT2_INCDIR} ${ROOT_INCDIR})
+# if in debug, compile optimized sources as such
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(OptimizedSources PRIVATE -O0)
+else()
+    target_compile_options(OptimizedSources PRIVATE -O3)
+endif()
 
 # Create an object library for the box matrix sources (do not optimize)
 add_library(BoxMatrix OBJECT ${BOX_MATRIX_SOURCES})

@@ -17,7 +17,7 @@
       <Action>DoPrint</Action>
 
       <!-- <OutputStub>KPiPrint_Kinv</OutputStub> -->
-      <OutputStub>KPiPrint_Q2</OutputStub>
+      <OutputStub>KPiPrint_Cayley</OutputStub>
       <OutputMode>full</OutputMode>
 
         <OmegaMu>30.0</OmegaMu>
@@ -162,7 +162,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>2.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -175,7 +175,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -188,7 +188,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
 </KBBlock>
 
 <!--

@@ -122,6 +122,33 @@ RealSymmetricMatrix::operator-=(const RealSymmetricMatrix& incoming) {
   return *this;
 }
 
+void RealSymmetricMatrix::modifyEigenvalues(std::complex<double> (*func)(double), Matrix<std::complex<double>>& out_matrix) const {
+  int n = static_cast<int>(m_size);
+
+  RVector eigvals(n);
+  std::vector<complex<double>> modified_eigvals(n);
+  RMatrix eigvecs;
+  Diagonalizer D;
+
+  // Compute the eigenvalues and eigenvectors of the matrix.
+  D.getEigenvectors(*this, eigvals, eigvecs);
+
+  for (int i = 0; i < n; ++i) {
+    modified_eigvals[i] = func(eigvals[i]);
+  }
+
+
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      complex<double> element(0.0, 0.0);
+      for (int k = 0; k < n; ++k) {
+        element += eigvecs(i, k) * eigvecs(j, k) * modified_eigvals[k];
+      }
+      out_matrix.put(i, j, element);
+    }
+  }
+}
+
 RealSymmetricMatrix& RealSymmetricMatrix::resize() { return clear(); }
 
 RealSymmetricMatrix& RealSymmetricMatrix::resize(int insize) {
@@ -224,7 +251,7 @@ ComplexHermitianMatrix::operator-=(const ComplexHermitianMatrix& incoming) {
   return *this;
 }
 
-void ComplexHermitianMatrix::modifyEigenvalues(std::complex<double> (*func)(double), Matrix<std::complex<double>>& out_matrix) {
+void ComplexHermitianMatrix::modifyEigenvalues(std::complex<double> (*func)(double), Matrix<std::complex<double>>& out_matrix) const {
   int n = static_cast<int>(m_size);
 
   RVector eigvals(n);

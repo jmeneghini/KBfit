@@ -1111,63 +1111,105 @@ double BoxQuantization::get_omega(const double mu, const uint N,
                                   const ComplexHermitianMatrix& B) {
   RealDeterminantRoot DR;
   Diagonalizer D;
-  //  det((1+B^2)^{-1/4}(Ktildeinv-B)(1+B^2)^{-1/4}) = 0
-  //  det(Ktilde-B)/det(1+B^2)^{1/2} = 0
   if (m_Kinv != 0) {
-    ComplexHermitianMatrix top(N);
-    Rvector top_eigvals(N);
-    for (uint row = 0; row < N; row++) {
-      for (uint col = row; col < N; col++)
-        top.put(row, col, Kv(row, col) - B(row, col));
-    }
-    D.getEigenvalues(top, top_eigvals);
-
-    Rvector bot_eigvals(N);
-    Rvector B_eigvals(N);
-    D.getEigenvalues(B, B_eigvals);
-    for (uint i = 0; i < N; ++i) {
-      bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
-    }
-
-    double det = 1;
-    for (uint i = 0; i < N; ++i) {
-      det *= top_eigvals[i] / bot_eigvals[i];
-    }
-
-    return det;
-
-    // ComplexHermitianMatrix Q(N);
-    // for (uint row = 0; row < N; row++)
+    // ComplexHermitianMatrix top(N);
+    // Rvector top_eigvals(N);
+    // for (uint row = 0; row < N; row++) {
     //   for (uint col = row; col < N; col++)
-    //     Q.put(row, col, Kv(row, col) - B(row, col));
-    // return DR.getOmega(mu, Q);
+    //     top.put(row, col, Kv(row, col) - B(row, col));
+    // }
+    // D.getEigenvalues(top, top_eigvals);
+    //
+    // Rvector bot_eigvals(N);
+    // Rvector B_eigvals(N);
+    // D.getEigenvalues(B, B_eigvals);
+    // for (uint i = 0; i < N; ++i) {
+    //   bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
+    // }
+    //
+    // double det = 1;
+    // for (uint i = 0; i < N; ++i) {
+    //   det *= top_eigvals[i] / bot_eigvals[i];
+    // }
+    //
+    // return det;
+
+    ComplexHermitianMatrix Q(N);
+    for (uint row = 0; row < N; row++)
+      for (uint col = row; col < N; col++)
+        Q.put(row, col, Kv(row, col) - B(row, col));
+    return DR.getOmega(mu, Q);
   } // det(1 - Ktilde B)
-  CMatrix top(N, N);
-  Cvector top_eigvals(N);
+
+  CMatrix StildeLeft(N, N); // 1 + i Ktilde
+  CMatrix StildeRight(N, N); // (1 - i Ktilde) (no invert yet)
+
+  CMatrix CBLeft(N, N);
+  CMatrix CBRight(N, N);
+
   for (uint row = 0; row < N; row++) {
-    for (uint col = row; col < N; col++) {
-      complex elem = {0.0, 0.0};
-        for (uint k = 0; k < N; k++)
-          elem += Kv.get(row, k) * B.get(k, col);
-      if (row == col)
-        elem = elem - 1.0;
-      top.put(row, col, -elem);
+    for (uint col = 0; col < N; col++) {
+      complex<double> elementStildeL(0.0, 1.0);
+      complex<double> elementCBL(0.0, 1.0);
+      elementStildeL *= Kv.get(row, col);
+      elementCBL *= B.get(row, col);
+      if (row == col) {
+        elementStildeL += 1.0;
+        elementCBL += 1.0;
+      }
+      StildeLeft(row, col) = elementStildeL;
+      CBLeft(row, col) = elementCBL;
     }
   }
-  D.getEigenvalues(top, top_eigvals);
 
-  Rvector bot_eigvals(N);
-  Rvector B_eigvals(N);
-  D.getEigenvalues(B, B_eigvals);
-  for (uint i = 0; i < N; ++i) {
-    bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
+  // make StildeRight = (1 - i Ktilde)^{-1} noting Ktilde is symmetric
+  auto compute_on_evs = [](double ev) {
+    return 1.0 / complex<double>(1.0, -ev);
+  };
+
+  Kv.modifyEigenvalues(compute_on_evs, StildeRight);
+
+  CMatrix Stilde(N, N);
+  for (uint row = 0; row < N; row++) {
+    for (uint col = 0; col < N; col++) {
+      complex<double> element(0.0, 0.0);
+      for (uint k = 0; k < N; k++)
+        element += StildeLeft.get(row, k) * StildeRight.get(k, col);
+      Stilde.put(row, col, element);
+    }
+  } //definitely could diagonalize Sleft and Sright simultaneously since they commute (i think)
+
+  CMatrix CB(N, N);
+  B.modifyEigenvalues(compute_on_evs, CBRight);
+  for (uint row = 0; row < N; row++) {
+    for (uint col = 0; col < N; col++) {
+      complex<double> element(0.0, 0.0);
+      for (uint k = 0; k < N; k++)
+        element += CBLeft.get(row, k) * CBRight.get(k, col);
+      CB.put(row, col, element);
+    }
   }
 
-  complex det = {1.0, 1.0};
-  for (uint i = 0; i < N; ++i) {
-    det *= top_eigvals[i] / bot_eigvals[i];
+  CMatrix Q(N, N); // 1 + CB*Stilde
+
+  for (uint row = 0; row < N; row++) {
+    for (uint col = 0; col < N; col++) {
+      complex<double> element(0.0, 0.0);
+      for (uint k = 0; k < N; k++)
+        element += CB.get(row, k) * Stilde.get(k, col);
+      if (row == col)
+        element += 1.0;
+      Q.put(row, col, element);
+    }
   }
 
+  // get eigenvalues
+  std::vector<complex<double>> Q_eigvals(N);
+  D.getEigenvalues(Q, Q_eigvals);
+  complex<double> det = 1.0;
+  for (uint i = 0; i < N; ++i) {
+    det *= Q_eigvals[i];
+  }
   return det.real();
 }
 //  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
