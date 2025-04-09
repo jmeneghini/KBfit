@@ -560,6 +560,13 @@ double BoxQuantization::getEcmOverMrefFromElab(double Elab_over_mref) const {
   return m_boxes.front().first->getEcmOverMrefFromElab(Elab_over_mref);
 }
 
+list<double> BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
+                                         double max_Elab_over_mref) const {
+  return m_boxes.front().first->getEcmTransform()
+            .getFreeTwoParticleEnergies(min_Elab_over_mref,
+                                        max_Elab_over_mref);
+}
+
 void BoxQuantization::getQcmsqOverMrefsqFromElab(
     double Elab_over_mref, RVector& qcmsq_over_mrefsq) const {
   uint nchan = getNumberOfDecayChannels();
@@ -1107,33 +1114,33 @@ double BoxQuantization::get_omega(const double mu, const uint N,
   //  det((1+B^2)^{-1/4}(Ktildeinv-B)(1+B^2)^{-1/4}) = 0
   //  det(Ktilde-B)/det(1+B^2)^{1/2} = 0
   if (m_Kinv != 0) {
-    // ComplexHermitianMatrix top(N);
-    // Rvector top_eigvals(N);
-    // for (uint row = 0; row < N; row++) {
-    //   for (uint col = row; col < N; col++)
-    //     top.put(row, col, Kv(row, col) - B(row, col));
-    // }
-    // D.getEigenvalues(top, top_eigvals);
-    //
-    // Rvector bot_eigvals(N);
-    // Rvector B_eigvals(N);
-    // D.getEigenvalues(B, B_eigvals);
-    // for (uint i = 0; i < N; ++i) {
-    //   bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
-    // }
-    //
-    // double det = 1;
-    // for (uint i = 0; i < N; ++i) {
-    //   det *= top_eigvals[i] / bot_eigvals[i];
-    // }
-    //
-    // return det;
-
-    ComplexHermitianMatrix Q(N);
-    for (uint row = 0; row < N; row++)
+    ComplexHermitianMatrix top(N);
+    Rvector top_eigvals(N);
+    for (uint row = 0; row < N; row++) {
       for (uint col = row; col < N; col++)
-        Q.put(row, col, Kv(row, col) - B(row, col));
-    return DR.getOmega(mu, Q);
+        top.put(row, col, Kv(row, col) - B(row, col));
+    }
+    D.getEigenvalues(top, top_eigvals);
+
+    Rvector bot_eigvals(N);
+    Rvector B_eigvals(N);
+    D.getEigenvalues(B, B_eigvals);
+    for (uint i = 0; i < N; ++i) {
+      bot_eigvals[i] = sqrt(1+ B_eigvals[i]*B_eigvals[i]);
+    }
+
+    double det = 1;
+    for (uint i = 0; i < N; ++i) {
+      det *= top_eigvals[i] / bot_eigvals[i];
+    }
+
+    return det;
+
+    // ComplexHermitianMatrix Q(N);
+    // for (uint row = 0; row < N; row++)
+    //   for (uint col = row; col < N; col++)
+    //     Q.put(row, col, Kv(row, col) - B(row, col));
+    // return DR.getOmega(mu, Q);
   } // det(1 - Ktilde B)
   CMatrix top(N, N);
   Cvector top_eigvals(N);

@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Mon_Apr__7_14:31:05_2025</StartDateTime>
+ <StartDateTime>Tue_Apr__8_16:52:51_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -106,7 +106,7 @@
          <MCEnsembleParameters>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
             <ReferenceMassTimeSpacingProduct>
-               <MCObs>pion 0</MCObs>
+               <MCObs>kaon 0</MCObs>
             </ReferenceMassTimeSpacingProduct>
             <LatticeAnisotropy>
                <MCObs>xi_pion 0</MCObs>
@@ -130,7 +130,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>2.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBBlock>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
@@ -142,7 +142,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBBlock>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
@@ -154,7 +154,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBObservables>
             <MCSamplingInfo>
@@ -287,7 +287,7 @@
       <o>:                                                       :</o>
       <AvailableKeys>
          <Key>
-            <MCObs>pion 0 n re</MCObs>
+            <MCObs>kaon 0 n re</MCObs>
          </Key>
          <Key>
             <MCObs>kaon_mpi 0 n re</MCObs>
@@ -299,24 +299,27 @@
       <o>:                                                       :</o>
       <o>: Filename = KPiPrint_Q1_Omega.0                        :</o>
       <o>: Filename = KPiPrint_Q1_Eigenvals.0                    :</o>
+      <o>: Filename = KPiPrint_Q1_NonInteractingEnergies.0       :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                       :</o>
       <o>: MomRay ar   P^2 = 0 Box Irrep T1u                     :</o>
       <o>: Filename = KPiPrint_Q1_Omega.1                        :</o>
       <o>: Filename = KPiPrint_Q1_Eigenvals.1                    :</o>
+      <o>: Filename = KPiPrint_Q1_NonInteractingEnergies.1       :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                       :</o>
       <o>: MomRay oa   P^2 = 1 Box Irrep A1                      :</o>
       <o>: Filename = KPiPrint_Q1_Omega.2                        :</o>
       <o>: Filename = KPiPrint_Q1_Eigenvals.2                    :</o>
+      <o>: Filename = KPiPrint_Q1_NonInteractingEnergies.2       :</o>
       <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
       <o>:                                                       :</o>
       <o>: MomRay oa   P^2 = 1 Box Irrep E                       :</o>
    </Logger>
 </PrintOmega>
 
-<RunTimeInSeconds>0.138751</RunTimeInSeconds>
+<RunTimeInSeconds>8.15794</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Mon_Apr__7_14:31:05_2025</FinishDateTime>
+ <FinishDateTime>Tue_Apr__8_16:52:59_2025</FinishDateTime>
 </KBFit>
 

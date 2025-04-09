@@ -379,6 +379,9 @@ public:
 
   std::set<KElementInfo> getElementInfos() const;
 
+  std::list<double> getFreeTwoParticleEnergies(double min_Elab_over_mref,
+                                         double max_Elab_over_mref) const;
+
   double getEcmOverMrefFromElab(double Elab_over_mref) const;
 
   void getQcmsqOverMrefsqFromElab(double Elab_over_mref,

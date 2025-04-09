@@ -548,12 +548,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       const MCEnsembleInfo& mcens = blockens[blocknum];
       string omega_filename = outstub + "_Omega." + make_string(blocknum);
       string eigenvals_filename = outstub + "_Eigenvals." + make_string(blocknum);
+      string nis_filename = outstub + "_NonInteractingEnergies." + make_string(blocknum);
 
       BoxQuantization* bqptr = BQ[blocknum];
       logger << "Filename = " << omega_filename << endl;
       if (do_print_eigenvals) {
         logger << "Filename = " << eigenvals_filename << endl;
       }
+      logger << "Filename = " << nis_filename << endl;
       logger << mcens.str() << endl;
       logger << "MomRay " << bqptr->getMomRay()
              << "   P^2 = " << bqptr->getTotalMomentumIntegerSquared()
@@ -583,10 +585,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       double einc = elabs_inc[blocknum];
       double elab = emin;
       vector<double> elabvals;
-      vector<double> ecmvals;
       while (elab <= emax) {
         elabvals.push_back(elab);
-        ecmvals.push_back(bqptr->getEcmOverMrefFromElab(elab));
         elab += einc;
       }
       uint nvals = elabvals.size();
@@ -622,6 +622,12 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
             }
           }
         }
+      }
+
+      vector<double> ecmvals;
+      for (uint k = 0; k < nvals; ++k) {
+        double ecm_energy = bqptr->getEcmOverMrefFromElab(elabvals[k]);
+        ecmvals.push_back(ecm_energy);
       }
 
       ofstream fout_omega(omega_filename);
@@ -715,7 +721,24 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         }
         fout_omega.close();
       }
+      ofstream fout_nis(nis_filename);
+
+      fout_nis << header << "\n\n";
+
+      fout_nis.precision(12);
+      fout_nis.setf(ios::fixed, ios::floatfield);
+
+      fout_nis << "E_lab,E_cm" << endl;
+
+      list<double> ni_energies = bqptr->getFreeTwoParticleEnergies(emin, emax);
+      for (double & ni_energy : ni_energies) {
+        double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
+        fout_nis << ni_energy << "," << ecm_energy << endl;
+      }
+      fout_nis.close();
     }
+
+
 
     m_obs->clearSamplings();
     XMLHandler xmlK;
