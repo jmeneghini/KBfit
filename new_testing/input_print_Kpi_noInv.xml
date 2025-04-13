@@ -23,10 +23,6 @@
         <OmegaMu>30.0</OmegaMu>
 
         <PrintEigenvalues>
-<!--            <EigenvalueRegularizingInfo>-->
-<!--              <InScalar>1.0</InScalar>-->
-<!--              <OutScalar>5.0</OutScalar>-->
-<!--            </EigenvalueRegularizingInfo>-->
         </PrintEigenvalues>
 
 

@@ -1127,14 +1127,15 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
       eigvals_real[ev_order[i]] = ev.imag();
   }
 
-  last_iter_eigenvectors = Q_eigenvectors;
+  if (N != 1)
+    last_iter_eigenvectors = Q_eigenvectors;
 
   return eigvals_real;
 }
 
 std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_eigenvectors,
                                         const CMatrix& this_iter_eigenvectors) {
-  uint num_vecs = past_iter_eigenvectors.size(); // assume both matrices have the same number of columns
+  uint num_vecs = past_iter_eigenvectors.size()/2; // assume both matrices have the same number of columns
   std::vector<int> order(num_vecs, -1);
 
   // Loop over each eigenvector from the past iteration.

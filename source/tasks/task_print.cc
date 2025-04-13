@@ -592,12 +592,11 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           bqptr->setMassesOverRef(ci, (*(particlemass1[ci]))[b],
                                   (*(particlemass2[ci]))[b]);
         }
-        CMatrix last_iter_eigenvectors(0, 0);
+        CMatrix last_iter_eigenvectors;
         for (uint k = 0; k < nvals; ++k) {
           omegavals[k][b] = bqptr->getOmegaFromElab(omega_mu, elabvals[k]);
           if (do_print_eigenvals) {
             RVector ev_res;
-
             ev_res = bqptr->getEigenvaluesFromElab(elabvals[k], last_iter_eigenvectors);
             for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
               eigenvals[dim][k][b] = ev_res[dim];
