@@ -245,16 +245,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           "Multiple PrintEigenvalues tags cannot be present"));
     }
     bool do_print_eigenvals = (count_print_eigenvals == 1);
-    bool regularize_eigenvals = false;
-    if (do_print_eigenvals) {
-      ArgsHandler xmlev(xmltask, "PrintEigenvalues");
-      regularize_eigenvals = xmlev.queryTag("EigenvalueRegularizingInfo");
-      if (regularize_eigenvals) {
-        ArgsHandler xmlreg(xmlev, "EigenvalueRegularizingInfo");
-        xmlreg.getReal("InScalar", in_scalar);
-        xmlreg.getReal("OutScalar", out_scalar);
-      }
-    }
 
 
     if (outstub.empty())
@@ -602,21 +592,13 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           bqptr->setMassesOverRef(ci, (*(particlemass1[ci]))[b],
                                   (*(particlemass2[ci]))[b]);
         }
-
+        CMatrix last_iter_eigenvectors(0, 0);
         for (uint k = 0; k < nvals; ++k) {
           omegavals[k][b] = bqptr->getOmegaFromElab(omega_mu, elabvals[k]);
           if (do_print_eigenvals) {
             RVector ev_res;
-            if (regularize_eigenvals) {
-              BoxQuantization::EigenvalueRegularizingInfo ev_reg_info{};
-              ev_reg_info.in_scalar = in_scalar;
-              ev_reg_info.out_scalar = out_scalar;
-              ev_reg_info.E_min = emin;
-              ev_reg_info.E_max = emax;
-              ev_res = bqptr->getEigenvaluesFromElab(elabvals[k], &ev_reg_info);
-            }
-            else
-              ev_res = bqptr->getEigenvaluesFromElab(elabvals[k]);
+
+            ev_res = bqptr->getEigenvaluesFromElab(elabvals[k], last_iter_eigenvectors);
             for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
               eigenvals[dim][k][b] = ev_res[dim];
             }

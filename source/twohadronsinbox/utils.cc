@@ -78,6 +78,41 @@ void calcMatrixInverse(const ComplexHermitianMatrix& H,
   }
 }
 
+//  Calculates the phase angle of the complex number "z"
+//  in the range [0, 2*PI) and returns it in "phase".
+//  This is in contrast to the standard atan2 function which
+//  returns the angle in the range (-PI, PI].
+//  This was added in hopes of removing any redundant
+//  calculations would occur by using atan2 directly,
+//  then modifying the result to be in [0, 2*PI).
+double getPhaseAngle(const std::complex<double>& z) {
+  double x = z.real();
+  double y = z.imag();
+  // Handle the trivial case to avoid division by zero.
+  if (x == 0.0) {
+    if (y > 0.0) return M_PI / 2;
+    if (y < 0.0) return 3 * M_PI / 2;
+    return 0.0;
+  }
+
+  // Compute the base angle using atan.
+  double theta = std::atan(y / x); // returns value in (-pi/2, pi/2)
+
+  // Adjust the angle based on the quadrant.
+  if (x < 0.0) {
+    // When x is negative, adjust the angle.
+    theta += (y >= 0.0) ? M_PI : -M_PI;
+  }
+
+  // Ensure the result is in [0, 2PI)
+  if (theta < 0.0) {
+    theta += 2 * M_PI;
+  }
+
+  return theta;
+}
+
+
 // ***************************************************************
 
 //  Takes a Hermitian matrix "H" and returns the eigenvalues in
@@ -205,7 +240,7 @@ void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& 
   Rvector lambda(2 * n);
   int info;
   char jobvl = 'N';
-  char jobvr = 'N';
+  char jobvr = 'V';
   double* null = 0;
 
   // load M (entire matrix) into matf fortran format

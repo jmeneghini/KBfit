@@ -13,6 +13,15 @@ typedef std::vector<std::complex<double>> Cvector;
 void calcMatrixInverse(const ComplexHermitianMatrix& H,
                        ComplexHermitianMatrix& Hinv);
 
+//  Calculates the phase angle of the complex number "z"
+//  in the range [0, 2*PI) and returns it in "phase".
+//  This is in contrast to the standard atan2 function which
+//  returns the angle in the range (-PI, PI].
+double getPhaseAngle(const std::complex<double>& z);
+
+
+
+
 // ***************************************************************************************
 
 //  Takes a Hermitian matrix "H" and returns the eigenvalues in
