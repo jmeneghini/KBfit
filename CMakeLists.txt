@@ -116,7 +116,7 @@ add_library(OptimizedSources OBJECT ${SOURCES} ${HEADERS})
 target_include_directories(OptimizedSources PUBLIC ${MINUIT2_INCDIR} ${ROOT_INCDIR})
 # if in debug, compile optimized sources as such
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(OptimizedSources PRIVATE -O0)
+    target_compile_options(OptimizedSources PRIVATE -O0 -g)
 else()
     target_compile_options(OptimizedSources PRIVATE -O3)
 endif()

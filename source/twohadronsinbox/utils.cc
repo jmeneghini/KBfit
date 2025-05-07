@@ -420,6 +420,25 @@ double RealDeterminantRoot::get_det_odd_root(std::vector<double>& matf, int n,
 
 //   returns  Omega(mu,M)   M = Hermitian
 
+double RealDeterminantRoot::getOmega(double mu, const RVector& eigenvalues) {
+  double omega = 1.0;
+  for (int i = 0; i < static_cast<int>(eigenvalues.size()); i++) {
+    omega *= eigenvalues[i] /
+             pow(mu * mu + eigenvalues[i] * eigenvalues[i], 0.5);
+  }
+  return omega;
+}
+
+double RealDeterminantRoot::getOmega(double mu, const CVector& eigenvalues, double& imag_part) {
+  complex<double> omega = {1.0, 0.0};
+  for (int i = 0; i < static_cast<int>(eigenvalues.size()); i++) {
+    omega *= eigenvalues[i]/
+             pow(mu * mu + eigenvalues[i] * conj(eigenvalues[i]), 0.5);
+  }
+  imag_part = omega.imag();
+  return (conjugate(omega)*omega).real();
+}
+
 double RealDeterminantRoot::getOmega(double mu,
                                      const ComplexHermitianMatrix& M) {
   int n = M.size();

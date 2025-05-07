@@ -735,7 +735,24 @@ double BoxQuantization::getOmega(double mu,
   uint N = B.size();
   if (KtildeOrInverse.size() != N)
     throw(std::invalid_argument("Mismatch in Kv, B matrix sizes"));
-  return get_omega(mu, N, KtildeOrInverse, B);
+  double dummy_imag = 0.0;
+  return get_omega(mu, N, KtildeOrInverse, B, dummy_imag);
+}
+
+void BoxQuantization::getRootsInEcmInterval(double mu,
+                                              double Ecm_over_mref_min,
+                                              double Ecm_over_mref_max,
+                                              std::vector<double>& roots) {
+  get_roots_in_interval(mu, Ecm_over_mref_min,
+                               Ecm_over_mref_max, false, roots);
+}
+
+void BoxQuantization::getRootsInElabInterval(double mu,
+                                              double Ecm_over_mref_min,
+                                              double Ecm_over_mref_max,
+                                              std::vector<double>& roots) {
+  get_roots_in_interval(mu, Ecm_over_mref_min,
+                               Ecm_over_mref_max, true, roots);
 }
 
 //  computes [det(Ktildeinv-B)]^(1/Ndet) or [det(1-B*K)]^(1/Ndet)
@@ -1085,7 +1102,7 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
         element += StildeLeft.get(row, k) * StildeRight.get(k, col);
       Stilde.put(row, col, element);
     }
-  } //definitely could diagonalize Sleft and Sright simultaneously since they commute (i think)
+  }
 
   CMatrix CB(N, N);
   B.modifyEigenvalues(compute_on_evs, CBRight);
@@ -1118,6 +1135,7 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
     needs_ordering = true;
   }
 
+
   complex<double> ev;
   for (uint i = 0; i < N; ++i) {
     ev = 1.0 + eigvals[i];
@@ -1137,24 +1155,23 @@ std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_
                                         const CMatrix& this_iter_eigenvectors) {
   uint num_vecs = past_iter_eigenvectors.size()/2; // assume both matrices have the same number of columns
   std::vector<int> order(num_vecs, -1);
-
   // Loop over each eigenvector from the past iteration.
   for (uint i = 0; i < num_vecs; ++i) {
     double max_inner_product = -std::numeric_limits<double>::infinity();
     int max_index = -1;
 
     // Compare with each eigenvector from the current iteration.
-    for (uint j = 0; j < num_vecs; ++j) {
-      double inner_prod_imag = 0.0;
-      // Compute the imaginary part of the inner product across all elements.
+    for (uint j = 0; j <= i; ++j) {
+      double inner_prod_real = 0.0;
+      // Compute the real part of the inner product across all elements.
       for (uint k = 0; k < num_vecs; ++k) {
-        inner_prod_imag += (past_iter_eigenvectors.get(i, k)
-                             * conj(this_iter_eigenvectors.get(j, k))).imag();
+        inner_prod_real += abs((conj(past_iter_eigenvectors.get(i, k))
+                             * this_iter_eigenvectors.get(j, k)).real());
       }
       // Update maximum if current inner product is larger.
-      if (inner_prod_imag > max_inner_product) {
-        max_inner_product = inner_prod_imag;
-        max_index = j;
+      if (inner_prod_real > max_inner_product) {
+        max_inner_product = inner_prod_real;
+        max_index = i;
       }
     }
     order[i] = max_index;
@@ -1162,17 +1179,27 @@ std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_
   return order;
 }
 
+double BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab, double& imag_part) {
+  ComplexHermitianMatrix B;
+  RealSymmetricMatrix Kv;
+  assign_matrices(E_over_mref, Elab, B, Kv);
+  const uint N = B.size();
+  return get_omega(mu, N, Kv, B, imag_part);
+}
+
 double BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   assign_matrices(E_over_mref, Elab, B, Kv);
   const uint N = B.size();
-  return get_omega(mu, N, Kv, B);
+  double dummy_imag = 0.0;
+  return get_omega(mu, N, Kv, B, dummy_imag);
 }
 
 double BoxQuantization::get_omega(const double mu, const uint N,
                                   const RealSymmetricMatrix& Kv,
-                                  const ComplexHermitianMatrix& B) {
+                                  const ComplexHermitianMatrix& B,
+                                  double& imag_part) {
   RealDeterminantRoot DR;
   Diagonalizer D;
   if (m_Kinv != 0) {
@@ -1237,12 +1264,7 @@ double BoxQuantization::get_omega(const double mu, const uint N,
 
   // get eigenvalues
   std::vector<complex<double>> Q_eigvals(N);
-  D.getEigenvalues(Q, Q_eigvals);
-  complex<double> det = 1.0;
-  for (uint i = 0; i < N; ++i) {
-    det *= Q_eigvals[i];
-  }
-  return det.imag();
+  return DR.getOmega(mu, Q_eigvals, imag_part);
     // ComplexHermitianMatrix top(N);
     // Rvector top_eigvals(N);
     // for (uint row = 0; row < N; row++) {
@@ -1337,12 +1359,10 @@ double BoxQuantization::get_omega(const double mu, const uint N,
   // get eigenvalues
   std::vector<complex<double>> Q_eigvals(N);
   D.getEigenvalues(Q, Q_eigvals);
-  complex<double> det = 1.0;
-  for (uint i = 0; i < N; ++i) {
-    det *= Q_eigvals[i];
-  }
-  return det.imag();
 
+  return DR.getOmega(mu, Q_eigvals, imag_part);
+
+  // return CB.get(0, 0).imag();
   // det(1 - Ktilde B)
   // std::vector<complex<double>> Q_eigvals(N);
   // CMatrix Q(N, N);
@@ -1410,5 +1430,22 @@ double BoxQuantization::get_omega(const double mu, const uint N,
 //  else { //  det( 1 - K*B ) = det( 1 - B*K )
 //    return DR.getOmega(mu, Kv, B);
 //  }
+
+void BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
+                               double E_over_mref_max, bool Elab,
+                               std::vector<double>& roots) {
+  std::function<std::pair<double, double>(double)> f = [this, mu, Elab](double E_over_mref) {
+    double imag_part = 0.0;
+    double omega = get_omega(mu, E_over_mref, Elab, imag_part);
+    return std::make_pair(omega, imag_part);
+  };
+
+  AdaptiveBracketParameters P;
+  AdaptiveBracketRootFinder RF(P, f);
+
+  RF.findRoots(E_over_mref_min, E_over_mref_max, roots);
+}
+
+
 
 // ***************************************************************************************

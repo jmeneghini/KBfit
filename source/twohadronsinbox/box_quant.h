@@ -6,6 +6,7 @@
 #include "cmframe.h"
 #include "matrix.h"
 #include "xml_handler.h"
+#include "root_finder.h"
 #include <complex>
 #include <iostream>
 #include <map>
@@ -13,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 
 typedef unsigned int uint;
 typedef std::complex<double> cmplx;
@@ -440,6 +442,16 @@ public:
   double getOmega(double mu, const RealSymmetricMatrix& KtildeOrInverse,
                   const ComplexHermitianMatrix& B);
 
+  void getRootsInEcmInterval(double mu,
+                              double Ecm_over_mref_min,
+                              double Ecm_over_mref_max,
+                              std::vector<double>& roots);
+
+  void getRootsInElabInterval(double mu,
+                              double Ecm_over_mref_min,
+                              double Ecm_over_mref_max,
+                              std::vector<double>& roots);
+
   //  computes [det(Ktildeinv-B)]^(1/Ndet) or [det(1-B*K)]^(1/Ndet)
   //  where Ndet is positive odd integer (depending on K or Kinv mode)
 
@@ -516,8 +528,14 @@ private:
 
   double get_omega(double mu, double E_over_mref, bool Elab);
 
+  double get_omega(double mu, double E_over_mref, bool Elab, double& imag_part);
+
   double get_omega(double mu, uint N, const RealSymmetricMatrix& Kv,
-                   const ComplexHermitianMatrix& B);
+                   const ComplexHermitianMatrix& B, double& imag_part);
+
+  void get_roots_in_interval(double mu, double E_over_mref_min,
+                               double E_over_mref_max, bool Elab,
+                               std::vector<double>& roots);
 };
 
 #endif

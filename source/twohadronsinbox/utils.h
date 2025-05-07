@@ -75,6 +75,11 @@ public:
   double getDeterminantOddRoot(const RealSymmetricMatrix& A,
                                const ComplexHermitianMatrix& B, uint Ndet);
 
+
+  double getOmega(double mu, const RVector& eigenvalues);
+
+  double getOmega(double mu, const CVector& eigenvalues, double& imag_part);
+
   double getOmega(double mu, const ComplexHermitianMatrix& M);
 
   double getOmega(double mu, const RealSymmetricMatrix& A,
