@@ -253,7 +253,6 @@ class BoxQuantization {
   KtildeMatrixCalculator* m_Kmat;
   KtildeInverseCalculator* m_Kinv;
 
-
   // Prevent copying and no default.
 
   BoxQuantization(const BoxQuantization&);
@@ -347,9 +346,7 @@ public:
       return m_Kinv->getNumberOfParameters();
   }
 
-  bool isBoxMatrixInverseRootMode() const {
-    return is_box_matrix_inverse_root;
-  }
+  bool isBoxMatrixInverseRootMode() const { return is_box_matrix_inverse_root; }
 
   std::string output(int indent = 0) const; // XML output
 
@@ -451,9 +448,13 @@ public:
   //  the eigenvalues of (B - B*K*B), divided by |detB|^(1/N)
   //  for NxN matrices (depending on K or Kinv mode)
 
-  std::vector<double> getEigenvaluesFromElab(double Elab_over_mref, EigenvalueRegularizingInfo* ev_reg_info = nullptr);
+  std::vector<double>
+  getEigenvaluesFromElab(double Elab_over_mref,
+                         EigenvalueRegularizingInfo* ev_reg_info = nullptr);
 
-  std::vector<double> getEigenvaluesFromEcm(double Ecm_over_mref, EigenvalueRegularizingInfo* ev_reg_info = nullptr);
+  std::vector<double>
+  getEigenvaluesFromEcm(double Ecm_over_mref,
+                        EigenvalueRegularizingInfo* ev_reg_info = nullptr);
 
   //  computes [det(B)]^(1/Ndet)
 
@@ -503,7 +504,8 @@ private:
   double get_determinant(uint N, const RealSymmetricMatrix& Kv,
                          const ComplexHermitianMatrix& B, uint Ndet);
 
-  std::vector<double> get_eigenvalues(double E_over_mref, bool Elab, EigenvalueRegularizingInfo* ev_reg_info);
+  std::vector<double> get_eigenvalues(double E_over_mref, bool Elab,
+                                      EigenvalueRegularizingInfo* ev_reg_info);
 
   double get_omega(double mu, double E_over_mref, bool Elab);
 

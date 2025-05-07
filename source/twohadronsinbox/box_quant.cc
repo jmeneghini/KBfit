@@ -758,13 +758,13 @@ BoxQuantization::getDeterminantRoot(const RealSymmetricMatrix& KtildeOrInverse,
 //  the eigenvalues of (B - B*K*B), divided by |detB|^(1/N)
 //  for NxN matrices (depending on K or Kinv mode)
 
-std::vector<double>
-BoxQuantization::getEigenvaluesFromElab(double Elab_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
+std::vector<double> BoxQuantization::getEigenvaluesFromElab(
+    double Elab_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
   return get_eigenvalues(Elab_over_mref, true, ev_reg_info);
 }
 
-std::vector<double>
-BoxQuantization::getEigenvaluesFromEcm(double Ecm_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
+std::vector<double> BoxQuantization::getEigenvaluesFromEcm(
+    double Ecm_over_mref, EigenvalueRegularizingInfo* ev_reg_info) {
   return get_eigenvalues(Ecm_over_mref, false, ev_reg_info);
 }
 
@@ -1012,8 +1012,9 @@ double BoxQuantization::get_determinant(uint N, const RealSymmetricMatrix& Kv,
   }
 }
 
-std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
-                                                     bool Elab, EigenvalueRegularizingInfo* ev_reg_info) {
+std::vector<double>
+BoxQuantization::get_eigenvalues(double E_over_mref, bool Elab,
+                                 EigenvalueRegularizingInfo* ev_reg_info) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   Diagonalizer D;
@@ -1026,44 +1027,42 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     D.getEigenvalues(Q, eigvals);
-  }
-  else { //  Q = 1 - BK
+  } else { //  Q = 1 - BK
     for (uint row = 0; row < N; row++)
       for (uint col = row; col < N; col++) {
         cmplx elem(0.0, 0.0);
         for (uint k = 0; k < N; k++)
           elem += Kv(row, k) * B(k, col);
-          if (col == row)
-            elem = 1.0 - elem;
+        if (col == row)
+          elem = 1.0 - elem;
         Q.put(row, col, elem);
       }
     D.getEigenvalues(Q, eigvals);
-//    vector<double> Beigvals;
-//    D.getEigenvalues(B, Beigvals);
-//    double rescale = 1.0;
-//    double root = 1.0 / double(N);
-//    for (uint k = 0; k < N; k++)
-//      rescale *= std::pow(std::abs(Beigvals[k]), root);
-//    rescale = 1.0 / rescale;
-//    for (uint k = 0; k < N; k++)
-//      eigvals[k] *= rescale;
+    //    vector<double> Beigvals;
+    //    D.getEigenvalues(B, Beigvals);
+    //    double rescale = 1.0;
+    //    double root = 1.0 / double(N);
+    //    for (uint k = 0; k < N; k++)
+    //      rescale *= std::pow(std::abs(Beigvals[k]), root);
+    //    rescale = 1.0 / rescale;
+    //    for (uint k = 0; k < N; k++)
+    //      eigvals[k] *= rescale;
   }
   // eigenvalues regularized by Prod tanh(Ecm - E_noninteracting)
   if (ev_reg_info != nullptr) {
     std::list<double> non_interacting_energies =
-        m_boxes.front().first->getEcmTransform()
-            .getFreeTwoParticleEnergies(ev_reg_info->E_min,
-                                        ev_reg_info->E_max);
+        m_boxes.front().first->getEcmTransform().getFreeTwoParticleEnergies(
+            ev_reg_info->E_min, ev_reg_info->E_max);
     double alpha = ev_reg_info->in_scalar;
     double beta = ev_reg_info->out_scalar;
     double regulating_factor = 1;
-    for (const auto &NI_energy : non_interacting_energies) {
-      const double exp_2x = exp(2*alpha*(E_over_mref - NI_energy));
-      double tanh_Elab = (exp_2x - 1)/(exp_2x + 1);
+    for (const auto& NI_energy : non_interacting_energies) {
+      const double exp_2x = exp(2 * alpha * (E_over_mref - NI_energy));
+      double tanh_Elab = (exp_2x - 1) / (exp_2x + 1);
       regulating_factor *= tanh_Elab;
     }
     for (int i = 0; i < eigvals.size(); ++i) {
-      eigvals[i] *= regulating_factor*beta;
+      eigvals[i] *= regulating_factor * beta;
     }
   }
   return eigvals;
@@ -1087,18 +1086,19 @@ double BoxQuantization::get_omega(double mu, uint N,
       for (uint col = row; col < N; col++)
         Q.put(row, col, Kv(row, col) - B(row, col));
     return DR.getOmega(mu, Q);
-  }
-  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
+  } else if (m_Kinv != 0 &&
+             isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) -
+                                             //   1 )
 
     ComplexHermitianMatrix Q(N);
     ComplexHermitianMatrix B_copy = B;
     ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
 
-    for (uint row=0; row<N; row++) {
-      for (uint col=row; col<N; col++) {
+    for (uint row = 0; row < N; row++) {
+      for (uint col = row; col < N; col++) {
         complex<double> sum = 0.0;
-        for (uint k=0; k<N; k++) {
-          sum += B_inv_root(row,k) * Kv(k,col);
+        for (uint k = 0; k < N; k++) {
+          sum += B_inv_root(row, k) * Kv(k, col);
         }
         // Only subtract 1 from diagonal entries
         if (row == col) {
@@ -1110,29 +1110,30 @@ double BoxQuantization::get_omega(double mu, uint N,
     }
     return DR.getOmega(mu, Q);
   }
-//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
-//    ComplexHermitianMatrix Q(N);
-//    ComplexHermitianMatrix B_copy = B;
-//    ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
-//
-//    for (uint row=0; row<N; row++) {
-//      for (uint col=row; col<N; col++) {
-//          complex<double> sum = 0.0;
-//          for (uint k=0; k<N; k++) {
-//              for (uint l=0; l<N; l++) {
-//                  sum += B_inv_root(row,k) * Kv(k,l) * B_inv_root(l,col);
-//              }
-//          }
-//          // Only subtract 1 from diagonal entries
-//          if (row == col) {
-//            Q.put(row, col, sum - 1.0);
-//          } else {
-//            Q.put(row, col, sum);
-//          }
-//      }
-//    }
-//    return DR.getOmega(mu, Q);
-//  }
+  //  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det(
+  //  B^(-1/2)K^(-1)B^(-1/2) - 1 )
+  //    ComplexHermitianMatrix Q(N);
+  //    ComplexHermitianMatrix B_copy = B;
+  //    ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
+  //
+  //    for (uint row=0; row<N; row++) {
+  //      for (uint col=row; col<N; col++) {
+  //          complex<double> sum = 0.0;
+  //          for (uint k=0; k<N; k++) {
+  //              for (uint l=0; l<N; l++) {
+  //                  sum += B_inv_root(row,k) * Kv(k,l) * B_inv_root(l,col);
+  //              }
+  //          }
+  //          // Only subtract 1 from diagonal entries
+  //          if (row == col) {
+  //            Q.put(row, col, sum - 1.0);
+  //          } else {
+  //            Q.put(row, col, sum);
+  //          }
+  //      }
+  //    }
+  //    return DR.getOmega(mu, Q);
+  //  }
   else { //  det( 1 - K*B ) = det( 1 - B*K )
     return DR.getOmega(mu, Kv, B);
   }
