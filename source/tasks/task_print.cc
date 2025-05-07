@@ -239,13 +239,13 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     // check if we're printing eigenvalues
     double in_scalar = 1;
     double out_scalar = 1;
-    int count_print_eigenvals =  xmltask.count_among_children("PrintEigenvalues");
+    int count_print_eigenvals =
+        xmltask.count_among_children("PrintEigenvalues");
     if (count_print_eigenvals > 1) {
       throw(std::invalid_argument(
           "Multiple PrintEigenvalues tags cannot be present"));
     }
     bool do_print_eigenvals = (count_print_eigenvals == 1);
-
 
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
@@ -537,8 +537,10 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       const MCEnsembleInfo& mcens = blockens[blocknum];
       string omega_filename = outstub + "_Omega." + make_string(blocknum);
-      string eigenvals_filename = outstub + "_Eigenvals." + make_string(blocknum);
-      string nis_filename = outstub + "_NonInteractingEnergies." + make_string(blocknum);
+      string eigenvals_filename =
+          outstub + "_Eigenvals." + make_string(blocknum);
+      string nis_filename =
+          outstub + "_NonInteractingEnergies." + make_string(blocknum);
 
       BoxQuantization* bqptr = BQ[blocknum];
       logger << "Filename = " << omega_filename << endl;
@@ -583,8 +585,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       if (outmode == "full")
         nsamp = 0;
       vector<RVector> omegavals(nvals, RVector(nsamp + 1));
-      vector<vector<RVector>> eigenvals(bqptr->getBasisSize(),
-                                        vector<RVector>(nvals, RVector(nsamp + 1)));
+      vector<vector<RVector>> eigenvals(
+          bqptr->getBasisSize(), vector<RVector>(nvals, RVector(nsamp + 1)));
 
       for (uint b = 0; b <= nsamp; ++b) {
         bqptr->setRefMassL(mrefL[b]);
@@ -597,7 +599,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           omegavals[k][b] = bqptr->getOmegaFromElab(omega_mu, elabvals[k]);
           if (do_print_eigenvals) {
             RVector ev_res;
-            ev_res = bqptr->getEigenvaluesFromElab(elabvals[k], last_iter_eigenvectors);
+            ev_res = bqptr->getEigenvaluesFromElab(elabvals[k],
+                                                   last_iter_eigenvectors);
             for (int dim = 0; dim < bqptr->getBasisSize(); ++dim) {
               eigenvals[dim][k][b] = ev_res[dim];
             }
@@ -613,9 +616,10 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       ofstream fout_omega(omega_filename);
 
-      string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay()
-                      + " # P^2 = " + std::to_string(bqptr->getTotalMomentumIntegerSquared())
-                      + " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
+      string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
+                      " # P^2 = " +
+                      std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
+                      " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
 
       fout_omega << header << "\n\n";
 
@@ -624,14 +628,15 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       fout_omega << "E_lab,E_cm,Omega" << endl;
       if (nsamp == 0) {
         for (uint k = 0; k < nvals; ++k)
-          fout_omega << elabvals[k] << "," << ecmvals[k] << "," << omegavals[k][0] << endl;
+          fout_omega << elabvals[k] << "," << ecmvals[k] << ","
+                     << omegavals[k][0] << endl;
       } else if (m_obs->isJackknifeMode()) {
         MCEstimate mcest;
         for (uint k = 0; k < nvals; ++k) {
           m_obs->jack_analyze(omegavals[k], mcest);
           fout_omega << "  " << setw(12) << elabvals[k] << " " << setw(20)
-               << mcest.getAverageEstimate() << " " << setw(20)
-               << mcest.getSymmetricError() << endl;
+                     << mcest.getAverageEstimate() << " " << setw(20)
+                     << mcest.getSymmetricError() << endl;
         }
       } else {
         MCEstimate mcest;
@@ -640,9 +645,9 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           double avg = mcest.getAverageEstimate();
           double upperr = mcest.getUpperConfLimit() - avg;
           double dwnerr = mcest.getLowerConfLimit() - avg;
-          fout_omega << "  " << setw(12) << elabvals[k] << " " << setw(20) << avg
-               << " " << setw(20) << upperr << " " << setw(20) << dwnerr
-               << endl;
+          fout_omega << "  " << setw(12) << elabvals[k] << " " << setw(20)
+                     << avg << " " << setw(20) << upperr << " " << setw(20)
+                     << dwnerr << endl;
         }
       }
       fout_omega.close();
@@ -660,8 +665,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           fout_eigenvals << ",ev" << dim;
           if (m_obs->isJackknifeMode() && nsamp != 0) {
             fout_eigenvals << "_AverageEstimate,ev" << dim << "_SymmetricError";
-          }
-          else if (m_obs->isBootstrapMode() && nsamp != 0) {
+          } else if (m_obs->isBootstrapMode() && nsamp != 0) {
             fout_eigenvals << "_AverageEstimate,ev" << dim << "_UpperError,ev"
                            << dim << "_LowerError";
           }
@@ -694,8 +698,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
               double avg = mcest.getAverageEstimate();
               double upperr = mcest.getUpperConfLimit() - avg;
               double dwnerr = mcest.getLowerConfLimit() - avg;
-              fout_omega << avg << "," << upperr << ","
-                         << dwnerr;
+              fout_omega << avg << "," << upperr << "," << dwnerr;
             }
             fout_omega << endl;
           }
@@ -712,14 +715,12 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       fout_nis << "E_lab,E_cm" << endl;
 
       list<double> ni_energies = bqptr->getFreeTwoParticleEnergies(emin, emax);
-      for (double & ni_energy : ni_energies) {
+      for (double& ni_energy : ni_energies) {
         double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
         fout_nis << ni_energy << "," << ecm_energy << endl;
       }
       fout_nis.close();
     }
-
-
 
     m_obs->clearSamplings();
     XMLHandler xmlK;

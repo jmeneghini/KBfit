@@ -19,9 +19,6 @@ void calcMatrixInverse(const ComplexHermitianMatrix& H,
 //  returns the angle in the range (-PI, PI].
 double getPhaseAngle(const std::complex<double>& z);
 
-
-
-
 // ***************************************************************************************
 
 //  Takes a Hermitian matrix "H" and returns the eigenvalues in
@@ -74,7 +71,6 @@ public:
 
   double getDeterminantOddRoot(const RealSymmetricMatrix& A,
                                const ComplexHermitianMatrix& B, uint Ndet);
-
 
   double getOmega(double mu, const RVector& eigenvalues);
 

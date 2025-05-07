@@ -90,8 +90,10 @@ double getPhaseAngle(const std::complex<double>& z) {
   double y = z.imag();
   // Handle the trivial case to avoid division by zero.
   if (x == 0.0) {
-    if (y > 0.0) return M_PI / 2;
-    if (y < 0.0) return 3 * M_PI / 2;
+    if (y > 0.0)
+      return M_PI / 2;
+    if (y < 0.0)
+      return 3 * M_PI / 2;
     return 0.0;
   }
 
@@ -111,7 +113,6 @@ double getPhaseAngle(const std::complex<double>& z) {
 
   return theta;
 }
-
 
 // ***************************************************************
 
@@ -225,7 +226,8 @@ void Diagonalizer::getEigenvalues(const ComplexHermitianMatrix& H,
   diagonalize(H, eigvals, eigvecs, false);
 }
 
-void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& eigvecs) {
+void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals,
+                                   CMatrix& eigvecs) {
   int n = M.size(0);
   if (int(M.size(1)) != n)
     throw(std::invalid_argument("Must be square matrix to get eigenvalues"));
@@ -257,8 +259,8 @@ void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& 
 
   vector<double> eigenvectors(2 * n * n);
 
-  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n, &eigenvectors[0], &n,
-         &work[0], &lwork, &rwork[0], &info);
+  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n,
+         &eigenvectors[0], &n, &work[0], &lwork, &rwork[0], &info);
 
   if (info < 0) {
     throw(std::invalid_argument(" bad arguments in diagonalize"));
@@ -272,7 +274,9 @@ void Diagonalizer::getEigenvectors(const CMatrix& M, Cvector& eigvals, CMatrix& 
   for (int col = 0; col < n; col++)
     for (int row = 0; row < n; row++) {
       int index = 2 * (row + n * col);
-      eigvecs.put(row, col, complex<double>{eigenvectors[index], eigenvectors[index+1]});
+      eigvecs.put(
+          row, col,
+          complex<double>{eigenvectors[index], eigenvectors[index + 1]});
     }
 }
 
@@ -308,8 +312,8 @@ void Diagonalizer::getEigenvalues(const CMatrix& M, Cvector& eigvals) {
 
   vector<double> eigenvectors(2 * n * n);
 
-  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n, &eigenvectors[0], &n,
-         &work[0], &lwork, &rwork[0], &info);
+  zgeev_(&jobvl, &jobvr, &n, &matf[0], &n, &lambda[0], null, &n,
+         &eigenvectors[0], &n, &work[0], &lwork, &rwork[0], &info);
 
   if (info < 0) {
     throw(std::invalid_argument(" bad arguments in diagonalize"));
@@ -423,20 +427,21 @@ double RealDeterminantRoot::get_det_odd_root(std::vector<double>& matf, int n,
 double RealDeterminantRoot::getOmega(double mu, const RVector& eigenvalues) {
   double omega = 1.0;
   for (int i = 0; i < static_cast<int>(eigenvalues.size()); i++) {
-    omega *= eigenvalues[i] /
-             pow(mu * mu + eigenvalues[i] * eigenvalues[i], 0.5);
+    omega *=
+        eigenvalues[i] / pow(mu * mu + eigenvalues[i] * eigenvalues[i], 0.5);
   }
   return omega;
 }
 
-double RealDeterminantRoot::getOmega(double mu, const CVector& eigenvalues, double& imag_part) {
+double RealDeterminantRoot::getOmega(double mu, const CVector& eigenvalues,
+                                     double& imag_part) {
   complex<double> omega = {1.0, 0.0};
   for (int i = 0; i < static_cast<int>(eigenvalues.size()); i++) {
-    omega *= eigenvalues[i]/
+    omega *= eigenvalues[i] /
              pow(mu * mu + eigenvalues[i] * conj(eigenvalues[i]), 0.5);
   }
   imag_part = omega.imag();
-  return (conjugate(omega)*omega).real();
+  return (conjugate(omega) * omega).real();
 }
 
 double RealDeterminantRoot::getOmega(double mu,

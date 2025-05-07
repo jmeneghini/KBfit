@@ -560,11 +560,11 @@ double BoxQuantization::getEcmOverMrefFromElab(double Elab_over_mref) const {
   return m_boxes.front().first->getEcmOverMrefFromElab(Elab_over_mref);
 }
 
-list<double> BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
-                                         double max_Elab_over_mref) const {
-  return m_boxes.front().first->getEcmTransform()
-            .getFreeTwoParticleEnergies(min_Elab_over_mref,
-                                        max_Elab_over_mref);
+list<double>
+BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
+                                            double max_Elab_over_mref) const {
+  return m_boxes.front().first->getEcmTransform().getFreeTwoParticleEnergies(
+      min_Elab_over_mref, max_Elab_over_mref);
 }
 
 void BoxQuantization::getQcmsqOverMrefsqFromElab(
@@ -739,20 +739,17 @@ double BoxQuantization::getOmega(double mu,
   return get_omega(mu, N, KtildeOrInverse, B, dummy_imag);
 }
 
-void BoxQuantization::getRootsInEcmInterval(double mu,
-                                              double Ecm_over_mref_min,
-                                              double Ecm_over_mref_max,
-                                              std::vector<double>& roots) {
-  get_roots_in_interval(mu, Ecm_over_mref_min,
-                               Ecm_over_mref_max, false, roots);
+void BoxQuantization::getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
+                                            double Ecm_over_mref_max,
+                                            std::vector<double>& roots) {
+  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, false, roots);
 }
 
 void BoxQuantization::getRootsInElabInterval(double mu,
-                                              double Ecm_over_mref_min,
-                                              double Ecm_over_mref_max,
-                                              std::vector<double>& roots) {
-  get_roots_in_interval(mu, Ecm_over_mref_min,
-                               Ecm_over_mref_max, true, roots);
+                                             double Ecm_over_mref_min,
+                                             double Ecm_over_mref_max,
+                                             std::vector<double>& roots) {
+  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, true, roots);
 }
 
 //  computes [det(Ktildeinv-B)]^(1/Ndet) or [det(1-B*K)]^(1/Ndet)
@@ -783,12 +780,14 @@ BoxQuantization::getDeterminantRoot(const RealSymmetricMatrix& KtildeOrInverse,
 //  for NxN matrices (depending on K or Kinv mode)
 
 std::vector<double>
-BoxQuantization::getEigenvaluesFromElab(double Elab_over_mref, CMatrix& last_iter_eigenvectors) {
+BoxQuantization::getEigenvaluesFromElab(double Elab_over_mref,
+                                        CMatrix& last_iter_eigenvectors) {
   return get_eigenvalues(Elab_over_mref, true, last_iter_eigenvectors);
 }
 
 std::vector<double>
-BoxQuantization::getEigenvaluesFromEcm(double Ecm_over_mref, CMatrix& last_iter_eigenvectors) {
+BoxQuantization::getEigenvaluesFromEcm(double Ecm_over_mref,
+                                       CMatrix& last_iter_eigenvectors) {
   return get_eigenvalues(Ecm_over_mref, false, last_iter_eigenvectors);
 }
 
@@ -930,11 +929,14 @@ void BoxQuantization::get_ktilde_matrix(double E_over_mref,
   }
 }
 
-// One could compute the matrix V = (1 + B^2)^{-1/2} for det(V (Ktilde^{-1} - B) ),
-// but potentially faster to compute V = U diag(1/sqrt(1 + lambda^2)) Udag,
-// then we compute det(U diag(1/sqrt(1 + lambda^2)) Udag (Ktilde^{-1} - B) U diag(1/sqrt(1 + lambda^2)) Udag) = 0
-// = det(diag(1/sqrt(1 + lambda^2)) Udag (Ktilde^{-1} - B) U diag(1/sqrt(1 + lambda^2)))=0
-void BoxQuantization::get_Vdiag_and_U(const ComplexHermitianMatrix& B, std::vector<double>& V_eigvals, CMatrix& U) {
+// One could compute the matrix V = (1 + B^2)^{-1/2} for det(V (Ktilde^{-1} - B)
+// ), but potentially faster to compute V = U diag(1/sqrt(1 + lambda^2)) Udag,
+// then we compute det(U diag(1/sqrt(1 + lambda^2)) Udag (Ktilde^{-1} - B) U
+// diag(1/sqrt(1 + lambda^2)) Udag) = 0 = det(diag(1/sqrt(1 + lambda^2)) Udag
+// (Ktilde^{-1} - B) U diag(1/sqrt(1 + lambda^2)))=0
+void BoxQuantization::get_Vdiag_and_U(const ComplexHermitianMatrix& B,
+                                      std::vector<double>& V_eigvals,
+                                      CMatrix& U) {
   uint n = B.size();
   std::vector<double> B_eigvals(n);
   Diagonalizer D;
@@ -943,7 +945,7 @@ void BoxQuantization::get_Vdiag_and_U(const ComplexHermitianMatrix& B, std::vect
   D.getEigenvectors(B, B_eigvals, U);
 
   for (int i = 0; i < n; ++i) {
-    V_eigvals[i] = 1.0/sqrt(1 + B_eigvals[i]*B_eigvals[i]);
+    V_eigvals[i] = 1.0 / sqrt(1 + B_eigvals[i] * B_eigvals[i]);
   }
 }
 
@@ -1053,8 +1055,9 @@ double BoxQuantization::get_determinant(uint N, const RealSymmetricMatrix& Kv,
   }
 }
 
-std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
-                                                     bool Elab, CMatrix& last_iter_eigenvectors) {
+std::vector<double>
+BoxQuantization::get_eigenvalues(double E_over_mref, bool Elab,
+                                 CMatrix& last_iter_eigenvectors) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   Diagonalizer D;
@@ -1066,7 +1069,7 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
   if (m_Kinv != 0) {
     throw std::runtime_error("get_eigenvalues not implemented for Kinv");
   }
-  CMatrix StildeLeft(N, N); // 1 + i Ktilde
+  CMatrix StildeLeft(N, N);  // 1 + i Ktilde
   CMatrix StildeRight(N, N); // (1 - i Ktilde) (no invert yet)
 
   CMatrix CBLeft(N, N);
@@ -1135,7 +1138,6 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
     needs_ordering = true;
   }
 
-
   complex<double> ev;
   for (uint i = 0; i < N; ++i) {
     ev = 1.0 + eigvals[i];
@@ -1151,9 +1153,11 @@ std::vector<double> BoxQuantization::get_eigenvalues(double E_over_mref,
   return eigvals_real;
 }
 
-std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_eigenvectors,
-                                        const CMatrix& this_iter_eigenvectors) {
-  uint num_vecs = past_iter_eigenvectors.size()/2; // assume both matrices have the same number of columns
+std::vector<int>
+BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_eigenvectors,
+                                      const CMatrix& this_iter_eigenvectors) {
+  uint num_vecs = past_iter_eigenvectors.size() /
+                  2; // assume both matrices have the same number of columns
   std::vector<int> order(num_vecs, -1);
   // Loop over each eigenvector from the past iteration.
   for (uint i = 0; i < num_vecs; ++i) {
@@ -1165,8 +1169,9 @@ std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_
       double inner_prod_real = 0.0;
       // Compute the real part of the inner product across all elements.
       for (uint k = 0; k < num_vecs; ++k) {
-        inner_prod_real += abs((conj(past_iter_eigenvectors.get(i, k))
-                             * this_iter_eigenvectors.get(j, k)).real());
+        inner_prod_real += abs((conj(past_iter_eigenvectors.get(i, k)) *
+                                this_iter_eigenvectors.get(j, k))
+                                   .real());
       }
       // Update maximum if current inner product is larger.
       if (inner_prod_real > max_inner_product) {
@@ -1179,7 +1184,8 @@ std::vector<int> BoxQuantization::get_eigenvalue_order(const CMatrix& past_iter_
   return order;
 }
 
-double BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab, double& imag_part) {
+double BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
+                                  double& imag_part) {
   ComplexHermitianMatrix B;
   RealSymmetricMatrix Kv;
   assign_matrices(E_over_mref, Elab, B, Kv);
@@ -1204,67 +1210,68 @@ double BoxQuantization::get_omega(const double mu, const uint N,
   Diagonalizer D;
   if (m_Kinv != 0) {
 
-  CMatrix StildeInvLeft(N, N); // 1 + i Ktilde
-  CMatrix StildeInvRight(N, N); // (1 - i Ktilde) (no invert yet)
+    CMatrix StildeInvLeft(N, N);  // 1 + i Ktilde
+    CMatrix StildeInvRight(N, N); // (1 - i Ktilde) (no invert yet)
 
-  CMatrix CBLeft(N, N);
-  CMatrix CBRight(N, N);
+    CMatrix CBLeft(N, N);
+    CMatrix CBRight(N, N);
 
-  for (uint row = 0; row < N; row++) {
-    for (uint col = 0; col < N; col++) {
-      complex<double> elementStildeInvL(0.0, 1.0);
-      complex<double> elementCBL(0.0, 1.0);
-      elementStildeInvL *= Kv.get(row, col);
-      elementCBL *= B.get(row, col);
-      if (row == col) {
-        elementStildeInvL += 1.0;
-        elementCBL += 1.0;
+    for (uint row = 0; row < N; row++) {
+      for (uint col = 0; col < N; col++) {
+        complex<double> elementStildeInvL(0.0, 1.0);
+        complex<double> elementCBL(0.0, 1.0);
+        elementStildeInvL *= Kv.get(row, col);
+        elementCBL *= B.get(row, col);
+        if (row == col) {
+          elementStildeInvL += 1.0;
+          elementCBL += 1.0;
+        }
+        StildeInvLeft(row, col) = elementStildeInvL;
+        CBLeft(row, col) = elementCBL;
       }
-      StildeInvLeft(row, col) = elementStildeInvL;
-      CBLeft(row, col) = elementCBL;
     }
-  }
 
-  // make StildeInvRight = (1 - i Ktilde^{-1})^{-1} noting Ktilde is symmetric
-  auto compute_on_evs = [](double ev) {
-    return 1.0 / complex<double>(1.0, -ev);
-  };
+    // make StildeInvRight = (1 - i Ktilde^{-1})^{-1} noting Ktilde is symmetric
+    auto compute_on_evs = [](double ev) {
+      return 1.0 / complex<double>(1.0, -ev);
+    };
 
-  Kv.modifyEigenvalues(compute_on_evs, StildeInvRight);
+    Kv.modifyEigenvalues(compute_on_evs, StildeInvRight);
 
-  CMatrix StildeInv(N, N);
-  for (uint row = 0; row < N; row++) {
-    for (uint col = 0; col < N; col++) {
-      complex<double> element(0.0, 0.0);
-      for (uint k = 0; k < N; k++)
-        element += StildeInvRight.get(row, k) * StildeInvRight.get(k, col);
-      StildeInv.put(row, col, element);
+    CMatrix StildeInv(N, N);
+    for (uint row = 0; row < N; row++) {
+      for (uint col = 0; col < N; col++) {
+        complex<double> element(0.0, 0.0);
+        for (uint k = 0; k < N; k++)
+          element += StildeInvRight.get(row, k) * StildeInvRight.get(k, col);
+        StildeInv.put(row, col, element);
+      }
+    } // definitely could diagonalize Sleft and Sright simultaneously since they
+      // commute (i think)
+
+    CMatrix CB(N, N);
+    B.modifyEigenvalues(compute_on_evs, CBRight);
+    for (uint row = 0; row < N; row++) {
+      for (uint col = 0; col < N; col++) {
+        complex<double> element(0.0, 0.0);
+        for (uint k = 0; k < N; k++)
+          element += CBLeft.get(row, k) * CBRight.get(k, col);
+        CB.put(row, col, element);
+      }
     }
-  } //definitely could diagonalize Sleft and Sright simultaneously since they commute (i think)
 
-  CMatrix CB(N, N);
-  B.modifyEigenvalues(compute_on_evs, CBRight);
-  for (uint row = 0; row < N; row++) {
-    for (uint col = 0; col < N; col++) {
-      complex<double> element(0.0, 0.0);
-      for (uint k = 0; k < N; k++)
-        element += CBLeft.get(row, k) * CBRight.get(k, col);
-      CB.put(row, col, element);
+    CMatrix Q(N, N); // 1 + CB*Stilde
+
+    for (uint row = 0; row < N; row++) {
+      for (uint col = 0; col < N; col++) {
+        complex<double> element = CB.get(row, col) - StildeInv.get(row, col);
+        Q.put(row, col, element);
+      }
     }
-  }
 
-  CMatrix Q(N, N); // 1 + CB*Stilde
-
-  for (uint row = 0; row < N; row++) {
-    for (uint col = 0; col < N; col++) {
-      complex<double> element = CB.get(row, col) - StildeInv.get(row, col);
-      Q.put(row, col, element);
-    }
-  }
-
-  // get eigenvalues
-  std::vector<complex<double>> Q_eigvals(N);
-  return DR.getOmega(mu, Q_eigvals, imag_part);
+    // get eigenvalues
+    std::vector<complex<double>> Q_eigvals(N);
+    return DR.getOmega(mu, Q_eigvals, imag_part);
     // ComplexHermitianMatrix top(N);
     // Rvector top_eigvals(N);
     // for (uint row = 0; row < N; row++) {
@@ -1294,7 +1301,7 @@ double BoxQuantization::get_omega(const double mu, const uint N,
     // return DR.getOmega(mu, Q);
   } // det(1 - Ktilde B)
 
-  CMatrix StildeLeft(N, N); // 1 + i Ktilde
+  CMatrix StildeLeft(N, N);  // 1 + i Ktilde
   CMatrix StildeRight(N, N); // (1 - i Ktilde) (no invert yet)
 
   CMatrix CBLeft(N, N);
@@ -1330,7 +1337,8 @@ double BoxQuantization::get_omega(const double mu, const uint N,
         element += StildeLeft.get(row, k) * StildeRight.get(k, col);
       Stilde.put(row, col, element);
     }
-  } //definitely could diagonalize Sleft and Sright simultaneously since they commute (i think)
+  } // definitely could diagonalize Sleft and Sright simultaneously since they
+    // commute (i think)
 
   CMatrix CB(N, N);
   B.modifyEigenvalues(compute_on_evs, CBRight);
@@ -1383,7 +1391,8 @@ double BoxQuantization::get_omega(const double mu, const uint N,
   // }
   // return det.real();
 }
-//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
+//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det(
+//  B^(-1/2)K^(-1)B^(-1/2) - 1 )
 //
 //    ComplexHermitianMatrix Q(N);
 //    ComplexHermitianMatrix B_copy = B;
@@ -1404,7 +1413,8 @@ double BoxQuantization::get_omega(const double mu, const uint N,
 //    }
 //    return DR.getOmega(mu, Q);
 //  }
-//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det( B^(-1/2)K^(-1)B^(-1/2) - 1 )
+//  else if (m_Kinv != 0 && isBoxMatrixInverseRootMode()) { //   det(
+//  B^(-1/2)K^(-1)B^(-1/2) - 1 )
 //    ComplexHermitianMatrix Q(N);
 //    ComplexHermitianMatrix B_copy = B;
 //    ComplexHermitianMatrix B_inv_root = B_copy.invertRoot();
@@ -1432,20 +1442,19 @@ double BoxQuantization::get_omega(const double mu, const uint N,
 //  }
 
 void BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
-                               double E_over_mref_max, bool Elab,
-                               std::vector<double>& roots) {
-  std::function<std::pair<double, double>(double)> f = [this, mu, Elab](double E_over_mref) {
-    double imag_part = 0.0;
-    double omega = get_omega(mu, E_over_mref, Elab, imag_part);
-    return std::make_pair(omega, imag_part);
-  };
+                                            double E_over_mref_max, bool Elab,
+                                            std::vector<double>& roots) {
+  std::function<std::pair<double, double>(double)> f =
+      [this, mu, Elab](double E_over_mref) {
+        double imag_part = 0.0;
+        double omega = get_omega(mu, E_over_mref, Elab, imag_part);
+        return std::make_pair(omega, imag_part);
+      };
 
   AdaptiveBracketParameters P;
   AdaptiveBracketRootFinder RF(P, f);
 
   RF.findRoots(E_over_mref_min, E_over_mref_max, roots);
 }
-
-
 
 // ***************************************************************************************

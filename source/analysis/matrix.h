@@ -1153,7 +1153,8 @@ public:
 
   uint size() const { return m_size; }
 
-  void modifyEigenvalues(std::complex<double> (*func)(double), Matrix<std::complex<double>>& out_matrix) const;
+  void modifyEigenvalues(std::complex<double> (*func)(double),
+                         Matrix<std::complex<double>>& out_matrix) const;
 
   RealSymmetricMatrix& resize();
   RealSymmetricMatrix& resize(int size);
@@ -1318,7 +1319,8 @@ public:
   ComplexHermitianMatrix& operator+=(const ComplexHermitianMatrix& incoming);
   ComplexHermitianMatrix& operator-=(const ComplexHermitianMatrix& incoming);
 
-  void modifyEigenvalues(std::complex<double> (*func)(double), Matrix<std::complex<double>>& out_matrix) const;
+  void modifyEigenvalues(std::complex<double> (*func)(double),
+                         Matrix<std::complex<double>>& out_matrix) const;
 
   const std::complex<double> operator()(int i0, int i1) const;
   const std::complex<double> operator()(uint i0, uint i1) const;

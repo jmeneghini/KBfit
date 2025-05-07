@@ -5,8 +5,8 @@
 #include "box_matrix.h"
 #include "cmframe.h"
 #include "matrix.h"
-#include "xml_handler.h"
 #include "root_finder.h"
+#include "xml_handler.h"
 #include <complex>
 #include <iostream>
 #include <map>
@@ -14,7 +14,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
 
 typedef unsigned int uint;
 typedef std::complex<double> cmplx;
@@ -255,7 +254,6 @@ class BoxQuantization {
   KtildeMatrixCalculator* m_Kmat;
   KtildeInverseCalculator* m_Kinv;
 
-
   // Prevent copying and no default.
 
   BoxQuantization(const BoxQuantization&);
@@ -349,9 +347,7 @@ public:
       return m_Kinv->getNumberOfParameters();
   }
 
-  bool isBoxMatrixInverseRootMode() const {
-    return is_box_matrix_inverse_root;
-  }
+  bool isBoxMatrixInverseRootMode() const { return is_box_matrix_inverse_root; }
 
   std::string output(int indent = 0) const; // XML output
 
@@ -382,7 +378,7 @@ public:
   std::set<KElementInfo> getElementInfos() const;
 
   std::list<double> getFreeTwoParticleEnergies(double min_Elab_over_mref,
-                                         double max_Elab_over_mref) const;
+                                               double max_Elab_over_mref) const;
 
   double getEcmOverMrefFromElab(double Elab_over_mref) const;
 
@@ -442,13 +438,11 @@ public:
   double getOmega(double mu, const RealSymmetricMatrix& KtildeOrInverse,
                   const ComplexHermitianMatrix& B);
 
-  void getRootsInEcmInterval(double mu,
-                              double Ecm_over_mref_min,
-                              double Ecm_over_mref_max,
-                              std::vector<double>& roots);
+  void getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
+                             double Ecm_over_mref_max,
+                             std::vector<double>& roots);
 
-  void getRootsInElabInterval(double mu,
-                              double Ecm_over_mref_min,
+  void getRootsInElabInterval(double mu, double Ecm_over_mref_min,
                               double Ecm_over_mref_max,
                               std::vector<double>& roots);
 
@@ -466,9 +460,11 @@ public:
   //  the eigenvalues of (B - B*K*B), divided by |detB|^(1/N)
   //  for NxN matrices (depending on K or Kinv mode)
 
-  std::vector<double> getEigenvaluesFromElab(double Elab_over_mref, CMatrix& last_iter_eigenvectors);
+  std::vector<double> getEigenvaluesFromElab(double Elab_over_mref,
+                                             CMatrix& last_iter_eigenvectors);
 
-  std::vector<double> getEigenvaluesFromEcm(double Ecm_over_mref, CMatrix& last_iter_eigenvectors);
+  std::vector<double> getEigenvaluesFromEcm(double Ecm_over_mref,
+                                            CMatrix& last_iter_eigenvectors);
 
   //  computes [det(B)]^(1/Ndet)
 
@@ -508,7 +504,8 @@ private:
   void get_ktilde_matrix(double E_over_mref, RealSymmetricMatrix& Kh,
                          RMatrix& K, bool Elab, bool herm, T* evalptr);
 
-  void get_Vdiag_and_U(const ComplexHermitianMatrix& B, std::vector<double>& V_eigvals, CMatrix& U);
+  void get_Vdiag_and_U(const ComplexHermitianMatrix& B,
+                       std::vector<double>& V_eigvals, CMatrix& U);
 
   template <typename T>
   std::set<BoxQuantBasisState> find_excluded_states_from_ktilde(T* evalptr);
@@ -521,10 +518,11 @@ private:
                          const ComplexHermitianMatrix& B, uint Ndet);
 
   std::vector<double> get_eigenvalues(double E_over_mref, bool Elab,
-                                       CMatrix& last_iter_eigenvectors);
+                                      CMatrix& last_iter_eigenvectors);
 
-  static std::vector<int> get_eigenvalue_order(const CMatrix& past_iter_eigenvectors,
-                                        const CMatrix& this_iter_eigenvectors);
+  static std::vector<int>
+  get_eigenvalue_order(const CMatrix& past_iter_eigenvectors,
+                       const CMatrix& this_iter_eigenvectors);
 
   double get_omega(double mu, double E_over_mref, bool Elab);
 
@@ -534,8 +532,8 @@ private:
                    const ComplexHermitianMatrix& B, double& imag_part);
 
   void get_roots_in_interval(double mu, double E_over_mref_min,
-                               double E_over_mref_max, bool Elab,
-                               std::vector<double>& roots);
+                             double E_over_mref_max, bool Elab,
+                             std::vector<double>& roots);
 };
 
 #endif
