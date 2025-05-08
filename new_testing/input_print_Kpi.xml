@@ -21,12 +21,12 @@
 
         <OmegaMu>-1.0</OmegaMu>
 
-        <QuantizationCondition>StildeCB</QuantizationCondition>
+        <QuantizationCondition>KtildeinvB</QuantizationCondition>
 
 
 
 
-        <KtildeMatrix>
+        <KtildeMatrixInverse>
           <Element>
             <KElementInfo>
               <JTimesTwo>0</JTimesTwo>
@@ -112,7 +112,7 @@
             </KFitParamInfo>
           </StartingValues>
 
-        </KtildeMatrix>
+        </KtildeMatrixInverse>
 
 <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
 
