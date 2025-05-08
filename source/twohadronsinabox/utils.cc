@@ -443,6 +443,16 @@ void DeterminantCalculator::getDeterminantAsProduct(const CMatrix& M,
     DetProd[0] = -DetProd[0];
 }
 
+complex<double> DeterminantCalculator::getDeterminant(const CMatrix& M) {
+  Cvector det_prod;
+  getDeterminantAsProduct(M, det_prod);
+  complex<double> det(1.0, 0.0);
+  for (uint i = 0; i < det_prod.size(); ++i) {
+    det *= det_prod[i];
+  }
+  return det;
+}
+
 //   returns  Omega(mu,M) where  M = complex square matrix, and
 //      Omega(mu,M) = det(M) / det( sqrt(mu^2 + M M^dagger) )
 

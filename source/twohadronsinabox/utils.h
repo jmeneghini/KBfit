@@ -74,6 +74,7 @@ public:
   ~DeterminantCalculator() {}
 
   void getDeterminantAsProduct(const CMatrix& M, Cvector& DetProd);
+  std::complex<double> getDeterminant(const CMatrix& M);
   std::complex<double> getOmega(double mu, const CMatrix& M);
 
 private:

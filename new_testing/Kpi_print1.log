@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Thu_May__8_15:19:27_2025</StartDateTime>
+ <StartDateTime>Thu_May__8_16:14:05_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -130,7 +130,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>2.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBBlock>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
@@ -142,7 +142,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBBlock>
             <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
@@ -154,7 +154,7 @@
             </BoxQuantization>
             <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
             <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-            <LabFrameEnergyInc>0.02</LabFrameEnergyInc>
+            <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
          </KBBlock>
          <KBObservables>
             <MCSamplingInfo>
@@ -315,8 +315,8 @@
    </Logger>
 </PrintOmega>
 
-<RunTimeInSeconds>0.135783</RunTimeInSeconds>
+<RunTimeInSeconds>2.37511</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Thu_May__8_15:19:27_2025</FinishDateTime>
+ <FinishDateTime>Thu_May__8_16:14:07_2025</FinishDateTime>
 </KBFit>
 

@@ -1073,7 +1073,11 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
   CMatrix Q;
   get_qc_matrix(E_over_mref, Elab, qctype, Q);
   DeterminantCalculator DC;
-  return DC.getOmega(mu, Q);
+  if (mu >= 0.0) {
+    return DC.getOmega(mu, Q);
+  }
+  // mu < 0.0, dont calculate omega
+  return DC.getDeterminant(Q);
 }
 
 list<double>
