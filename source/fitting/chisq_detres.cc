@@ -513,7 +513,7 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
         //         for (uint jj=0;jj<=j;++jj) cout <<
         //         "Ktildeinv("<<j<<","<<jj<<") =
         //         "<<KtildeOrInverse(j,jj)<<endl;}
-        res[kk][b] = bqptr->getOmega(omega_mu, KtildeOrInverse, Bmat[kk][b]);
+        // res[kk][b] = bqptr->getOmega(omega_mu, KtildeOrInverse, Bmat[kk][b]);
       }
     }
     for (uint k = 0; k < nbres; ++k) {

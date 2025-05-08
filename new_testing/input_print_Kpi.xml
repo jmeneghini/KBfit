@@ -16,21 +16,17 @@
       <Task>
       <Action>DoPrint</Action>
 
-      <OutputStub>KPiPrint_KinvB_Reg</OutputStub>
+      <OutputStub>KPiPrint</OutputStub>
       <OutputMode>full</OutputMode>
 
-        <OmegaMu>30.0</OmegaMu>
+        <OmegaMu>-1.0</OmegaMu>
 
-        <PrintEigenvalues>
-<!--            <EigenvalueRegularizingInfo>-->
-<!--              <InScalar>1.0</InScalar>-->
-<!--              <OutScalar>5.0</OutScalar>-->
-<!--            </EigenvalueRegularizingInfo>-->
-        </PrintEigenvalues>
+        <QuantizationCondition>StildeCB</QuantizationCondition>
 
 
 
-        <KtildeMatrixInverse>
+
+        <KtildeMatrix>
           <Element>
             <KElementInfo>
               <JTimesTwo>0</JTimesTwo>
@@ -116,7 +112,7 @@
             </KFitParamInfo>
           </StartingValues>
 
-        </KtildeMatrixInverse>
+        </KtildeMatrix>
 
 <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
 
