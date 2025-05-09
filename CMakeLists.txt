@@ -30,16 +30,22 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+# ccache for faster compilation
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_PROGRAM})
+    message(STATUS "Using ccache for compilation: ${CCACHE_PROGRAM}")
+else()
+    message(STATUS "ccache not found, not using it.")
+endif()
+
 # Set maximum orbital angular momentum LMAX 
 # for AR (at rest), OA (on-axis total momentum (0,0,n)),
 # PD (planar diagonal total momentum (0,n,n)),
 # CD (cubic diagonal total momentum (n,n,n))
 # LMAX<=6 currently supported; decreasing speeds up compile time.
 # Setting any one to a negative value eliminates that momentum ray.
-add_compile_definitions(AR_LMAX=6)
-add_compile_definitions(OA_LMAX=6)
-add_compile_definitions(PD_LMAX=6)
-add_compile_definitions(CD_LMAX=6)
+add_compile_definitions(AR_LMAX=6 OA_LMAX=6 PD_LMAX=6 CD_LMAX=6)
 
 # Set maximum total intrinsic spin (times two) SX2MAX 
 # for AR (at rest), OA (on-axis total momentum (0,0,n)),
@@ -48,20 +54,20 @@ add_compile_definitions(CD_LMAX=6)
 # SX2MAX<=4 currently supported for AR,OA; SX2MAX<=3 for PD,CD.
 # Decreasing these values speeds up compile time.
 # Setting less than 0 eliminates all routines for the momentum ray.
-add_compile_definitions(AR_SX2MAX=4)
-add_compile_definitions(OA_SX2MAX=4)
-add_compile_definitions(PD_SX2MAX=3)
-add_compile_definitions(CD_SX2MAX=3)
+add_compile_definitions(AR_SX2MAX=4 OA_SX2MAX=4 PD_SX2MAX=3 CD_SX2MAX=3)
+
 
 # Find the source files
 set(KBFIT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(SOURCE_DIR ${KBFIT_DIR}/source)
+set(TEST_SOURCE_DIR ${KBFIT_DIR}/source_testing)
 
 # Collect box matrix sources and exclude them from the main sources
 file(GLOB_RECURSE BOX_MATRIX_SOURCES ${SOURCE_DIR}/box_matrix_*.cc)
 file(GLOB_RECURSE SOURCES ${SOURCE_DIR}/*.cc)
-list(REMOVE_ITEM SOURCES ${BOX_MATRIX_SOURCES})
+list(REMOVE_ITEM SOURCES ${BOX_MATRIX_SOURCES} ${SOURCE_DIR}/main/KBfit.cc)
 file(GLOB_RECURSE HEADERS ${SOURCE_DIR}/*.h)
+
 
 # External libraries (versions on cluster: LAPACK 3.9.0, Minuit2 6.34.04)
 # LAPACK
@@ -111,9 +117,22 @@ endif()
 find_package(OpenMP REQUIRED)
 
 
+# common headers
+set(COMMON_INCLUDE_DIRS " ")
+list(APPEND COMMON_INCLUDE_DIRS ${MINUIT2_INCDIR})
+if(ROOT_INCDIR AND NOT ROOT_INCDIR STREQUAL MINUIT2_INCDIR)
+    list(APPEND COMMON_INCLUDE_DIRS ${ROOT_INCDIR})
+endif()
+file(GLOB SUBDIRS LIST_DIRECTORIES true RELATIVE ${SOURCE_DIR} "${SOURCE_DIR}/*")
+foreach(subdir IN LISTS SUBDIRS)
+    if(IS_DIRECTORY "${SOURCE_DIR}/${subdir}")
+        list(APPEND COMMON_INCLUDE_DIRS "${SOURCE_DIR}/${subdir}")
+    endif()
+endforeach()
+
 # Create an object library for the main sources
-add_library(OptimizedSources OBJECT ${SOURCES} ${HEADERS})
-target_include_directories(OptimizedSources PUBLIC ${MINUIT2_INCDIR} ${ROOT_INCDIR})
+add_library(OptimizedSources OBJECT ${SOURCES})
+target_include_directories(OptimizedSources PUBLIC ${COMMON_INCLUDE_DIRS})
 # if in debug, compile optimized sources as such
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(OptimizedSources PRIVATE -O0 -g)
@@ -121,33 +140,77 @@ else()
     target_compile_options(OptimizedSources PRIVATE -O3)
 endif()
 
-# Create an object library for the box matrix sources (do not optimize)
-add_library(BoxMatrix OBJECT ${BOX_MATRIX_SOURCES})
-target_compile_options(BoxMatrix PRIVATE -O0)
+# Create an static library for the box matrix sources (do not optimize)
+add_library(BoxMatrix_lib STATIC ${BOX_MATRIX_SOURCES})
+target_compile_options(BoxMatrix_lib PRIVATE -O0)
+target_include_directories(BoxMatrix_lib PUBLIC ${COMMON_INCLUDE_DIRS})
 
+message(STATUS "COMMON_INCLUDE_DIRS: ${COMMON_INCLUDE_DIRS}")
 
 # Create the executable
-add_executable(KBfit
-    $<TARGET_OBJECTS:OptimizedSources>
-    $<TARGET_OBJECTS:BoxMatrix>
-)
-
-# Include the header directories
-file(GLOB SUBDIRS LIST_DIRECTORIES true RELATIVE ${SOURCE_DIR} "${SOURCE_DIR}/*")
-
-foreach(subdir IN LISTS SUBDIRS)
-    if(IS_DIRECTORY "${SOURCE_DIR}/${subdir}")
-        target_include_directories(OptimizedSources PUBLIC "${SOURCE_DIR}/${subdir}")
-    endif()
-endforeach()
-
+add_executable(KBfit ${SOURCE_DIR}/main/KBfit.cc
+                    $<TARGET_OBJECTS:OptimizedSources>)
 target_link_libraries(KBfit PUBLIC
-    OpenMP::OpenMP_CXX
-    LAPACK::LAPACK
-    ${MINUIT2_LIBDIR}/${MINUIT2_LIB} 
+        BoxMatrix_lib
+        OpenMP::OpenMP_CXX
+        LAPACK::LAPACK
+        ${MINUIT2_LIBDIR}/${MINUIT2_LIB}
 )
 
 # Put binary in my conda bin directory if on AlmaLinux, else usr/local/bin
 
 install(TARGETS KBfit 
         RUNTIME DESTINATION bin)
+
+# testing setup with doctest
+set(BUILD_TESTING True)
+
+message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
+
+if(BUILD_TESTING)
+    enable_testing()
+    set(DOCTEST_INCLUDE_DIR "${TEST_SOURCE_DIR}/include" CACHE PATH "Path to Doctest include directory")
+    message(STATUS "Test source directory: ${TEST_SOURCE_DIR}")
+    message(STATUS "Doctest include directory: ${DOCTEST_INCLUDE_DIR}")
+
+    # collect test files
+    file(GLOB_RECURSE TEST_SOURCES ${TEST_SOURCE_DIR}/test_*.cc)
+
+    if(TEST_SOURCES STREQUAL "")
+        message(WARNING "No test files found in ${TEST_SOURCE_DIR} matching test_*.cc. Test executable will not be built correctly.")
+    endif()
+
+    message(STATUS "Test files found: ${TEST_SOURCES}")
+
+    add_executable(KBfit_tests
+            "${TEST_SOURCE_DIR}/run_tests.cc" # Main test runner
+            ${TEST_FILES}                     # Your individual test files
+            "${TEST_SOURCE_DIR}/test_cayley_transform.cc"
+    )
+
+    target_include_directories(KBfit_tests PRIVATE
+            ${DOCTEST_INCLUDE_DIR}
+            ${COMMON_INCLUDE_DIRS}
+            ${SOURCE_DIR}
+            ${TEST_SOURCE_DIR}
+    )
+
+    target_link_libraries(KBfit_tests PRIVATE
+            BoxMatrix_lib                     # Static library being tested
+            $<TARGET_OBJECTS:OptimizedSources> # Object files from the other part of your code
+            OpenMP::OpenMP_CXX                # Link OpenMP if tests use it or tested code needs its symbols at link time
+            LAPACK::LAPACK                    # Link LAPACK for dpotrf_, dsyev_, etc.
+            "${MINUIT2_LIBDIR}/${MINUIT2_LIB}" # Link Minuit2 for ROOT::Minuit2:: symbols
+    )
+
+    set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD ${CMAKE_CXX_STANDARD})
+    set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD_REQUIRED ${CMAKE_CXX_STANDARD_REQUIRED})
+
+    # Add the test to CTest
+    # run tests with 'ctest' command in the build directory
+    add_test(NAME ProjectTests COMMAND KBfit_tests)
+
+    message(STATUS "Testing enabled (Doctest). Test executable: KBfit_tests")
+else()
+    message(STATUS "Testing disabled.")
+endif()
