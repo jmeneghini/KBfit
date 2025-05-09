@@ -1,6 +1,7 @@
 #include "chisq_detres.h"
 #include "chisq_fit.h"
 #include "task_handler.h"
+#include "root_finder.h"
 #include <iomanip>
 
 using namespace std;
@@ -56,6 +57,39 @@ using namespace std;
 // *                                                                        *
 // *      <QuantizationCondition>...</QuantizationCondition>                *
 // *       (StildeCB, StildeinvCB, KtildeB, KtildeinvB)                     *
+// *                                                                        *
+// *  <RootFinder>                                                          *
+// *    <LabFrameEnergyMin>1.10</LabFrameEnergyMin>                         *
+// *    <LabFrameEnergyMax>2.30</LabFrameEnergyMax>                         *
+// *                                                                        *
+// *    <AdaptiveBracket>                                                   *
+// *                                                                        *
+// *      <!--‑‑‑‑‑ All tags below are OPTIONAL ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑>*
+// *                                                                        *
+// *      <InitialStepSize>         1e-2  </InitialStepSize>                *
+// *      <AbsXTolerance>           1e-6  </AbsXTolerance>                  *
+// *      <AbsResidualTolerance>    1e-10 </AbsResidualTolerance>           *
+// *      <MinStepSize>             1e-4  </MinStepSize>                    *
+// *      <MaxStepSize>             5e-2  </MaxStepSize>                    *
+// *      <StepScaleLimit>          3.0   </StepScaleLimit>                 *
+// *      <PlateauMod2Threshold>    1e-4  </PlateauMod2Threshold>           *
+// *      <PlateauCountBeforeJump>  4     </PlateauCountBeforeJump>         *
+// *                                                                        *
+// *    </AdaptiveBracket>                                                  *
+// *  </RootFinder>                                                         *
+// *                                                                        *
+// *----------------------------------------------------------------------  *
+// *            TAG  →  AdaptiveBracketConfig FIELD MAPPING                 *
+// *----------------------------------------------------------------------  *
+// *      <InitialStepSize>          →  initial_step_size                   *
+// *      <AbsXTolerance>            →  x_tol                               *
+// *      <AbsResidualTolerance>     →  zero_tol                            *
+// *      <MinStepSize>              →  min_step_size                       *
+// *      <MaxStepSize>              →  max_step_size                       *
+// *      <StepScaleLimit>           →  step_scale_limit                    *
+// *      <PlateauMod2Threshold>     →  plateau_mod2_threshold              *
+// *      <PlateauCountBeforeJump>   →  plateau_count_before_jump           *
+// *------------------------------------------------------------------------*
 // *                                                                        *
 // *      <KtildeMatrixInverse>  (or <KtildeMatrix> - match quant cond)     *
 // *          .....                                                         *
@@ -246,7 +280,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       throw(std::invalid_argument(
           "Multiple PrintEigenvalues tags cannot be present"));
     }
-    bool do_print_eigenvals = (count_print_eigenvals == 1);
+    bool do_print_eigenvals = count_print_eigenvals;
 
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
@@ -332,6 +366,19 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       else
         throw(std::invalid_argument("Invalid <DefaultEnergyFormat> tag"));
     }
+
+    // Get root finding info
+    int root_counts = xmltask.count_among_children("RootFinder");
+    if (root_counts > 1)
+      throw(std::invalid_argument(
+              "Multiple RootFinder tags cannot be present"));
+    bool do_root_find = root_counts;
+    AdaptiveBracketConfig root_config;
+    if (do_root_find) {
+      XMLHandler xmlroot(xmltask, "RootFinder");
+      root_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
+    }
+
 
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
@@ -584,18 +631,21 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     //  Now start the output, block by block
 
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
-
       const MCEnsembleInfo& mcens = blockens[blocknum];
       string omega_filename = "Omega_Block" + make_string(blocknum) + ".csv";
       string eigenvals_filename =
           "Eigenvals_Block" + make_string(blocknum) + ".csv";
       string nis_filename =
           "NonInteractingEnergies_Block" + make_string(blocknum) + ".csv";
+      string roots_filename = "Roots_Block" + make_string(blocknum) + ".csv";
 
       BoxQuantization* bqptr = BQ[blocknum];
       logger << "Filename = " << omega_filename << endl;
       if (do_print_eigenvals) {
         logger << "Filename = " << eigenvals_filename << endl;
+      }
+      if (do_root_find) {
+        logger << "Filename = " << roots_filename << endl;
       }
       logger << "Filename = " << nis_filename << endl;
       logger << mcens.str() << endl;
@@ -681,6 +731,27 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           fout_omega << elabvals[k] << "," << ecmvals[k] << ","
                      << omegavals[k][0].real() << "," << omegavals[k][0].imag()
                      << endl;
+      }
+
+      if (do_root_find) {
+        std::vector<double> roots;
+        bqptr->getRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
+                                      root_config, roots);
+        ofstream fout_roots(roots_filename);
+        fout_roots << header << "\n\n";
+
+        fout_roots.precision(12);
+        fout_roots.setf(ios::fixed, ios::floatfield);
+
+        fout_roots << "E_lab,E_cm";
+
+        if (nsamp == 0) {
+          for (uint k = 0; k < nvals; ++k) {
+            double root_ecm = bqptr->getEcmOverMrefFromElab(roots[k]);
+            fout_roots << roots[k] << "," << root_ecm << endl;
+          }
+        }
+
       }
       // } else if (m_obs->isJackknifeMode()) {
       //   MCEstimate mcest;

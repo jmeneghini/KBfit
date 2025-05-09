@@ -10,6 +10,7 @@
 #include <iostream>
 #include <map>
 #include <optional>
+#include <root_finder.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -456,6 +457,16 @@ public:
 
   cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, QuantCondType qctype);
 
+  void getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
+                           double Ecm_over_mref_max,
+                            QuantCondType qctype, AdaptiveBracketConfig P,
+                           std::vector<double>& roots);
+
+  void getRootsInElabInterval(double mu, double Ecm_over_mref_min,
+                              double Ecm_over_mref_max,
+                              QuantCondType qctype, AdaptiveBracketConfig P,
+                              std::vector<double>& roots);
+
 private:
   // case insensitive map from string to QuantCondType
   const std::unordered_map<std::string_view, QuantCondType> m_qctype_map = {
@@ -529,6 +540,11 @@ private:
 
   cmplx get_omega(double mu, double E_over_mref, bool Elab,
                   QuantCondType qctype);
+
+  void get_roots_in_interval(double mu, double E_over_mref_min,
+                           double E_over_mref_max, bool Elab,
+                            QuantCondType qctype, AdaptiveBracketConfig P,
+                           std::vector<double>& roots);
 };
 
 #endif

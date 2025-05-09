@@ -717,6 +717,52 @@ cmplx BoxQuantization::getOmegaFromEcm(double mu, double Ecm_over_mref,
   return get_omega(mu, Ecm_over_mref, false, qctype);
 }
 
+list<double>
+BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
+                                            double max_Elab_over_mref) const {
+  return m_boxes.front().first->getEcmTransform().getFreeTwoParticleEnergies(
+      min_Elab_over_mref, max_Elab_over_mref);
+}
+
+void BoxQuantization::getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
+                                            double Ecm_over_mref_max,
+                                            QuantCondType qctype, AdaptiveBracketConfig P,
+                                            std::vector<double>& roots) {
+
+  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, false, qctype, P,  roots);
+}
+
+void BoxQuantization::getRootsInElabInterval(double mu,
+                                             double Ecm_over_mref_min,
+                                             double Ecm_over_mref_max,
+                                             QuantCondType qctype, AdaptiveBracketConfig P,
+                                             std::vector<double>& roots) {
+  // get all NIs in the interval
+  std::vector<double> intervals;
+  intervals.push_back(Ecm_over_mref_min);
+  list<double> NIs = getFreeTwoParticleEnergies(Ecm_over_mref_min, Ecm_over_mref_max);
+  for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {
+    intervals.push_back(*it);
+  }
+  intervals.push_back(Ecm_over_mref_max);
+  for (uint i = 0; i < intervals.size() - 1; ++i) {
+    std::vector<double> temp_roots;
+    double Ecm_over_mref_min = intervals[i];
+    double Ecm_over_mref_max = intervals[i + 1];
+    if (Ecm_over_mref_min > Ecm_over_mref_max)
+      throw(std::invalid_argument("Bad interval in getRootsInElabInterval"));
+    // get the roots in the interval
+    get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, true, qctype, P, temp_roots);
+    // add the roots to the final list
+    for (std::vector<double>::const_iterator it = temp_roots.begin();
+             it != temp_roots.end(); ++it) {
+      if (std::find(roots.begin(), roots.end(), *it) == roots.end()) {
+            roots.push_back(*it);
+      }
+    }
+  }
+}
+
 // assigns a complex value to an element in a complex Hermitian matrix
 // which is either of type "ComplexHermitianMatrix" or "CMatrix"
 // if "herm" is true, assigns to "CMh"; else to "CM"
@@ -1080,11 +1126,20 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
   return DC.getDeterminant(Q);
 }
 
-list<double>
-BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
-                                            double max_Elab_over_mref) const {
-  return m_boxes.front().first->getEcmTransform().getFreeTwoParticleEnergies(
-      min_Elab_over_mref, max_Elab_over_mref);
+void BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
+                                            double E_over_mref_max, bool Elab,
+                                            QuantCondType qctype, AdaptiveBracketConfig P,
+                                            std::vector<double>& roots) {
+  std::function<cmplx(double)> f =
+      [this, mu, Elab, qctype](double E_over_mref) {
+        cmplx omega = get_omega(mu, E_over_mref, Elab, qctype);
+        return omega;
+  };
+
+  AdaptiveBracketRootFinder RF(P, f);
+
+  RF.findRoots(E_over_mref_min, E_over_mref_max, roots);
 }
+
 
 // ***************************************************************************************
