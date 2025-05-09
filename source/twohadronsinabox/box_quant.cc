@@ -745,14 +745,14 @@ void BoxQuantization::getRootsInElabInterval(double mu,
     intervals.push_back(*it);
   }
   intervals.push_back(Ecm_over_mref_max);
-  for (uint i = 0; i < intervals.size() - 1; ++i) {
+  for (size_t i = 0; i < intervals.size() - 1; ++i) {
     std::vector<double> temp_roots;
-    double Ecm_over_mref_min = intervals[i];
-    double Ecm_over_mref_max = intervals[i + 1];
-    if (Ecm_over_mref_min > Ecm_over_mref_max)
+    double E_min = intervals[i] + 1e-6;
+    double E_max = intervals[i + 1] - 1e-6; // might be hitting NIs and getting nan's
+    if (E_min > E_max)
       throw(std::invalid_argument("Bad interval in getRootsInElabInterval"));
     // get the roots in the interval
-    get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, true, qctype, P, temp_roots);
+    get_roots_in_interval(mu, E_min, E_max, true, qctype, P, temp_roots);
     // add the roots to the final list
     for (std::vector<double>::const_iterator it = temp_roots.begin();
              it != temp_roots.end(); ++it) {

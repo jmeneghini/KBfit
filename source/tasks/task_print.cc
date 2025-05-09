@@ -3,6 +3,7 @@
 #include "task_handler.h"
 #include "root_finder.h"
 #include <iomanip>
+#include <filesystem>
 
 using namespace std;
 
@@ -738,6 +739,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         bqptr->getRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
                                       root_config, roots);
         ofstream fout_roots(roots_filename);
+
         fout_roots << header << "\n\n";
 
         fout_roots.precision(12);
@@ -746,9 +748,9 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         fout_roots << "E_lab,E_cm";
 
         if (nsamp == 0) {
-          for (uint k = 0; k < nvals; ++k) {
-            double root_ecm = bqptr->getEcmOverMrefFromElab(roots[k]);
-            fout_roots << roots[k] << "," << root_ecm << endl;
+          for (double root : roots) {
+            double root_ecm = bqptr->getEcmOverMrefFromElab(root);
+            fout_roots << root << "," << root_ecm << endl;
           }
         }
 
