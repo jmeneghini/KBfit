@@ -24,11 +24,11 @@ AdaptiveBracketRootFinder::EvalCache::operator()(double x) {
 AdaptiveBracketConfig
 AdaptiveBracketRootFinder::makeConfigFromXML(XMLHandler& xmlin) {
   AdaptiveBracketConfig p;
-  xmlreadifchild(xmlin, "InitialStepSize", p.initial_step_size);
+  xmlreadifchild(xmlin, "InitialStepPercent", p.initial_step_percent);
   xmlreadifchild(xmlin, "AbsXTolerance", p.x_tol);
   xmlreadifchild(xmlin, "AbsResidualTolerance", p.zero_tol);
-  xmlreadifchild(xmlin, "MinStepSize", p.min_step_size);
-  xmlreadifchild(xmlin, "MaxStepSize", p.max_step_size);
+  xmlreadifchild(xmlin, "MinStepPercent", p.min_step_percent);
+  xmlreadifchild(xmlin, "MaxStepPercent", p.max_step_percent);
   xmlreadifchild(xmlin, "StepScaleLimit", p.step_scale_limit);
   xmlreadifchild(xmlin, "PlateauMod2Threshold", p.plateau_mod2_threshold);
   xmlreadifchild(xmlin, "PlateauCountBeforeJump", p.plateau_count_before_jump);
@@ -80,10 +80,16 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
   eval_count_ = 0;
   EvalCache Z(*this);
 
+  double interval_len = b - a;
+
   std::deque<std::pair<double, double>> brackets;
 
+  double initial_step_size = interval_len*params_.initial_step_percent;
+  double max_step_size = interval_len*params_.max_step_percent;
+  double min_step_size = interval_len*params_.min_step_percent;
+
   double x = a;
-  double h = std::min(params_.initial_step_size, b - a);
+  double h = std::min(initial_step_size, b - a);
   auto Zv = Z(x);
   double im_prev  = Zv.value.imag();
   double mod2_prev= Zv.mod2;
@@ -100,7 +106,7 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
 
     double h_new;
     if (Zn.mod2 > params_.plateau_mod2_threshold) {
-      h_new = params_.max_step_size;
+      h_new = max_step_size;
       flat_cnt = 0;
     } else {
       double ratio = std::sqrt(Zn.mod2 / mod2_prev);
@@ -108,12 +114,12 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
                          1.0 / params_.step_scale_limit,
                          params_.step_scale_limit);
       h_new = std::clamp(h * ratio,
-                         params_.min_step_size,
-                         params_.max_step_size);
+                         min_step_size,
+                         max_step_size);
 
       if (0.9 < ratio && ratio < 1.1) {
         if (++flat_cnt >= params_.plateau_count_before_jump) {
-          h_new = std::min(2 * h_new, params_.max_step_size);
+          h_new = std::min(2 * h_new, max_step_size);
           flat_cnt = 0;
         }
       } else {

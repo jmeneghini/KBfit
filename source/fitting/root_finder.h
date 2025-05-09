@@ -10,12 +10,12 @@
   Parameters for adaptive bracket + Newton‑secant polish
 ----------------------------------------------------------------*/
 struct AdaptiveBracketConfig {
-  double initial_step_size = 1e-2;
-  double x_tol = 1e-6;
-  double zero_tol = 1e-10;
+  double initial_step_percent = 1e-2;
+  double x_tol = 1e-8;
+  double zero_tol = 1e-6;
 
-  double min_step_size = 1e-4;
-  double max_step_size = 5e-2;
+  double min_step_percent = 1e-5;
+  double max_step_percent = 5e-2;
   double step_scale_limit = 3.0; // |h_new / h_old| <= this
 
   double plateau_mod2_threshold = 1e-4; // “flat” if |Z|^2 above this

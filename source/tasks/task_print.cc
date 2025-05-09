@@ -745,7 +745,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         fout_roots.precision(12);
         fout_roots.setf(ios::fixed, ios::floatfield);
 
-        fout_roots << "E_lab,E_cm";
+        fout_roots << "E_lab,E_cm" << endl;
 
         if (nsamp == 0) {
           for (double root : roots) {
