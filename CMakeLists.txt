@@ -184,8 +184,7 @@ if(BUILD_TESTING)
 
     add_executable(KBfit_tests
             "${TEST_SOURCE_DIR}/run_tests.cc" # Main test runner
-            ${TEST_FILES}                     # Your individual test files
-            "${TEST_SOURCE_DIR}/test_cayley_transform.cc"
+            ${TEST_SOURCES}                     # All test files
     )
 
     target_include_directories(KBfit_tests PRIVATE
