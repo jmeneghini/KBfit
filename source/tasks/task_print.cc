@@ -673,15 +673,57 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         particlemass2[ci] = &(m_obs->getFullAndSamplingValues(mass2key));
       }
 
+      for (int b = 0; b <= nsamp; ++b) { // set masses
+        bqptr->setRefMassL(mrefL[b]);
+        for (uint ci = 0; ci < bqptr->getNumberOfDecayChannels(); ++ci) {
+          bqptr->setMassesOverRef(ci, (*(particlemass1[ci]))[b],
+                                  (*(particlemass2[ci]))[b]);
+        }
+      }
+
       double emin = elabs_min[blocknum];
       double emax = elabs_max[blocknum];
-      double einc = elabs_inc[blocknum];
-      double elab = emin;
-      vector<double> elabvals;
-      while (elab <= emax) {
-        elabvals.push_back(elab);
-        elab += einc;
+
+      // Non interacting energies first for resolution of elabsvals
+
+      string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
+                " # P^2 = " +
+                std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
+                " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
+
+      ofstream fout_nis(nis_filename);
+
+      fout_nis << header << "\n\n";
+
+      fout_nis.precision(12);
+      fout_nis.setf(ios::fixed, ios::floatfield);
+
+      fout_nis << "E_lab,E_cm" << endl;
+
+      list<double> ni_energies = bqptr->getFreeTwoParticleEnergies(emin, emax);
+      for (double& ni_energy : ni_energies) {
+        double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
+        fout_nis << ni_energy << "," << ecm_energy << endl;
       }
+      fout_nis.close();
+
+      double einc_percent = elabs_inc[blocknum];
+      double elab = emin;
+
+      ni_energies.push_front(emin);
+      ni_energies.push_back(emax);
+
+      vector<double> elabvals;
+      for (int i = 0; i < ni_energies.size() - 1; ++i) {
+        double e1 = *std::next(ni_energies.begin(), i);
+        double e2 = *std::next(ni_energies.begin(), i + 1);
+        double einc = einc_percent * (e2 - e1); // relative to NI interval
+        while (elab <= e2+1e-9) {
+          elabvals.push_back(elab);
+          elab += einc;
+        }
+      }
+
       uint nvals = elabvals.size();
       if (outmode == "full")
         nsamp = 0;
@@ -690,11 +732,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           bqptr->getBasisSize(), vector<CVector>(nvals, CVector(nsamp + 1)));
 
       for (uint b = 0; b <= nsamp; ++b) {
-        bqptr->setRefMassL(mrefL[b]);
-        for (uint ci = 0; ci < bqptr->getNumberOfDecayChannels(); ++ci) {
-          bqptr->setMassesOverRef(ci, (*(particlemass1[ci]))[b],
-                                  (*(particlemass2[ci]))[b]);
-        }
         CMatrix last_iter_eigenvectors;
         for (uint k = 0; k < nvals; ++k) {
           omegavals[k][b] =
@@ -717,11 +754,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       ofstream fout_omega(omega_filename);
 
-      string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
-                      " # P^2 = " +
-                      std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
-                      " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
-
       fout_omega << header << "\n\n";
 
       fout_omega.precision(12);
@@ -736,8 +768,9 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       if (do_root_find) {
         std::vector<double> roots;
+        std::vector<uint> fn_calls;
         bqptr->getRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
-                                      root_config, roots);
+                                      root_config, roots, fn_calls);
         ofstream fout_roots(roots_filename);
 
         fout_roots << header << "\n\n";
@@ -753,6 +786,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
             fout_roots << root << "," << root_ecm << endl;
           }
         }
+
+        // put fn calls in the log
+        logger << "Number of function calls for each root finding interval:"
+               << endl;
+        for (int i = 0; i < fn_calls.size(); ++i) {
+          logger << "Interval " << i << ": " << fn_calls[i] << endl;
+        }
+
 
       }
       // } else if (m_obs->isJackknifeMode()) {
@@ -835,21 +876,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         // }
         fout_omega.close();
       }
-      ofstream fout_nis(nis_filename);
-
-      fout_nis << header << "\n\n";
-
-      fout_nis.precision(12);
-      fout_nis.setf(ios::fixed, ios::floatfield);
-
-      fout_nis << "E_lab,E_cm" << endl;
-
-      list<double> ni_energies = bqptr->getFreeTwoParticleEnergies(emin, emax);
-      for (double& ni_energy : ni_energies) {
-        double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
-        fout_nis << ni_energy << "," << ecm_energy << endl;
-      }
-      fout_nis.close();
     }
 
     m_obs->clearSamplings();

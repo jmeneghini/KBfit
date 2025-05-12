@@ -1,6 +1,6 @@
 <LogKBFit>
  <ProjectName>KPiPrint</ProjectName>
- <StartDateTime>Mon_Apr_21_22:00:43_2025</StartDateTime>
+ <StartDateTime>Thu_May__8_20:51:16_2025</StartDateTime>
  <InputXML>
   <Initialize>
       <ProjectName>KPiPrint</ProjectName>
@@ -17,10 +17,13 @@
    <TaskSequence>
       <Task>
          <Action>DoPrint</Action>
-         <OutputStub>KPiPrint_OmegaCayleyModulus</OutputStub>
+         <OutputStub>KPiPrint</OutputStub>
          <OutputMode>full</OutputMode>
-         <OmegaMu>30.0</OmegaMu>
-         <PrintEigenvalues/>
+         <OmegaMu>-1.0</OmegaMu>
+         <QuantizationCondition>StildeCB</QuantizationCondition>
+         <RootFinder>
+            <AdaptiveBracket/>
+         </RootFinder>
          <KtildeMatrix>
             <Element>
                <KElementInfo>
@@ -166,7 +169,7 @@
             </MCSamplingInfo>
             <Verbose/>
             <SamplingData>
-               <FileName>../../data/k-pi_scatteringDrew.smp</FileName>
+               <FileName>../data/k-pi_scatteringDrew.smp</FileName>
             </SamplingData>
          </KBObservables>
       </Task>
@@ -179,147 +182,11 @@
  <Count>0</Count>
 
 <PrintOmega>
-   <KtildeMatrixCalculator>
-      <KtildeMatrix>
-         <DecayChannels>
-            <DecayChannelInfo>
-               <Particle1Name>kaon</Particle1Name>
-               <Spin1TimesTwo>0</Spin1TimesTwo>
-               <Particle2Name>pion</Particle2Name>
-               <Spin2TimesTwo>0</Spin2TimesTwo>
-               <IntrinsicParities>same</IntrinsicParities>
-            </DecayChannelInfo>
-         </DecayChannels>
-         <Element>
-            <KElementInfo>
-               <JTimesTwo>0</JTimesTwo>
-               <KIndex>L(0) 2S(0) chan(0)</KIndex>
-               <KIndex>L(0) 2S(0) chan(0)</KIndex>
-            </KElementInfo>
-            <Polynomial>
-               <Powers>0 2</Powers>
-            </Polynomial>
-         </Element>
-         <Element>
-            <KElementInfo>
-               <JTimesTwo>2</JTimesTwo>
-               <KIndex>L(1) 2S(0) chan(0)</KIndex>
-               <KIndex>L(1) 2S(0) chan(0)</KIndex>
-            </KElementInfo>
-            <Polynomial>
-               <Powers>1 3</Powers>
-            </Polynomial>
-         </Element>
-      </KtildeMatrix>
-      <FitParameterInfos>
-         <FitParameterInfo>
-            <KFitParamInfo>
-               <PolynomialTerm>
-                  <Power>0</Power>
-                  <KElementInfo>
-                     <JTimesTwo>0</JTimesTwo>
-                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
-                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
-                  </KElementInfo>
-               </PolynomialTerm>
-            </KFitParamInfo>
-            <Index>0</Index>
-         </FitParameterInfo>
-         <FitParameterInfo>
-            <KFitParamInfo>
-               <PolynomialTerm>
-                  <Power>2</Power>
-                  <KElementInfo>
-                     <JTimesTwo>0</JTimesTwo>
-                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
-                     <KIndex>L(0) 2S(0) chan(0)</KIndex>
-                  </KElementInfo>
-               </PolynomialTerm>
-            </KFitParamInfo>
-            <Index>1</Index>
-         </FitParameterInfo>
-         <FitParameterInfo>
-            <KFitParamInfo>
-               <PolynomialTerm>
-                  <Power>1</Power>
-                  <KElementInfo>
-                     <JTimesTwo>2</JTimesTwo>
-                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
-                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
-                  </KElementInfo>
-               </PolynomialTerm>
-            </KFitParamInfo>
-            <Index>2</Index>
-         </FitParameterInfo>
-         <FitParameterInfo>
-            <KFitParamInfo>
-               <PolynomialTerm>
-                  <Power>3</Power>
-                  <KElementInfo>
-                     <JTimesTwo>2</JTimesTwo>
-                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
-                     <KIndex>L(1) 2S(0) chan(0)</KIndex>
-                  </KElementInfo>
-               </PolynomialTerm>
-            </KFitParamInfo>
-            <Index>3</Index>
-         </FitParameterInfo>
-      </FitParameterInfos>
-   </KtildeMatrixCalculator>
-   <Logger>
-      <o>: Omega mu = 30                                                  :</o>
-      <o>:                                                                :</o>
-      <o>: Observable get handler connecting to files:                    :</o>
-      <o>: Now connecting file ../../data/k-pi_scatteringDrew.smp         :</o>
-      <o>:                                                                :</o>
-      <o>: File map:                                                      :</o>
-      <FileMap>
-         <EnsembleMapping>
-            <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-            <FileName>../../data/k-pi_scatteringDrew.smp</FileName>
-         </EnsembleMapping>
-      </FileMap>
-      <o>:                                                                :</o>
-      <o>: MCEnsemble connection:                                         :</o>
-      <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:  Size = 3                                                      :</o>
-      <o>: Keys:                                                          :</o>
-      <o>:                                                                :</o>
-      <AvailableKeys>
-         <Key>
-            <MCObs>pion 0 n re</MCObs>
-         </Key>
-         <Key>
-            <MCObs>kaon_mpi 0 n re</MCObs>
-         </Key>
-         <Key>
-            <MCObs>xi_pion 0 n re</MCObs>
-         </Key>
-      </AvailableKeys>
-      <o>:                                                                :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Omega.0                 :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Eigenvals.0             :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_NonInteractingEnergies.0:</o>
-      <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                :</o>
-      <o>: MomRay ar   P^2 = 0 Box Irrep T1u                              :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Omega.1                 :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Eigenvals.1             :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_NonInteractingEnergies.1:</o>
-      <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                :</o>
-      <o>: MomRay oa   P^2 = 1 Box Irrep A1                               :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Omega.2                 :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_Eigenvals.2             :</o>
-      <o>: Filename = KPiPrint_OmegaCayleyModulus_NonInteractingEnergies.2:</o>
-      <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-      <o>:                                                                :</o>
-      <o>: MomRay oa   P^2 = 1 Box Irrep E                                :</o>
-   </Logger>
+   <Error>doPrint failed: ErrorCould not open input sampling fileObservable get handler connecting to files:Now connecting file ../data/k-pi_scatteringDrew.smpError opening file ../data/k-pi_scatteringDrew.smp</Error>
 </PrintOmega>
 
-<RunTimeInSeconds>2.45451</RunTimeInSeconds>
+<RunTimeInSeconds>0.002637</RunTimeInSeconds>
 </Task>
- <FinishDateTime>Mon_Apr_21_22:00:45_2025</FinishDateTime>
+ <FinishDateTime>Thu_May__8_20:51:16_2025</FinishDateTime>
 </KBFit>
 

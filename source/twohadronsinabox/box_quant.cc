@@ -727,32 +727,36 @@ BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
 void BoxQuantization::getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
                                             double Ecm_over_mref_max,
                                             QuantCondType qctype, AdaptiveBracketConfig P,
-                                            std::vector<double>& roots) {
+                                            std::vector<double>& roots,std::vector<uint>& fn_calls) {
 
-  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, false, qctype, P,  roots);
+  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max,
+    false, qctype, P,  roots);
 }
 
+// fn calls is the number of function calls made for each NI/endpoint interval
 void BoxQuantization::getRootsInElabInterval(double mu,
-                                             double Ecm_over_mref_min,
-                                             double Ecm_over_mref_max,
+                                             double Elab_over_mref_min,
+                                             double Elab_over_mref_max,
                                              QuantCondType qctype, AdaptiveBracketConfig P,
-                                             std::vector<double>& roots) {
+                                             std::vector<double>& roots, std::vector<uint>& fn_calls) {
   // get all NIs in the interval
   std::vector<double> intervals;
-  intervals.push_back(Ecm_over_mref_min);
-  list<double> NIs = getFreeTwoParticleEnergies(Ecm_over_mref_min, Ecm_over_mref_max);
+  intervals.push_back(Elab_over_mref_min);
+  list<double> NIs = getFreeTwoParticleEnergies(Elab_over_mref_min, Elab_over_mref_max);
   for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {
     intervals.push_back(*it);
   }
-  intervals.push_back(Ecm_over_mref_max);
+  intervals.push_back(Elab_over_mref_max);
   for (size_t i = 0; i < intervals.size() - 1; ++i) {
     std::vector<double> temp_roots;
-    double E_min = intervals[i] + 1e-6;
-    double E_max = intervals[i + 1] - 1e-6; // might be hitting NIs and getting nan's
+    double E_min = intervals[i] - 1e-9;
+    double E_max = intervals[i + 1] - 1e-9; // might be hitting NIs and getting nan's
+    // which is not good. likely is an issue with first calculating the box matrix
+    // then relying on numerical limits to work out.
     if (E_min > E_max)
       throw(std::invalid_argument("Bad interval in getRootsInElabInterval"));
     // get the roots in the interval
-    get_roots_in_interval(mu, E_min, E_max, true, qctype, P, temp_roots);
+    fn_calls.push_back(get_roots_in_interval(mu, E_min, E_max, true, qctype, P, temp_roots));
     // add the roots to the final list
     for (std::vector<double>::const_iterator it = temp_roots.begin();
              it != temp_roots.end(); ++it) {
@@ -1126,7 +1130,7 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
   return DC.getDeterminant(Q);
 }
 
-void BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
+uint BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
                                             double E_over_mref_max, bool Elab,
                                             QuantCondType qctype, AdaptiveBracketConfig P,
                                             std::vector<double>& roots) {
@@ -1139,6 +1143,7 @@ void BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
   AdaptiveBracketRootFinder RF(P, f);
 
   RF.findRoots(E_over_mref_min, E_over_mref_max, roots);
+  return RF.evalCount();
 }
 
 
