@@ -460,12 +460,12 @@ public:
   void getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
                            double Ecm_over_mref_max,
                             QuantCondType qctype, AdaptiveBracketConfig P,
-                           std::vector<double>& roots);
+                           std::vector<double>& roots, std::vector<uint>& fn_calls);
 
-  void getRootsInElabInterval(double mu, double Ecm_over_mref_min,
-                              double Ecm_over_mref_max,
+  void getRootsInElabInterval(double mu, double Elab_over_mref_min,
+                              double Elab_over_mref_max,
                               QuantCondType qctype, AdaptiveBracketConfig P,
-                              std::vector<double>& roots);
+                              std::vector<double>& roots, std::vector<uint>& fn_calls);
 
 private:
   // case insensitive map from string to QuantCondType
@@ -541,7 +541,7 @@ private:
   cmplx get_omega(double mu, double E_over_mref, bool Elab,
                   QuantCondType qctype);
 
-  void get_roots_in_interval(double mu, double E_over_mref_min,
+  uint get_roots_in_interval(double mu, double E_over_mref_min,
                            double E_over_mref_max, bool Elab,
                             QuantCondType qctype, AdaptiveBracketConfig P,
                            std::vector<double>& roots);

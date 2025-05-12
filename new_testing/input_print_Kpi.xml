@@ -19,7 +19,7 @@
       <OutputStub>KPiPrint</OutputStub>
       <OutputMode>full</OutputMode>
 
-        <OmegaMu>-1.0</OmegaMu>
+        <OmegaMu>0.5</OmegaMu>
 
         <QuantizationCondition>StildeCB</QuantizationCondition>
 
