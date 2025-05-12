@@ -57,7 +57,9 @@ double AdaptiveBracketRootFinder::polishSecant(double a, double b,
   if (std::abs(f0) < ftol) return x0;
   double x1 = b, f1 = Z(b).value.imag();
   if (std::abs(f1) < ftol) return x1;
-  if (f0 * f1 > 0) throw std::runtime_error("invalid bracket");
+  if (f0 * f1 > 0) {
+    throw std::runtime_error("invalid bracket");
+  }
 
   for (std::size_t it = 0; it < MAX_IT; ++it) {
     double denom = f1 - f0;
@@ -106,11 +108,12 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
     auto   Zn     = Z(x_next);
 
     bool check_for_im_jump = true;
-    if (im_prev * Zn.value.imag() < 0 || // sign flip
-        mod2_prev < params_.zero_tol || // prev grazes 0
-        Zn.mod2   < params_.zero_tol) { // mod2 grazes 0
-
+    if (im_prev * Zn.value.imag() < 0) { // sign flip
       brackets.emplace_back(x, x_next);
+      check_for_im_jump = false;
+    }
+    else if (Zn.mod2 < params_.zero_tol) { // mod2 grazes 0
+      brackets.emplace_back(x - h_max, x_next + h_max); // give an extended bracket
       check_for_im_jump = false;
     }
 
@@ -130,11 +133,6 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
           brackets.emplace_back(x_mid, x_next);
       }
     }
-
-
-
-
-
 
     // step‑size control
     double h_new;
@@ -166,8 +164,7 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
   /* ---- polish brackets & DFS fallback -------------------------------- */
   for (auto [lft, rgt] : brackets) {
     double root = polishSecant(lft, rgt, Z);
-    if (Z(root).mod2 < params_.zero_tol &&
-        std::abs(Z(root).value.imag()) < params_.zero_tol) {
+    if (Z(root).mod2 < params_.zero_tol) {
       roots.push_back(root);
       continue;
     }

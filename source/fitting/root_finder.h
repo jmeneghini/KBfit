@@ -17,12 +17,12 @@ struct AdaptiveBracketConfig {
   double x_tol                    = 1e-8;
   double zero_tol                 = 1e-6;
 
-  double min_step_percent         = 1e-6;
-  double max_step_percent         = 5e-2;
+  double min_step_percent         = 1e-3;
+  double max_step_percent         = 1e-2;
   double step_scale_limit         = 3.0;   // |h_new / h_old| <= this
 
-  double plateau_mod2_threshold   = 1e-4;  // “flat” if |Z|² above this
-  int    plateau_count_before_jump= 8;     // consecutive flats before ×2
+  double plateau_mod2_threshold   = 0.75;  // “flat” if |Z|² above this
+  int    plateau_count_before_jump= 3;     // consecutive flats before ×2
 };
 
 /*---------------------------------------------------------------

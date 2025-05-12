@@ -416,6 +416,8 @@ public:
 
   // gets Ktilde or Ktildeinv, depending on mode
 
+  // test these
+
   void getKtildeOrInverseFromElab(double Elab_over_mref,
                                   RealSymmetricMatrix& KtildeOrInverse);
 
