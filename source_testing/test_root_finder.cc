@@ -5,6 +5,7 @@
 
 #include "doctest.h"
 #include "root_finder.h" // Your header file
+#include "helper.h"
 #include <cmath>        // For M_PI, sin, cos, pow, sqrt, abs, round
 #include <vector>
 #include <string>
@@ -13,6 +14,8 @@
 #include <iomanip>      // For std::setprecision
 #include <functional>   // For std::function
 #include <complex>      // For std::complex
+
+using namespace TestHelper;
 
 // Helper to convert vector to string for Doctest INFO messages
 template <typename T>

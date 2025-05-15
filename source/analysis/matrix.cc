@@ -224,60 +224,6 @@ ComplexHermitianMatrix::operator-=(const ComplexHermitianMatrix& incoming) {
   return *this;
 }
 
-ComplexHermitianMatrix& ComplexHermitianMatrix::invertRoot() {
-  int n = static_cast<int>(m_size);
-
-  RVector eigvals(n);
-  RVector inv_root_eigvals(n);
-  CMatrix eigvecs;
-  Diagonalizer D;
-
-  // Compute the eigenvalues and eigenvectors of the matrix.
-  D.getEigenvectors(*this, eigvals, eigvecs);
-
-  //  // Print the eigenvecs
-  //  std::cout << "Eigenvecs: " << std::endl;
-  //  for (int i = 0; i < n; ++i)
-  //  {
-  //     for (int j = 0; j < n; ++j)
-  //     {
-  //        std::cout << eigvecs(i, j) << " ";
-  //     }
-  //     std::cout << std::endl;
-  //  }
-
-  // Check if eigenvalues are positive. If so, replace with inverse square root.
-  for (int i = 0; i < n; ++i) {
-    inv_root_eigvals[i] = 1.0 / eigvals[i];
-  }
-
-  // Reconstruct A^(-1/2) = U diag(1/sqrt(eigvals)) U^dag -> A^(-1/2)_ij = sum_k
-  // U_ik (1/sqrt(eigvals_k)) U_jk^*
-  std::vector<std::complex<double>> result(0.5 * n * (n + 1));
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      for (int k = 0; k < n; ++k) {
-        result[get_index(i, j)] =
-            eigvecs(i, k) * conjugate(eigvecs(j, k)) * inv_root_eigvals[k];
-      }
-    }
-  }
-
-  m_store = result;
-
-  //  std::cout << "InvertRoot: " << std::endl;
-  //  for (int i = 0; i < n; ++i)
-  //  {
-  //     for (int j = 0; j < n; ++j)
-  //     {
-  //        std::cout << m_store[get_index(i, j)] << " ";
-  //     }
-  //     std::cout << std::endl;
-  //  }
-
-  return *this;
-}
-
 ComplexHermitianMatrix& ComplexHermitianMatrix::resize() { return clear(); }
 
 ComplexHermitianMatrix& ComplexHermitianMatrix::resize(int insize) {

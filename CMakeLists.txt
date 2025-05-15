@@ -182,15 +182,20 @@ if(BUILD_TESTING)
 
     message(STATUS "Test files found: ${TEST_SOURCES}")
 
+    # for cnpy
+    find_package(ZLIB REQUIRED)
+
     add_executable(KBfit_tests
             "${TEST_SOURCE_DIR}/run_tests.cc" # Main test runner
             ${TEST_SOURCES}                     # All test files
+           "${TEST_SOURCE_DIR}/cnpy.cc"
     )
 
     target_include_directories(KBfit_tests PRIVATE
             ${DOCTEST_INCLUDE_DIR}
             ${COMMON_INCLUDE_DIRS}
             ${SOURCE_DIR}
+            ${ZLIB_INCLUDE_DIRS}
             ${TEST_SOURCE_DIR}
     )
 
@@ -199,6 +204,7 @@ if(BUILD_TESTING)
             $<TARGET_OBJECTS:OptimizedSources> # Object files from the other part of your code
             OpenMP::OpenMP_CXX                # Link OpenMP if tests use it or tested code needs its symbols at link time
             LAPACK::LAPACK                    # Link LAPACK for dpotrf_, dsyev_, etc.
+            ${ZLIB_LIBRARIES}
             "${MINUIT2_LIBDIR}/${MINUIT2_LIB}" # Link Minuit2 for ROOT::Minuit2:: symbols
     )
 

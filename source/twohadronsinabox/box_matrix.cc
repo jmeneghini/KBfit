@@ -488,10 +488,10 @@ map<string, BoxMatrix::BlockSetupPtr> BoxMatrix::initializeBlockSetupPtrs() {
 
 //   Initialize the static map of function pointers.
 
-map<string, BoxMatrix::EvaluatorPtr>
-    BoxMatrix::evaluatorMap(BoxMatrix::initializeEvalPtrs());
-
-map<string, BoxMatrix::BlockSetupPtr>
-    BoxMatrix::blockSetupMap(BoxMatrix::initializeBlockSetupPtrs());
+// map<string, BoxMatrix::EvaluatorPtr>
+//     BoxMatrix::evaluatorMap(BoxMatrix::initializeEvalPtrs());
+//
+// map<string, BoxMatrix::BlockSetupPtr>
+//     BoxMatrix::blockSetupMap(BoxMatrix::initializeBlockSetupPtrs());
 
 // ***************************************************************************************

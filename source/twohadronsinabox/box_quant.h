@@ -438,6 +438,8 @@ public:
 
   void getStildeFromEcm(double Ecm_over_mref, CMatrix& Stilde);
 
+  // these 2 are not implemented
+
   void outputCTMatricesFromElab(double Elab_over_mref, std::ostream& fout);
 
   void outputCTMatricesFromEcm(double Ecm_over_mref, std::ostream& fout);
