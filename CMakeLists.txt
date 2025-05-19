@@ -211,6 +211,11 @@ if(BUILD_TESTING)
     set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD ${CMAKE_CXX_STANDARD})
     set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD_REQUIRED ${CMAKE_CXX_STANDARD_REQUIRED})
 
+    # Define project root path and pass it to the test executable
+    target_compile_definitions(KBfit_tests PRIVATE 
+        PROJECT_ROOT_DIR="${KBFIT_DIR}"
+    )
+
     # Add the test to CTest
     # run tests with 'ctest' command in the build directory
     add_test(NAME ProjectTests COMMAND KBfit_tests)

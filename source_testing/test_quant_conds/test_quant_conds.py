@@ -81,10 +81,7 @@ def main():
     
     # get the quantization conditions
     qc_evs, qc_evs_inv, qc_omegas = getQuantConds(Ktilde, B, Ktilde_inv, B_from_inv)
-    
-    # sort evs by real part
-    qc_evs = [sorted(evs, key=lambda x: np.real(x)) for evs in qc_evs]
-    qc_evs
+
     # write them to files
     np.save('qc_evs.npy', qc_evs)
     np.save('qc_evs_inv.npy', qc_evs_inv)

@@ -7,13 +7,12 @@
 
 using namespace TestHelper;
 
-
 TEST_SUITE("calcCayleyTransformMatrix Tests") {
 
     TEST_CASE("ComplexHermitianMatrix: 2x2") {
-        ComplexHermitianMatrix H_input(2); // Renamed from H_I for clarity
+        ComplexHermitianMatrix H_input(2);
         H_input.put(0, 0, std::complex<double>(0.147, 0.0));
-        H_input.put(0, 1, std::complex<double>(1.23, 2.85)); // Corrected: added closing parenthesis
+        H_input.put(0, 1, std::complex<double>(1.23, 2.85));
         H_input.put(1, 1, std::complex<double>(1.84, 0.0));
 
         CMatrix CT_result;
@@ -26,7 +25,7 @@ TEST_SUITE("calcCayleyTransformMatrix Tests") {
         // Expected result for Mform = true (d=1)
         CT_expected_Mform_true.put(0,0, std::complex<double>(-0.748231, -0.306778));
         CT_expected_Mform_true.put(0,1, std::complex<double>(-0.574324, 0.127239));
-        CT_expected_Mform_true.put(1,0, std::complex<double>(0.486552 , 0.330613)); // Note: Cayley transform of Hermitian is Unitary, not necessarily Hermitian
+        CT_expected_Mform_true.put(1,0, std::complex<double>(0.486552 , 0.330613));
         CT_expected_Mform_true.put(1,1, std::complex<double>(-0.808636 , 0.00832031));
 
         // Expected result for Mform = false (d=-1)

@@ -315,10 +315,14 @@ private:
   typedef void (*BlockSetupPtr)(
       uint lmax, std::vector<BoxMatrixQuantumNumbers>& quantnums);
 
-  static std::map<std::string, EvaluatorPtr> evaluatorMap;
   static std::map<std::string, EvaluatorPtr> initializeEvalPtrs();
-  static std::map<std::string, BlockSetupPtr> blockSetupMap;
   static std::map<std::string, BlockSetupPtr> initializeBlockSetupPtrs();
+
+  inline static std::map<std::string, EvaluatorPtr>
+        evaluatorMap = initializeEvalPtrs();
+  inline static std::map<std::string, BlockSetupPtr>
+        blockSetupMap = initializeBlockSetupPtrs();
+
 
   //  evaluator and quantum number setup subroutines
 

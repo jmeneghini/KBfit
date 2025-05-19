@@ -21,12 +21,12 @@
 
         <OmegaMu>0.5</OmegaMu>
 
-        <QuantizationCondition>StildeCB</QuantizationCondition>
+        <QuantizationCondition>StildeinvCB</QuantizationCondition>
 
-        <RootFinder><AdaptiveBracket></AdaptiveBracket></RootFinder>
+<!--        <RootFinder><AdaptiveBracket></AdaptiveBracket></RootFinder>-->
 
 
-        <KtildeMatrix>
+        <KtildeMatrixInverse>
           <Element>
             <KElementInfo>
               <JTimesTwo>0</JTimesTwo>
@@ -112,7 +112,7 @@
             </KFitParamInfo>
           </StartingValues>
 
-        </KtildeMatrix>
+        </KtildeMatrixInverse>
 
 <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
 
@@ -157,7 +157,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>2.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -170,7 +170,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -183,7 +183,7 @@
   </BoxQuantization>
     <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
     <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.01</LabFrameEnergyInc>
+    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <!--
