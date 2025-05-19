@@ -492,15 +492,13 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     BoxQuantization::QuantCondType qctype_enum;
     try {
       qctype_enum = bqptr_dummy->getQuantCondTypeFromString(qctype).value();
-      if (qctype_enum == BoxQuantization::StildeCB ||
-          qctype_enum == BoxQuantization::KtildeB) {
+      if (qctype_enum == BoxQuantization::KtildeB) {
         if (k2 == 1) {
           throw(std::invalid_argument(
               "KtildeMatrixInverse cannot be used with StildeCB or KtildeB"));
         }
       }
-      if (qctype_enum == BoxQuantization::StildeinvCB ||
-          qctype_enum == BoxQuantization::KtildeinvB) {
+      if (qctype_enum == BoxQuantization::KtildeinvB) {
         if (k1 == 1) {
           throw(std::invalid_argument(
               "KtildeMatrix cannot be used with StildeinvCB or KtildeinvB"));

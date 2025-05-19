@@ -23,10 +23,10 @@
 
         <QuantizationCondition>StildeinvCB</QuantizationCondition>
 
-<!--        <RootFinder><AdaptiveBracket></AdaptiveBracket></RootFinder>-->
+        <RootFinder><AdaptiveBracket></AdaptiveBracket></RootFinder>
 
 
-        <KtildeMatrixInverse>
+        <KtildeMatrix>
           <Element>
             <KElementInfo>
               <JTimesTwo>0</JTimesTwo>
@@ -112,7 +112,7 @@
             </KFitParamInfo>
           </StartingValues>
 
-        </KtildeMatrixInverse>
+        </KtildeMatrix>
 
 <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
 
