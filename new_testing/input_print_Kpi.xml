@@ -21,8 +21,7 @@
 
         <OmegaMu>0.5</OmegaMu>
 
-        <QuantizationCondition>StildeinvCB</QuantizationCondition>
-
+        <QuantizationCondition>StildeCB</QuantizationCondition>
         <RootFinder><AdaptiveBracket></AdaptiveBracket></RootFinder>
 
 
@@ -49,7 +48,19 @@
               <Polynomial>
                 <Powers>1 3</Powers>
               </Polynomial>
-            </FitForm> <!-- Breit Wigner for l=0 -->
+            </FitForm> <!-- Breit Wigner for l=1 -->
+          </Element>
+          <Element>
+            <KElementInfo>
+              <JTimesTwo>4</JTimesTwo>
+              <KIndex>L(2) 2S(0) chan(0)</KIndex>
+              <KIndex>L(2) 2S(0) chan(0)</KIndex>
+            </KElementInfo>
+            <FitForm>
+              <Polynomial>
+                <Powers>0</Powers>
+              </Polynomial>
+            </FitForm>
           </Element>
 
           <DecayChannels>
@@ -110,6 +121,18 @@
               </PolynomialTerm>
               <StartingValue>-0.53</StartingValue>
             </KFitParamInfo>
+
+            <KFitParamInfo>
+              <PolynomialTerm>
+                <Power>0</Power>
+                <KElementInfo>
+                  <JTimesTwo>4</JTimesTwo>
+                  <KIndex>L(2) 2S(0) chan(0)</KIndex>
+                  <KIndex>L(2) 2S(0) chan(0)</KIndex>
+                </KElementInfo>
+              </PolynomialTerm>
+              <StartingValue>-2.1</StartingValue>
+            </KFitParamInfo>
           </StartingValues>
 
         </KtildeMatrix>
@@ -133,20 +156,20 @@
     <MCObs>kaon_mpi 0</MCObs>
   </ParticleMass>
 </MCEnsembleParameters>
-<!--
+
 <KBBlock>
   <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
   <BoxQuantization>
     <TotalMomentumRay>ar</TotalMomentumRay>
     <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
     <LGIrrep>A1g</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>0</LmaxValues>
   </BoxQuantization>
-    <LabFrameEnergyMin></LabFrameEnergyMin>
-    <LabFrameEnergyMax></LabFrameEnergyMax>
-    <LabFrameEnergyInc></LabFrameEnergyInc>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
--->
+
 <KBBlock>
   <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
   <BoxQuantization>
@@ -155,9 +178,9 @@
     <LGIrrep>T1u</LGIrrep>
     <LmaxValues>1</LmaxValues>
   </BoxQuantization>
-    <LabFrameEnergyMin>2.2</LabFrameEnergyMin>
-    <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -181,20 +204,23 @@
     <LGIrrep>E</LGIrrep>
     <LmaxValues>1</LmaxValues>
   </BoxQuantization>
-    <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-    <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-    <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
-<!--
+
 <KBBlock>
   <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
   <BoxQuantization>
     <TotalMomentumRay>pd</TotalMomentumRay>
     <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
     <LGIrrep>A1</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>2</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -203,8 +229,11 @@
     <TotalMomentumRay>pd</TotalMomentumRay>
     <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
     <LGIrrep>B1</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>2</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -213,8 +242,11 @@
     <TotalMomentumRay>pd</TotalMomentumRay>
     <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
     <LGIrrep>B2</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>2</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -225,6 +257,9 @@
     <LGIrrep>A1</LGIrrep>
     <LmaxValues>1</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -233,8 +268,11 @@
     <TotalMomentumRay>cd</TotalMomentumRay>
     <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
     <LGIrrep>E</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>2</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
 <KBBlock>
@@ -243,10 +281,14 @@
     <TotalMomentumRay>oa</TotalMomentumRay>
     <TotalMomentumIntSquared>4</TotalMomentumIntSquared>
     <LGIrrep>A1</LGIrrep>
-    <LmaxValues>1</LmaxValues>
+    <LmaxValues>2</LmaxValues>
   </BoxQuantization>
+  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
+  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
+  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
--->
+
+
 <KBObservables>
   <MCSamplingInfo>
     <Bootstrapper>
