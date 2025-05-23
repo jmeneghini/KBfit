@@ -1,168 +1,191 @@
 <Debug>
 <BoxQuantization>
-    <TotalMomentumRay>oa</TotalMomentumRay>
-    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
-    <LGIrrep>A1</LGIrrep>
-    <LmaxValues>5 5</LmaxValues>
+    <TotalMomentumRay>ar</TotalMomentumRay>
+    <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
+    <LGIrrep>A1g</LGIrrep>
+    <LmaxValues>0</LmaxValues>
 </BoxQuantization>
 
-<KtildeMatrixInverse>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>0</JTimesTwo>
-            <KIndex>L(0) 2S(0) chan(0)</KIndex>
-            <KIndex>L(0) 2S(0) chan(1)</KIndex> // off diagonal term
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>0</JTimesTwo>
-            <KIndex>L(0) 2S(0) chan(0)</KIndex>
-            <KIndex>L(0) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>2</JTimesTwo>
-            <KIndex>L(1) 2S(0) chan(0)</KIndex>
-            <KIndex>L(1) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Powers>1 3</Powers></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>4</JTimesTwo>
-            <KIndex>L(2) 2S(0) chan(0)</KIndex>
-            <KIndex>L(2) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>6</JTimesTwo>
-            <KIndex>L(3) 2S(0) chan(0)</KIndex>
-            <KIndex>L(3) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>1 </Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>8</JTimesTwo>
-            <KIndex>L(4) 2S(0) chan(0)</KIndex>
-            <KIndex>L(4) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>10</JTimesTwo>
-            <KIndex>L(5) 2S(0) chan(0)</KIndex>
-            <KIndex>L(5) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>
-    </Element>
+    <KtildeMatrixInverse>
+        <Element>
+            <KElementInfo>
+                <JTimesTwo>0</JTimesTwo>
+                <KIndex>L(0) 2S(0) chan(0)</KIndex>
+                <KIndex>L(0) 2S(0) chan(0)</KIndex>
+            </KElementInfo>
+            <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>
+        </Element>
 
-    <DecayChannels>
+        <DecayChannels>
 
-        <DecayChannelInfo>
-            <Particle1Name>kaon</Particle1Name>
-            <Spin1TimesTwo>0</Spin1TimesTwo>
-            <Particle2Name>pion</Particle2Name>
-            <Spin2TimesTwo>0</Spin2TimesTwo>
-            <IntrinsicParities>same</IntrinsicParities>
-        </DecayChannelInfo>
+                <DecayChannelInfo>
+                    <Particle1Name>lamba</Particle1Name>
+                    <Spin1TimesTwo>1</Spin1TimesTwo>
+                    <Particle2Name>lambda</Particle2Name>
+                    <Spin2TimesTwo>1</Spin2TimesTwo>
+                    <IntrinsicParities>same</IntrinsicParities>
+                </DecayChannelInfo>
 
-        <DecayChannelInfo>
-            <Particle1Name>kaon</Particle1Name>
-            <Spin1TimesTwo>0</Spin1TimesTwo>
-            <Particle2Name>eta</Particle2Name>
-            <Spin2TimesTwo>0</Spin2TimesTwo>
-            <IntrinsicParities>same</IntrinsicParities>
-        </DecayChannelInfo>
+        </DecayChannels>
+    </KtildeMatrixInverse>
 
-    </DecayChannels>
-</KtildeMatrixInverse>
-
-<KtildeMatrix>
-
+<!--<KtildeMatrixInverse>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>0</JTimesTwo>-->
+<!--            <KIndex>L(0) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(0) 2S(0) chan(1)</KIndex> // off diagonal term-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>0</JTimesTwo>-->
+<!--            <KIndex>L(0) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(0) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
 <!--    <Element>-->
 <!--        <KElementInfo>-->
 <!--            <JTimesTwo>2</JTimesTwo>-->
 <!--            <KIndex>L(1) 2S(0) chan(0)</KIndex>-->
-<!--            <KIndex>L(1) 2S(0) chan(1)</KIndex> // off diagonal term-->
+<!--            <KIndex>L(1) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Powers>1 3</Powers></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>4</JTimesTwo>-->
+<!--            <KIndex>L(2) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(2) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>6</JTimesTwo>-->
+<!--            <KIndex>L(3) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(3) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>1 </Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>8</JTimesTwo>-->
+<!--            <KIndex>L(4) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(4) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>10</JTimesTwo>-->
+<!--            <KIndex>L(5) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(5) 2S(0) chan(0)</KIndex>-->
 <!--        </KElementInfo>-->
 <!--        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>-->
 <!--    </Element>-->
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>0</JTimesTwo>
-            <KIndex>L(0) 2S(0) chan(0)</KIndex>
-            <KIndex>L(0) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>1</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>2</JTimesTwo>
-            <KIndex>L(1) 2S(0) chan(0)</KIndex>
-            <KIndex>L(1) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><SumOfPoles><NumberOfPoles>1</NumberOfPoles></SumOfPoles></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>4</JTimesTwo>
-            <KIndex>L(2) 2S(0) chan(0)</KIndex>
-            <KIndex>L(2) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>6</JTimesTwo>
-            <KIndex>L(3) 2S(0) chan(0)</KIndex>
-            <KIndex>L(3) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><SumOfPoles><NumberOfPoles>1</NumberOfPoles></SumOfPoles></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>8</JTimesTwo>
-            <KIndex>L(4) 2S(0) chan(0)</KIndex>
-            <KIndex>L(4) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>
-    </Element>
-    <Element>
-        <KElementInfo>
-            <JTimesTwo>10</JTimesTwo>
-            <KIndex>L(5) 2S(0) chan(0)</KIndex>
-            <KIndex>L(5) 2S(0) chan(0)</KIndex>
-        </KElementInfo>
-        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>
-    </Element>
 
-    <DecayChannels>
+<!--    <DecayChannels>-->
 
-        <DecayChannelInfo>
-            <Particle1Name>kaon</Particle1Name>
-            <Spin1TimesTwo>0</Spin1TimesTwo>
-            <Particle2Name>pion</Particle2Name>
-            <Spin2TimesTwo>0</Spin2TimesTwo>
-            <IntrinsicParities>same</IntrinsicParities>
-        </DecayChannelInfo>
+<!--        <DecayChannelInfo>-->
+<!--            <Particle1Name>kaon</Particle1Name>-->
+<!--            <Spin1TimesTwo>0</Spin1TimesTwo>-->
+<!--            <Particle2Name>pion</Particle2Name>-->
+<!--            <Spin2TimesTwo>0</Spin2TimesTwo>-->
+<!--            <IntrinsicParities>same</IntrinsicParities>-->
+<!--        </DecayChannelInfo>-->
 
-        <DecayChannelInfo>
-            <Particle1Name>kaon</Particle1Name>
-            <Spin1TimesTwo>0</Spin1TimesTwo>
-            <Particle2Name>eta</Particle2Name>
-            <Spin2TimesTwo>0</Spin2TimesTwo>
-            <IntrinsicParities>same</IntrinsicParities>
-        </DecayChannelInfo>
+<!--        <DecayChannelInfo>-->
+<!--            <Particle1Name>kaon</Particle1Name>-->
+<!--            <Spin1TimesTwo>0</Spin1TimesTwo>-->
+<!--            <Particle2Name>eta</Particle2Name>-->
+<!--            <Spin2TimesTwo>0</Spin2TimesTwo>-->
+<!--            <IntrinsicParities>same</IntrinsicParities>-->
+<!--        </DecayChannelInfo>-->
 
-    </DecayChannels>
-</KtildeMatrix>
+<!--    </DecayChannels>-->
+<!--</KtildeMatrixInverse>-->
+
+<!--<KtildeMatrix>-->
+
+<!--&lt;!&ndash;    <Element>&ndash;&gt;-->
+<!--&lt;!&ndash;        <KElementInfo>&ndash;&gt;-->
+<!--&lt;!&ndash;            <JTimesTwo>2</JTimesTwo>&ndash;&gt;-->
+<!--&lt;!&ndash;            <KIndex>L(1) 2S(0) chan(0)</KIndex>&ndash;&gt;-->
+<!--&lt;!&ndash;            <KIndex>L(1) 2S(0) chan(1)</KIndex> // off diagonal term&ndash;&gt;-->
+<!--&lt;!&ndash;        </KElementInfo>&ndash;&gt;-->
+<!--&lt;!&ndash;        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>&ndash;&gt;-->
+<!--&lt;!&ndash;    </Element>&ndash;&gt;-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>0</JTimesTwo>-->
+<!--            <KIndex>L(0) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(0) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>1</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>2</JTimesTwo>-->
+<!--            <KIndex>L(1) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(1) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><SumOfPoles><NumberOfPoles>1</NumberOfPoles></SumOfPoles></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>4</JTimesTwo>-->
+<!--            <KIndex>L(2) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(2) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>6</JTimesTwo>-->
+<!--            <KIndex>L(3) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(3) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><SumOfPoles><NumberOfPoles>1</NumberOfPoles></SumOfPoles></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>8</JTimesTwo>-->
+<!--            <KIndex>L(4) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(4) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>2</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+<!--    <Element>-->
+<!--        <KElementInfo>-->
+<!--            <JTimesTwo>10</JTimesTwo>-->
+<!--            <KIndex>L(5) 2S(0) chan(0)</KIndex>-->
+<!--            <KIndex>L(5) 2S(0) chan(0)</KIndex>-->
+<!--        </KElementInfo>-->
+<!--        <FitForm><Polynomial><Degree>0</Degree></Polynomial></FitForm>-->
+<!--    </Element>-->
+
+<!--    <DecayChannels>-->
+
+<!--        <DecayChannelInfo>-->
+<!--            <Particle1Name>kaon</Particle1Name>-->
+<!--            <Spin1TimesTwo>0</Spin1TimesTwo>-->
+<!--            <Particle2Name>pion</Particle2Name>-->
+<!--            <Spin2TimesTwo>0</Spin2TimesTwo>-->
+<!--            <IntrinsicParities>same</IntrinsicParities>-->
+<!--        </DecayChannelInfo>-->
+
+<!--        <DecayChannelInfo>-->
+<!--            <Particle1Name>kaon</Particle1Name>-->
+<!--            <Spin1TimesTwo>0</Spin1TimesTwo>-->
+<!--            <Particle2Name>eta</Particle2Name>-->
+<!--            <Spin2TimesTwo>0</Spin2TimesTwo>-->
+<!--            <IntrinsicParities>same</IntrinsicParities>-->
+<!--        </DecayChannelInfo>-->
+
+<!--    </DecayChannels>-->
+<!--</KtildeMatrix>-->
 
 </Debug>
