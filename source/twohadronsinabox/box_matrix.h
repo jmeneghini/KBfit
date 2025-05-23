@@ -287,6 +287,8 @@ public:
 
   double getQcmsqOverMrefsqFromElab(double Elab_over_mref) const;
 
+  double getQcmsqOverMrefsqFromEcm(double Ecm_over_mref) const;
+
   const EcmTransform& getEcmTransform() const { return m_cmt; }
 
   void setElementsFromElab(double Elab_over_mref);

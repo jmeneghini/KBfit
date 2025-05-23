@@ -583,6 +583,18 @@ void BoxQuantization::getQcmsqOverMrefsqFromElab(
   }
 }
 
+void BoxQuantization::getQcmsqOverMrefsqFromEcm(
+    double Ecm_over_mref, RVector& qcmsq_over_mrefsq) const {
+  uint nchan = getNumberOfDecayChannels();
+  qcmsq_over_mrefsq.resize(nchan);
+  for (std::list<std::pair<BoxMatrix*, uint>>::const_iterator it =
+           m_boxes.begin();
+       it != m_boxes.end(); ++it) {
+    qcmsq_over_mrefsq[it->second] =
+        it->first->getQcmsqOverMrefsqFromEcm(Ecm_over_mref);
+  }
+}
+
 void BoxQuantization::getBoxMatrixFromElab(double Elab_over_mref,
                                            ComplexHermitianMatrix& B) {
   CMatrix dummy;

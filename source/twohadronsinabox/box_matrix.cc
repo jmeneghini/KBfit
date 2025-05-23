@@ -165,6 +165,10 @@ double BoxMatrix::getQcmsqOverMrefsqFromElab(double Elab_over_mref) const {
   return m_cmt.getQcmsqOverMrefsq(Elab_over_mref);
 }
 
+double BoxMatrix::getQcmsqOverMrefsqFromEcm(double Ecm_over_mref) const {
+  return m_cmt.getQcmsqOverMrefsqFromEcm(Ecm_over_mref);
+}
+
 cmplx BoxMatrix::getElement(const BoxMatrixQuantumNumbers& bqn) const {
   std::map<BoxMatrixQuantumNumbers, uint>::const_iterator it =
       m_indexmap.find(bqn);

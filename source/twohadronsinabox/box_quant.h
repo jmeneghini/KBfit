@@ -400,6 +400,9 @@ public:
   void getQcmsqOverMrefsqFromElab(double Elab_over_mref,
                                   RVector& qcmsq_over_mrefsq) const;
 
+  void getQcmsqOverMrefsqFromEcm(double Ecm_over_mref,
+                                  RVector& qcmsq_over_mrefsq) const;
+
   void getBoxMatrixFromElab(double Elab_over_mref, ComplexHermitianMatrix& B);
 
   void getBoxMatrixFromEcm(double Ecm_over_mref, ComplexHermitianMatrix& B);
