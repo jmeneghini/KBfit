@@ -1,9 +1,9 @@
 #include "chisq_detres.h"
 #include "chisq_fit.h"
-#include "task_handler.h"
 #include "root_finder.h"
-#include <iomanip>
+#include "task_handler.h"
 #include <filesystem>
+#include <iomanip>
 
 using namespace std;
 
@@ -371,15 +371,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     // Get root finding info
     int root_counts = xmltask.count_among_children("RootFinder");
     if (root_counts > 1)
-      throw(std::invalid_argument(
-              "Multiple RootFinder tags cannot be present"));
+      throw(
+          std::invalid_argument("Multiple RootFinder tags cannot be present"));
     bool do_root_find = root_counts;
     AdaptiveBracketConfig root_config;
     if (do_root_find) {
       XMLHandler xmlroot(xmltask, "RootFinder");
       root_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
     }
-
 
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
@@ -685,9 +684,9 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       // Non interacting energies first for resolution of elabsvals
 
       string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
-                " # P^2 = " +
-                std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
-                " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
+                      " # P^2 = " +
+                      std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
+                      " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
 
       ofstream fout_nis(nis_filename);
 
@@ -716,7 +715,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         double e1 = *std::next(ni_energies.begin(), i);
         double e2 = *std::next(ni_energies.begin(), i + 1);
         double einc = einc_percent * (e2 - e1); // relative to NI interval
-        while (elab <= e2+1e-9) {
+        while (elab <= e2 + 1e-9) {
           elabvals.push_back(elab);
           elab += einc;
         }
@@ -791,8 +790,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         for (int i = 0; i < fn_calls.size(); ++i) {
           logger << "Interval " << i << ": " << fn_calls[i] << endl;
         }
-
-
       }
       // } else if (m_obs->isJackknifeMode()) {
       //   MCEstimate mcest;

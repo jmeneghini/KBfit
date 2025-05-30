@@ -13,16 +13,16 @@
   Parameters for adaptive bracket + Newton‑secant polish
 ----------------------------------------------------------------*/
 struct AdaptiveBracketConfig {
-  double initial_step_percent     = 1e-2;
-  double x_tol                    = 1e-8;
-  double zero_tol                 = 1e-6;
+  double initial_step_percent = 1e-2;
+  double x_tol = 1e-8;
+  double zero_tol = 1e-6;
 
-  double min_step_percent         = 1e-3;
-  double max_step_percent         = 1e-2;
-  double step_scale_limit         = 3.0;   // |h_new / h_old| <= this
+  double min_step_percent = 1e-3;
+  double max_step_percent = 1e-2;
+  double step_scale_limit = 3.0; // |h_new / h_old| <= this
 
-  double plateau_mod2_threshold   = 0.75;  // “flat” if |Z|² above this
-  int    plateau_count_before_jump= 3;     // consecutive flats before ×2
+  double plateau_mod2_threshold = 0.75; // “flat” if |Z|² above this
+  int plateau_count_before_jump = 3;    // consecutive flats before ×2
 };
 
 /*---------------------------------------------------------------
@@ -31,8 +31,7 @@ struct AdaptiveBracketConfig {
 class RootFinder {
 public:
   virtual ~RootFinder() = default;
-  virtual bool findRoots(double a, double b,
-                         std::vector<double>& roots) = 0;
+  virtual bool findRoots(double a, double b, std::vector<double>& roots) = 0;
 };
 
 /*---------------------------------------------------------------
@@ -52,29 +51,26 @@ public:
       : AdaptiveBracketRootFinder(makeConfigFromXML(xmlin), evalZ) {}
 
   /*---- API --------------------------------------------------------------*/
-  bool findRoots(double a, double b,
-                 std::vector<double>& roots) override;
+  bool findRoots(double a, double b, std::vector<double>& roots) override;
 
   std::size_t evalCount() const { return eval_count_; }
 
 private:
   /*---- cached Ω evaluation ---------------------------------------------*/
   struct Zval {
-    std::complex<double> value;   // Ω(x)
-    double               mod2;    // |Ω|²
+    std::complex<double> value; // Ω(x)
+    double mod2;                // |Ω|²
   };
 
   /* bit‑wise hashing so identical IEEE‑754 bits share one cache entry */
   struct KeyHash {
     std::size_t operator()(double x) const noexcept {
-      return std::hash<std::uint64_t>{}(
-               std::bit_cast<std::uint64_t>(x));
+      return std::hash<std::uint64_t>{}(std::bit_cast<std::uint64_t>(x));
     }
   };
   struct KeyEq {
     bool operator()(double a, double b) const noexcept {
-      return std::bit_cast<std::uint64_t>(a) ==
-             std::bit_cast<std::uint64_t>(b);
+      return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
     }
   };
 
@@ -93,8 +89,8 @@ private:
 
   /*---- data ------------------------------------------------------------*/
   const AdaptiveBracketConfig params_;
-  const EvalFn                evaluate_;
-  mutable std::size_t         eval_count_ = 0;
+  const EvalFn evaluate_;
+  mutable std::size_t eval_count_ = 0;
 };
 
 #endif /* ROOT_FINDER_H */

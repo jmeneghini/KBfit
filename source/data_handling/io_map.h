@@ -67,24 +67,28 @@
 // *          (a default constructor is not needed) *
 // *    (4) a multi_read(ioh, vector<K>&,n) must be defined to read n keys *
 // *    (5) a multi_write(ioh, const vector<K>&) must be defined *
-// *    (6) a K.serialize() function member which returns a string to represent *
+// *    (6) a K.serialize() function member which returns a string to represent
+// *
 // *         the data, and a constructor K(string) which can assign the *
 // *         data from the string created by "serialize" *
 // * *
-// *  The keys are used in a C++ map so keeping the keys small makes for a more *
+// *  The keys are used in a C++ map so keeping the keys small makes for a more
+// *
 // *  efficient search.  For the original fstreams format, the number of bytes *
 // *  must be the same for all key values.  For the HDF5 format, the keys *
 // *  are expressed as serialized strings. *
 // * *
 // *  The value type must have the following features: *
 // * *
-// *   (1) a write(ioh, const V&) must be defined (ioh is an IOFSTRHandler object) *
+// *   (1) a write(ioh, const V&) must be defined (ioh is an IOFSTRHandler
+// object) *
 // *   (2) a read(ioh, V&) must be defined *
 // *   (3) a numbytes(ioh,V) must be defined giving number of bytes occupied *
 // *           by V in an IOFSTRHandler file *
 // * *
 // *  The size of the value type does not need to be the same for all values. *
-// *  All of the basic data types, multi1d<T>, multi2d<T>, multi3d<T>, vector<T>, *
+// *  All of the basic data types, multi1d<T>, multi2d<T>, multi3d<T>,
+// vector<T>, *
 // *  Array<T> objects already have the above functions defined. *
 // * *
 // *  IOMap files can be opened using one of three open routines: *
@@ -94,31 +98,42 @@
 // *     (3) openUpdate -- updates existing file or creates new *
 // * *
 // *  An ID string is used to identify an IOMap file. You should *
-// *  choose a string that is based on the key and value types.  During an open *
-// *  of an existing file, an exact match of the ID string is needed or the open *
+// *  choose a string that is based on the key and value types.  During an open
+// *
+// *  of an existing file, an exact match of the ID string is needed or the open
+// *
 // *  fails.  For the original fstreams format, the ID string must be *
 // *  32-characters.  This does not apply for the HDF5 format. *
 // * *
-// *  During an open of a new file, a header string is written.  This can be of *
+// *  During an open of a new file, a header string is written.  This can be of
+// *
 // *  any length.  During an open of an existing file, the header string is *
-// *  read and returned (there is one read-only open routine that does not read *
+// *  read and returned (there is one read-only open routine that does not read
+// *
 // *  the header string). *
 // * *
-// *  During an open of a new file, you can request little endian ('L') format, *
+// *  During an open of a new file, you can request little endian ('L') format,
+// *
 // *  big endian ('B') format, or native ('N') format.  You can use check sums *
 // *  or not.  If check sums are included in a file, they will continue to be *
-// *  included in any future insertions, even if not used.  During reading, you *
+// *  included in any future insertions, even if not used.  During reading, you
+// *
 // *  can ignore checksums even if they are included in the file. *
 // * *
-// *  Inserting new data adds the data to the file.  If you attempt to add data *
+// *  Inserting new data adds the data to the file.  If you attempt to add data
+// *
 // *  whose key already exists in the file, the data in the file will be *
 // *  overwritten if overwrites are allowed and if, for the original fstreams *
-// *  format, the size of the new data cannot larger than the size of the data in *
-// *  the file (this restriction does not apply to the HDF5 format). To simplify *
-// *  matters, no erase member is available.  If you really need to erase records, *
+// *  format, the size of the new data cannot larger than the size of the data
+// in *
+// *  the file (this restriction does not apply to the HDF5 format). To simplify
+// *
+// *  matters, no erase member is available.  If you really need to erase
+// records, *
 // *  read a file and copy the records you wish to keep to a new file. *
 // * *
-// *  All errors that occur during a "get" or a "put" throw a string (so you can *
+// *  All errors that occur during a "get" or a "put" throw a string (so you can
+// *
 // *  output more meaning information). All other errors are fatal and cause *
 // *  an abort. *
 // * *
@@ -277,132 +292,135 @@ inline size_t numbytes(IOFSTRHandler& ioh, const UIntKey& uikey) {
 // *                                                      *
 // ********************************************************
 
-template <typename K, typename V>
-class IOMap {
+template <typename K, typename V> class IOMap {
 
-  char m_file_format;    // 'F' fstreams (default), 'H' hdf5
-  IOMapBase<K,V> *m_iomap_ptr;
+  char m_file_format; // 'F' fstreams (default), 'H' hdf5
+  IOMapBase<K, V>* m_iomap_ptr;
 
   // Determine format of file if it exists; if does not exist, set it
   // to "format_if_not_exist".  If "format_if_not_exist" is 'U' for unknown,
   // abort if file does not exist
 
-  void get_file_format(const std::string& filename, char use_format_if_not_exist) {
+  void get_file_format(const std::string& filename,
+                       char use_format_if_not_exist) {
     delete m_iomap_ptr;
     std::string ID;
     std::string fname(filename);
-    size_t pos=filename.find("[");
-    if (pos!=std::string::npos){
-       fname=filename.substr(0,pos);}
+    size_t pos = filename.find("[");
+    if (pos != std::string::npos) {
+      fname = filename.substr(0, pos);
+    }
     IOFSTRHandler iohA;
 #ifdef HDF5
     IOHDF5Handler iohB;
 #endif
-    char format_if_not_exist=use_format_if_not_exist;
+    char format_if_not_exist = use_format_if_not_exist;
 #ifdef DEFAULT_FSTREAM
-    if (use_format_if_not_exist=='D') format_if_not_exist='F';
+    if (use_format_if_not_exist == 'D')
+      format_if_not_exist = 'F';
 #else
-    if (use_format_if_not_exist=='D') format_if_not_exist='H';
+    if (use_format_if_not_exist == 'D')
+      format_if_not_exist = 'H';
 #endif
-    if (iohA.peekID(ID,fname)){
-       m_file_format='F';  // fstreams format
-       m_iomap_ptr=new IOFSTRMap<K,V>;}
+    if (iohA.peekID(ID, fname)) {
+      m_file_format = 'F'; // fstreams format
+      m_iomap_ptr = new IOFSTRMap<K, V>;
+    }
 #ifdef HDF5
-    else if (iohB.peekID(ID,fname)){
-       m_file_format='H';  // HDF5 format
-       m_iomap_ptr=new IOHDF5Map<K,V>;}
+    else if (iohB.peekID(ID, fname)) {
+      m_file_format = 'H'; // HDF5 format
+      m_iomap_ptr = new IOHDF5Map<K, V>;
+    }
 #endif
-    else if (format_if_not_exist=='F'){
-       m_file_format='F';  // fstreams format
-       m_iomap_ptr=new IOFSTRMap<K,V>;}
+    else if (format_if_not_exist == 'F') {
+      m_file_format = 'F'; // fstreams format
+      m_iomap_ptr = new IOFSTRMap<K, V>;
+    }
 #ifdef HDF5
-    else if (format_if_not_exist=='H'){
-       m_file_format='H';  // HDF5 format
-       m_iomap_ptr=new IOHDF5Map<K,V>;}
+    else if (format_if_not_exist == 'H') {
+      m_file_format = 'H'; // HDF5 format
+      m_iomap_ptr = new IOHDF5Map<K, V>;
+    }
 #endif
-    else{
-       std::cout << "IOMap cannot determine file format of "<<filename<<std::endl;
-       exit(1);}
+    else {
+      std::cout << "IOMap cannot determine file format of " << filename
+                << std::endl;
+      exit(1);
+    }
   }
-
 
   void reset_file_format(const std::string& filename, char use_file_format) {
     delete m_iomap_ptr;
-    char file_format=use_file_format;
+    char file_format = use_file_format;
 #ifdef DEFAULT_FSTREAM
-    if (use_file_format=='D') file_format='F';
+    if (use_file_format == 'D')
+      file_format = 'F';
 #else
-    if (use_file_format=='D') file_format='H';
+    if (use_file_format == 'D')
+      file_format = 'H'; // Default to HDF5
 #endif
-    if (file_format=='F'){
-       m_file_format='F';  // fstreams format
-       m_iomap_ptr=new IOFSTRMap<K,V>;}
+    if (file_format == 'F') {
+      m_file_format = 'F'; // fstreams format
+      m_iomap_ptr = new IOFSTRMap<K, V>;
+    }
 #ifdef HDF5
-    else if (file_format=='H'){
-       m_file_format='H';  // HDF5 format
-       m_iomap_ptr=new IOHDF5Map<K,V>;}
+    else if (file_format == 'H') {
+      m_file_format = 'H'; // HDF5 format
+      m_iomap_ptr = new IOHDF5Map<K, V>;
+    }
 #endif
-    else{
-       std::cout << "Invalid file format requested in IOMap for file "<<filename<<std::endl;
-       exit(1);}
+    else {
+      std::cout << "Invalid file format requested in IOMap for file "
+                << filename << std::endl;
+      exit(1);
+    }
   }
 
 public:
-
 #ifdef HDF5
 #ifdef DEFAULT_FSTREAM
-  IOMap() :  m_file_format('F'), m_iomap_ptr(new IOFSTRMap<K,V>) {}
+  IOMap() : m_file_format('F'), m_iomap_ptr(new IOFSTRMap<K, V>) {}
 #else
-  IOMap() :  m_file_format('H'), m_iomap_ptr(new IOHDF5Map<K,V>) {}
+  IOMap() : m_file_format('H'), m_iomap_ptr(new IOHDF5Map<K, V>) {}
 #endif
 #else
-  IOMap() :  m_file_format('F'), m_iomap_ptr(new IOFSTRMap<K,V>) {}
+  IOMap() : m_file_format('F'), m_iomap_ptr(new IOFSTRMap<K, V>) {}
 #endif
 
-  IOMap(char file_format) :  m_file_format('F'), m_iomap_ptr(0)
-  {
-    reset_file_format("",file_format);
+  IOMap(char file_format) : m_file_format('F'), m_iomap_ptr(0) {
+    reset_file_format("", file_format);
   }
 
   ~IOMap() { delete m_iomap_ptr; }
 
-
   // read only open, returns header string
 
-  void openReadOnly(const std::string& filename, 
-                    const std::string& filetype_id,
-                    std::string& header, bool turn_on_checksum=false,
-                    char file_format='D')
-  {
-    get_file_format(filename,file_format);
-    m_iomap_ptr->openReadOnly(filename,filetype_id,header,turn_on_checksum);
+  void openReadOnly(const std::string& filename, const std::string& filetype_id,
+                    std::string& header, bool turn_on_checksum = false,
+                    char file_format = 'D') {
+    get_file_format(filename, file_format);
+    m_iomap_ptr->openReadOnly(filename, filetype_id, header, turn_on_checksum);
   }
 
   // read only open, ignores header string
 
-  void openReadOnly(const std::string& filename, 
-                    const std::string& filetype_id,
-                    bool turn_on_checksum=false,
-                    char file_format='D')
-  {
-    get_file_format(filename,file_format);
-    m_iomap_ptr->openReadOnly(filename,filetype_id,turn_on_checksum);
+  void openReadOnly(const std::string& filename, const std::string& filetype_id,
+                    bool turn_on_checksum = false, char file_format = 'D') {
+    get_file_format(filename, file_format);
+    m_iomap_ptr->openReadOnly(filename, filetype_id, turn_on_checksum);
   }
 
   // open a new file in read/write mode, writes the header string (fails
   // if the file exists and "fail_if_exists" is true; if "fail_if_exists"
   // is false, deletes the existing file to start a new file)
 
-  void openNew(const std::string& filename, 
-               const std::string& filetype_id, 
-               const std::string& header,  
-               bool fail_if_exists=true, char endianness='N',
-               bool turn_on_checksum=false, bool overwrites_allowed=false,
-               char file_format='D')
-  {
-    reset_file_format(filename,file_format);
-    m_iomap_ptr->openNew(filename,filetype_id,header,fail_if_exists,endianness,
-                         turn_on_checksum,overwrites_allowed);
+  void openNew(const std::string& filename, const std::string& filetype_id,
+               const std::string& header, bool fail_if_exists = true,
+               char endianness = 'N', bool turn_on_checksum = false,
+               bool overwrites_allowed = false, char file_format = 'D') {
+    reset_file_format(filename, file_format);
+    m_iomap_ptr->openNew(filename, filetype_id, header, fail_if_exists,
+                         endianness, turn_on_checksum, overwrites_allowed);
   }
 
   // open a file in read/write mode; if file exists, the header
@@ -411,27 +429,18 @@ public:
   // case, the header string is needed as input so it can be written
   // into the new file)
 
-  void openUpdate(const std::string& filename, 
-                  const std::string& filetype_id, 
-                  std::string& header, 
-                  char endianness='N', bool turn_on_checksum=false, 
-                  bool overwrites_allowed=false,
-                  char file_format='D')
-  {
-    get_file_format(filename,file_format);
-    m_iomap_ptr->openUpdate(filename,filetype_id,header,endianness,
-                            turn_on_checksum,overwrites_allowed);
+  void openUpdate(const std::string& filename, const std::string& filetype_id,
+                  std::string& header, char endianness = 'N',
+                  bool turn_on_checksum = false,
+                  bool overwrites_allowed = false, char file_format = 'D') {
+    get_file_format(filename, file_format);
+    m_iomap_ptr->openUpdate(filename, filetype_id, header, endianness,
+                            turn_on_checksum, overwrites_allowed);
   }
 
+  void close() { m_iomap_ptr->close(); }
 
-  void close() 
-  {
-    m_iomap_ptr->close();
-  }
-
-
-
-  std::string getHeader()  // file must be open
+  std::string getHeader() // file must be open
   {
     return m_iomap_ptr->getHeader();
   }
@@ -440,151 +449,93 @@ public:
   // Returns false if file cannot be opened.
 
   bool peekHeader(std::string& header, const std::string& filename,
-                  const std::string& filetype_id)
-  {
-    return m_iomap_ptr->peekHeader(header,filename,filetype_id);
-  }
-  
-  std::string getFileName() const
-  {
-    return m_iomap_ptr->getFileName();
+                  const std::string& filetype_id) {
+    get_file_format(filename, 'D'); // Auto-detect file format first
+    return m_iomap_ptr->peekHeader(header, filename, filetype_id);
   }
 
-  bool isOpen() const
+  std::string getFileName() const { return m_iomap_ptr->getFileName(); }
+
+  bool isOpen() const { return m_iomap_ptr->isOpen(); }
+
+  bool isNewFile() const { return m_iomap_ptr->isNewFile(); }
+
+  bool isOverwriteOn() const { return m_iomap_ptr->isOverwriteOn(); }
+
+  bool areChecksumsInFile() const { return m_iomap_ptr->areChecksumsInFile(); }
+
+  bool isFileLittleEndian() const { return m_iomap_ptr->isFileLittleEndian(); }
+
+  bool isFileBigEndian() const { return m_iomap_ptr->isFileBigEndian(); }
+
+  void setHighVerbosity() { m_iomap_ptr->setHighVerbosity(); }
+
+  void setMediumVerbosity() { m_iomap_ptr->setMediumVerbosity(); }
+
+  void setNoVerbosity() { m_iomap_ptr->setNoVerbosity(); }
+
+  void setDisallowOverwrites() { m_iomap_ptr->setDisallowOverwrites(); }
+
+  void setAllowOverwrites() { m_iomap_ptr->setAllowOverwrites(); }
+
+  void put(const K& key, const V& val) { m_iomap_ptr->put(key, val); }
+
+  void get(const K& key, V& val) // throws exception or aborts if fails
   {
-    return m_iomap_ptr->isOpen();
+    m_iomap_ptr->get(key, val);
   }
 
-  bool isNewFile() const
+  bool get_maybe(const K& key, V& val) // returns false is fails, true otherwise
   {
-    return m_iomap_ptr->isNewFile();
+    return m_iomap_ptr->get_maybe(key, val);
   }
 
-  bool isOverwriteOn() const
-  {
-    return m_iomap_ptr->isOverwriteOn();
-  }
+  bool exist(const K& key) const { return m_iomap_ptr->exist(key); }
 
-
-  bool areChecksumsInFile() const
-  {
-    return m_iomap_ptr->areChecksumsInFile();
-  }
-    
-  bool isFileLittleEndian() const
-  {
-    return m_iomap_ptr->isFileLittleEndian();
-  }
- 
-  bool isFileBigEndian() const
-  {
-    return m_iomap_ptr->isFileBigEndian();
-  }
-
-
-
-  void setHighVerbosity()
-  {
-    m_iomap_ptr->setHighVerbosity();
-  }
-
-  void setMediumVerbosity()
-  {
-    m_iomap_ptr->setMediumVerbosity();
-  }
- 
-  void setNoVerbosity()
-  {
-    m_iomap_ptr->setNoVerbosity();
-  }
-
-  void setDisallowOverwrites()
-  {
-    m_iomap_ptr->setDisallowOverwrites();
-  }
-
-  void setAllowOverwrites()
-  {
-    m_iomap_ptr->setAllowOverwrites();
-  }
-
-
-
-  void put(const K& key, const V& val)
-  {
-    m_iomap_ptr->put(key,val);
-  }
-  
-  void get(const K& key, V& val)  // throws exception or aborts if fails
-  {
-    m_iomap_ptr->get(key,val);
-  }
-
-  bool get_maybe(const K& key, V& val)  // returns false is fails, true otherwise
-  {
-    return m_iomap_ptr->get_maybe(key,val);
-  }
-
-  bool exist(const K& key) const
-  {
-    return m_iomap_ptr->exist(key);
-  }
-  
-  void flush()  // puts file in finalized state so no data loss if abort occurs
+  void flush() // puts file in finalized state so no data loss if abort occurs
   {
     m_iomap_ptr->flush();
   }
-   
 
+  unsigned int size() const { return m_iomap_ptr->size(); }
 
-  unsigned int size() const
-  {
-    return m_iomap_ptr->size();
-  }
+  void getKeys(std::vector<K>& keys) const { m_iomap_ptr->getKeys(keys); }
 
-  void getKeys(std::vector<K>& keys) const
-  {
-    m_iomap_ptr->getKeys(keys);
-  }
+  void getKeys(std::set<K>& keys) const { m_iomap_ptr->getKeys(keys); }
 
-  void getKeys(std::set<K>& keys) const
-  {
-    m_iomap_ptr->getKeys(keys);
-  }
-
-  bool keepKeys(const std::set<K>& keys_to_keep)   // keep only those keys in "keys_to_keep"
-                          // return true if all keys in "keys_to_keep" are available,
-                          // false otherwise
+  bool keepKeys(const std::set<K>&
+                    keys_to_keep) // keep only those keys in "keys_to_keep"
+                                  // return true if all keys in "keys_to_keep"
+                                  // are available, false otherwise
   {
     return m_iomap_ptr->keepKeys(keys_to_keep);
   }
 
+  // Use the "operator=" to copy from another IOMap object, but do it such
+  // that the file format is as specified in the constructor.
 
-     // Use the "operator=" to copy from another IOMap object, but do it such
-     // that the file format is as specified in the constructor.
-
-  IOMap<K,V>& operator=(const IOMap<K,V>& copymap)
-  {
-    if (&copymap == this) return *this;
+  IOMap<K, V>& operator=(const IOMap<K, V>& copymap) {
+    if (&copymap == this)
+      return *this;
     delete m_iomap_ptr;
-    if (m_file_format=='F'){
-       m_iomap_ptr=new IOFSTRMap<K,V>;}
+    if (m_file_format == 'F') {
+      m_iomap_ptr = new IOFSTRMap<K, V>;
+    }
 #ifdef HDF5
-    else if (m_file_format=='H'){
-       m_iomap_ptr=new IOHDF5Map<K,V>;}
+    else if (m_file_format == 'H') {
+      m_iomap_ptr = new IOHDF5Map<K, V>;
+    }
 #endif
-    else{
-       std::cout << "Invalid file format in IOMap assignment"<<std::endl;
-       exit(1);}
+    else {
+      std::cout << "Invalid file format in IOMap assignment" << std::endl;
+      exit(1);
+    }
     // copy over the information from the other map
     return *this;
   }
 
-
-     // disallow copying
-  IOMap(const IOMap<K,V>& copymap);
-
+  // disallow copying
+  IOMap(const IOMap<K, V>& copymap);
 };
-
 
 #endif

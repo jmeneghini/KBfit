@@ -738,23 +738,25 @@ BoxQuantization::getFreeTwoParticleEnergies(double min_Elab_over_mref,
 
 void BoxQuantization::getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
                                             double Ecm_over_mref_max,
-                                            QuantCondType qctype, AdaptiveBracketConfig P,
-                                            std::vector<double>& roots,std::vector<uint>& fn_calls) {
+                                            QuantCondType qctype,
+                                            AdaptiveBracketConfig P,
+                                            std::vector<double>& roots,
+                                            std::vector<uint>& fn_calls) {
 
-  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max,
-    false, qctype, P,  roots);
+  get_roots_in_interval(mu, Ecm_over_mref_min, Ecm_over_mref_max, false, qctype,
+                        P, roots);
 }
 
 // fn calls is the number of function calls made for each NI/endpoint interval
-void BoxQuantization::getRootsInElabInterval(double mu,
-                                             double Elab_over_mref_min,
-                                             double Elab_over_mref_max,
-                                             QuantCondType qctype, AdaptiveBracketConfig P,
-                                             std::vector<double>& roots, std::vector<uint>& fn_calls) {
+void BoxQuantization::getRootsInElabInterval(
+    double mu, double Elab_over_mref_min, double Elab_over_mref_max,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
   // get all NIs in the interval
   std::vector<double> intervals;
   intervals.push_back(Elab_over_mref_min);
-  list<double> NIs = getFreeTwoParticleEnergies(Elab_over_mref_min, Elab_over_mref_max);
+  list<double> NIs =
+      getFreeTwoParticleEnergies(Elab_over_mref_min, Elab_over_mref_max);
   for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {
     intervals.push_back(*it);
   }
@@ -762,18 +764,20 @@ void BoxQuantization::getRootsInElabInterval(double mu,
   for (size_t i = 0; i < intervals.size() - 1; ++i) {
     std::vector<double> temp_roots;
     double E_min = intervals[i] - 1e-9;
-    double E_max = intervals[i + 1] - 1e-9; // might be hitting NIs and getting nan's
-    // which is not good. likely is an issue with first calculating the box matrix
-    // then relying on numerical limits to work out.
+    double E_max =
+        intervals[i + 1] - 1e-9; // might be hitting NIs and getting nan's
+    // which is not good. likely is an issue with first calculating the box
+    // matrix then relying on numerical limits to work out.
     if (E_min > E_max)
       throw(std::invalid_argument("Bad interval in getRootsInElabInterval"));
     // get the roots in the interval
-    fn_calls.push_back(get_roots_in_interval(mu, E_min, E_max, true, qctype, P, temp_roots));
+    fn_calls.push_back(
+        get_roots_in_interval(mu, E_min, E_max, true, qctype, P, temp_roots));
     // add the roots to the final list
     for (std::vector<double>::const_iterator it = temp_roots.begin();
-             it != temp_roots.end(); ++it) {
+         it != temp_roots.end(); ++it) {
       if (std::find(roots.begin(), roots.end(), *it) == roots.end()) {
-            roots.push_back(*it);
+        roots.push_back(*it);
       }
     }
   }
@@ -1144,12 +1148,13 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
 
 uint BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
                                             double E_over_mref_max, bool Elab,
-                                            QuantCondType qctype, AdaptiveBracketConfig P,
+                                            QuantCondType qctype,
+                                            AdaptiveBracketConfig P,
                                             std::vector<double>& roots) {
-  std::function<cmplx(double)> f =
-      [this, mu, Elab, qctype](double E_over_mref) {
-        cmplx omega = get_omega(mu, E_over_mref, Elab, qctype);
-        return omega;
+  std::function<cmplx(double)> f = [this, mu, Elab,
+                                    qctype](double E_over_mref) {
+    cmplx omega = get_omega(mu, E_over_mref, Elab, qctype);
+    return omega;
   };
 
   AdaptiveBracketRootFinder RF(P, f);
@@ -1157,6 +1162,5 @@ uint BoxQuantization::get_roots_in_interval(double mu, double E_over_mref_min,
   RF.findRoots(E_over_mref_min, E_over_mref_max, roots);
   return RF.evalCount();
 }
-
 
 // ***************************************************************************************

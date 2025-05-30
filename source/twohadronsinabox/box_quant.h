@@ -401,7 +401,7 @@ public:
                                   RVector& qcmsq_over_mrefsq) const;
 
   void getQcmsqOverMrefsqFromEcm(double Ecm_over_mref,
-                                  RVector& qcmsq_over_mrefsq) const;
+                                 RVector& qcmsq_over_mrefsq) const;
 
   void getBoxMatrixFromElab(double Elab_over_mref, ComplexHermitianMatrix& B);
 
@@ -465,14 +465,16 @@ public:
   cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, QuantCondType qctype);
 
   void getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
-                           double Ecm_over_mref_max,
-                            QuantCondType qctype, AdaptiveBracketConfig P,
-                           std::vector<double>& roots, std::vector<uint>& fn_calls);
+                             double Ecm_over_mref_max, QuantCondType qctype,
+                             AdaptiveBracketConfig P,
+                             std::vector<double>& roots,
+                             std::vector<uint>& fn_calls);
 
   void getRootsInElabInterval(double mu, double Elab_over_mref_min,
-                              double Elab_over_mref_max,
-                              QuantCondType qctype, AdaptiveBracketConfig P,
-                              std::vector<double>& roots, std::vector<uint>& fn_calls);
+                              double Elab_over_mref_max, QuantCondType qctype,
+                              AdaptiveBracketConfig P,
+                              std::vector<double>& roots,
+                              std::vector<uint>& fn_calls);
 
 private:
   // case insensitive map from string to QuantCondType
@@ -549,9 +551,9 @@ private:
                   QuantCondType qctype);
 
   uint get_roots_in_interval(double mu, double E_over_mref_min,
-                           double E_over_mref_max, bool Elab,
-                            QuantCondType qctype, AdaptiveBracketConfig P,
-                           std::vector<double>& roots);
+                             double E_over_mref_max, bool Elab,
+                             QuantCondType qctype, AdaptiveBracketConfig P,
+                             std::vector<double>& roots);
 };
 
 #endif

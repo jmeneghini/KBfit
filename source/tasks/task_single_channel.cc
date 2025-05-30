@@ -1,7 +1,7 @@
 #include "K_matrix_info.h"
 #include "box_matrix.h"
-#include "chisq_fit.h"
 #include "chisq_detres.h"
+#include "chisq_fit.h"
 #include "sampling_info.h"
 #include "task_handler.h"
 #include "xml_handler.h"
@@ -118,9 +118,8 @@ using namespace std;
 // *      </KBBlock>                                                        *
 // *                                                                        *
 
-
-void TaskHandler::doSingleChannel(
-    XMLHandler& xmltask, XMLHandler& xmlout, int taskcount) {
+void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
+                                  int taskcount) {
   try {
     xmlout.set_root("SingleChannel");
     stringstream logger;
@@ -156,7 +155,7 @@ void TaskHandler::doSingleChannel(
           ArgsHandler xmls(*it);
           string fname(xmls.getString("FileName"));
           sampfiles.insert(fname);
-             }
+        }
       }
     }
     if (sampfiles.empty()) {
@@ -169,16 +168,18 @@ void TaskHandler::doSingleChannel(
     list<XMLHandler> dcxml = xmld.find_among_children("DecayChannelInfo");
     if (dcxml.size() != 1) {
       throw(std::invalid_argument(
-              "SingleChannel task requires exactly one DecayChannelInfo tag"));
+          "SingleChannel task requires exactly one DecayChannelInfo tag"));
     }
 
     // ensure that the particles are spinless and store the channel info
     DecayChannelInfo single_channel(dcxml.front());
     if (single_channel.getSpin1timestwo() != 0) {
-      throw(std::invalid_argument("Spin1TimesTwo must be 0 for spinless particles"));
+      throw(std::invalid_argument(
+          "Spin1TimesTwo must be 0 for spinless particles"));
     }
     if (single_channel.getSpin2timestwo() != 0) {
-      throw(std::invalid_argument("Spin2TimesTwo must be 0 for spinless particles"));
+      throw(std::invalid_argument(
+          "Spin2TimesTwo must be 0 for spinless particles"));
     }
 
     // get set of particle names from decay channel
@@ -186,12 +187,12 @@ void TaskHandler::doSingleChannel(
     pnames.insert(single_channel.getParticle1Name());
     pnames.insert(single_channel.getParticle2Name());
 
-    // get the energy format (the independent variable associated with each cot(delta_0))
+    // get the energy format (the independent variable associated with each
+    // cot(delta_0))
     bool energy_ratios = true;
     {
       string reply;
-      xmlreadif(xmltask, "DefaultEnergyFormat", reply,
-                "doSingleChannel");
+      xmlreadif(xmltask, "DefaultEnergyFormat", reply, "doSingleChannel");
       if ((reply == "reference_ratio") || (reply.empty()))
         energy_ratios = true;
       else if (reply == "time_spacing_product")
@@ -224,8 +225,8 @@ void TaskHandler::doSingleChannel(
       MCObsInfo rkey;
       // get lattice spacing times reference scale info
       DeterminantResidualFit::read_obs(*it, "ReferenceMassTimeSpacingProduct",
-                                      false, rkey, kset, pname, mcens,
-                                      fixed_values);
+                                       false, rkey, kset, pname, mcens,
+                                       fixed_values);
       ref_at_mass.insert(make_pair(mcens, rkey));
       if (!energy_ratios) {
         kset.erase(rkey);
@@ -265,12 +266,14 @@ void TaskHandler::doSingleChannel(
     if (ensembles.empty())
       throw(std::invalid_argument("No ensembles listed in input XML"));
 
-    //  Loop over the KB quantization blocks to get the lab-frame energies infos.
+    //  Loop over the KB quantization blocks to get the lab-frame energies
+    //  infos.
     vector<KBObsInfo> labenergies;
     vector<MCEnsembleInfo> blockens;
     map<MCEnsembleInfo, uint> ensemble_idmap;
     vector<BoxQuantization*> BQ;
-    vector<vector<uint>> block_energy_indices; // Track which energies belong to which block
+    vector<vector<uint>>
+        block_energy_indices; // Track which energies belong to which block
 
     list<XMLHandler> xmlkb = xmltask.find("KBBlock");
     uint blockcount = 0;
@@ -278,12 +281,13 @@ void TaskHandler::doSingleChannel(
 
     // dummy KtildeMatrixCalculator pointer for BoxQuantization
     KElementInfo single_channel_info(0, 0, 0, 0, 0, 0, 0);
-    std::list<std::pair<KElementInfo, Polynomial>> dummy_pelems = {pair<KElementInfo, Polynomial>(
-        single_channel_info, Polynomial())};
+    std::list<std::pair<KElementInfo, Polynomial>> dummy_pelems = {
+        pair<KElementInfo, Polynomial>(single_channel_info, Polynomial())};
     std::list<std::pair<KElementInfo, SumOfPoles>> dummy_selems = {};
-    std::list<std::pair<KElementInfo, SumOfPolesPlusPolynomial>> dummy_spelems = {};
+    std::list<std::pair<KElementInfo, SumOfPolesPlusPolynomial>> dummy_spelems =
+        {};
     KtildeMatrixCalculator* dummyKmat = new KtildeMatrixCalculator(
-            dummy_pelems, dummy_selems, dummy_spelems, {single_channel});
+        dummy_pelems, dummy_selems, dummy_spelems, {single_channel});
 
     for (list<XMLHandler>::iterator it = xmlkb.begin(); it != xmlkb.end();
          ++it) {
@@ -303,7 +307,8 @@ void TaskHandler::doSingleChannel(
       set<MCObsInfo>& kset = needed_keys[mcens];
       uint nres = 0;
       MCObsInfo rkey;
-      vector<uint> this_block_energies; // Track energies for this specific block
+      vector<uint>
+          this_block_energies; // Track energies for this specific block
       list<XMLHandler> xmlee = it->find("LabFrameEnergy");
       for (list<XMLHandler>::iterator eet = xmlee.begin(); eet != xmlee.end();
            ++eet) {
@@ -415,13 +420,12 @@ void TaskHandler::doSingleChannel(
       }
     }
 
-    logger << "Found " << labenergies.size() << " energy observables across " 
+    logger << "Found " << labenergies.size() << " energy observables across "
            << blockcount << " blocks" << endl;
 
     //  Create a folder with project name if it does not already exist.
     //  The output files will be stored here.
     string project_name = outstub;
-    
 
     filesystem::path project_dir = filesystem::path(project_name);
 
@@ -437,14 +441,15 @@ void TaskHandler::doSingleChannel(
     // Now move into folder
     filesystem::current_path(project_dir);
 
-    // Now start the single-channel computations, block by block (following task_print.cc pattern)
+    // Now start the single-channel computations, block by block (following
+    // task_print.cc pattern)
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
       const MCEnsembleInfo& mcens = blockens[blocknum];
 
       string filename = "Block" + make_string(blocknum) + ".csv";
 
       BoxQuantization* bqptr = BQ[blocknum];
-      
+
       logger << "Filename = " << filename << endl;
       logger << "Block " << blocknum << ": " << mcens.str() << endl;
       logger << "MomRay " << bqptr->getMomRay()
@@ -461,8 +466,10 @@ void TaskHandler::doSingleChannel(
       const string& pname2 = single_channel.getParticle2Name();
       KBObsInfo mass1key(mcens, pmap[pname1]);
       KBObsInfo mass2key(mcens, pmap[pname2]);
-      const RVector* particlemass1 = &(m_obs->getFullAndSamplingValues(mass1key));
-      const RVector* particlemass2 = &(m_obs->getFullAndSamplingValues(mass2key));
+      const RVector* particlemass1 =
+          &(m_obs->getFullAndSamplingValues(mass1key));
+      const RVector* particlemass2 =
+          &(m_obs->getFullAndSamplingValues(mass2key));
 
       // Set masses for all resamplings - single channel only
       for (int b = 0; b <= nsamp; ++b) {
@@ -471,9 +478,9 @@ void TaskHandler::doSingleChannel(
       }
 
       string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
-                " # P^2 = " +
-                std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
-                " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
+                      " # P^2 = " +
+                      std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
+                      " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
 
       ofstream fout(filename);
 
@@ -487,20 +494,26 @@ void TaskHandler::doSingleChannel(
       if (outmode == "full") {
         fout << "E_lab/mref,E_cm/mref,(q/mref)^2,q/mref_cot_delta" << endl;
       } else {
-        fout << "E_lab/mref,E_lab/mref_upper_err,E_lab/mref_lower_err,E_lab/mref_sym_err,"
-             << "E_cm/mref,E_cm/mref_upper_err,E_cm/mref_lower_err,E_cm/mref_sym_err,"
-             << "(q/mref)^2,(q/mref)^2_upper_err,(q/mref)^2_lower_err,(q/mref)^2_sym_err,"
-             << "q/mref_cot_delta,q/mref_cot_delta_upper_err,q/mref_cot_delta_lower_err,"
+        fout << "E_lab/mref,E_lab/mref_upper_err,E_lab/mref_lower_err,E_lab/"
+                "mref_sym_err,"
+             << "E_cm/mref,E_cm/mref_upper_err,E_cm/mref_lower_err,E_cm/"
+                "mref_sym_err,"
+             << "(q/mref)^2,(q/mref)^2_upper_err,(q/mref)^2_lower_err,(q/"
+                "mref)^2_sym_err,"
+             << "q/mref_cot_delta,q/mref_cot_delta_upper_err,q/"
+                "mref_cot_delta_lower_err,"
              << "q/mref_cot_delta_sym_err" << endl;
       }
 
       // Get energies for this specific block using our proper mapping
       const vector<uint>& energy_indices = block_energy_indices[blocknum];
 
-      // Process each energy in this block (unified logic for both full and resampled modes)
+      // Process each energy in this block (unified logic for both full and
+      // resampled modes)
       for (uint idx : energy_indices) {
-        const RVector& energy_values = m_obs->getFullAndSamplingValues(labenergies[idx]);
-        
+        const RVector& energy_values =
+            m_obs->getFullAndSamplingValues(labenergies[idx]);
+
         // Convert energy to ratio if needed (following chisq_detres.cc pattern)
         const RVector* labenergy = &energy_values;
         if (!energy_ratios) {
@@ -513,53 +526,53 @@ void TaskHandler::doSingleChannel(
           for (uint kk = 0; kk < labenergyratio.size(); ++kk)
             labenergyratio[kk] /= atrefmass[kk];
           labenergy = &(m_obs->putFullAndSamplings(labenergies[idx],
-                                                  labenergyratio, true));
+                                                   labenergyratio, true));
         }
-        
+
         // Storage for resampling results
         vector<double> elab_values, ecm_values, qsqr_values, qcot_values;
         uint nsamples = (outmode == "full") ? 1 : nsamp + 1;
-        
+
         // Process full sample and resamplings
         for (uint b = 0; b < nsamples; ++b) {
           const double& Elab_ref = (*labenergy)[b]; // Elab/mref
-          
+
           // Set masses for this sample
           bqptr->setRefMassL(mrefL[b]);
           bqptr->setMassesOverRef(0, (*particlemass1)[b], (*particlemass2)[b]);
-          
+
           // Convert to center-of-mass energy
           double Ecm_ref = bqptr->getEcmOverMrefFromElab(Elab_ref);
-          
+
           // Get center-of-mass momentum for single channel
           RVector qcmsq_over_mrefsq;
           bqptr->getQcmsqOverMrefsqFromElab(Elab_ref, qcmsq_over_mrefsq);
           double qsqr_over_mrefsq = qcmsq_over_mrefsq[0];
-          
+
           // For our special case, q_cm/mref * cot(delta_0) = B_{00}
           ComplexHermitianMatrix B;
           bqptr->getBoxMatrixFromEcm(Ecm_ref, B);
           double q_cot_delta = B.get(0, 0).real(); // Take real part
-          
+
           // Store results
           elab_values.push_back(Elab_ref);
           ecm_values.push_back(Ecm_ref);
           qsqr_values.push_back(qsqr_over_mrefsq);
           qcot_values.push_back(q_cot_delta);
         }
-        
+
         // Output results based on mode
         if (outmode == "full") {
-          fout << elab_values[0] << "," << ecm_values[0] << "," 
+          fout << elab_values[0] << "," << ecm_values[0] << ","
                << qsqr_values[0] << "," << qcot_values[0] << endl;
         } else { // resampled mode
           // Calculate error estimates using jackknife or bootstrap
           MCEstimate elab_est, ecm_est, qsqr_est, qcot_est;
-          
+
           // Convert vectors to RVector for analysis
           RVector elab_rvec(elab_values), ecm_rvec(ecm_values);
           RVector qsqr_rvec(qsqr_values), qcot_rvec(qcot_values);
-          
+
           if (m_obs->isJackknifeMode()) {
             m_obs->jack_analyze(elab_rvec, elab_est);
             m_obs->jack_analyze(ecm_rvec, ecm_est);
@@ -571,29 +584,39 @@ void TaskHandler::doSingleChannel(
             m_obs->boot_analyze(qsqr_rvec, qsqr_est);
             m_obs->boot_analyze(qcot_rvec, qcot_est);
           }
-          
+
           // Output format: full_value upper_error down_error
-          double elab_upper = elab_est.getUpperConfLimit() - elab_est.getAverageEstimate();
-          double elab_lower = elab_est.getAverageEstimate() - elab_est.getLowerConfLimit();
+          double elab_upper =
+              elab_est.getUpperConfLimit() - elab_est.getAverageEstimate();
+          double elab_lower =
+              elab_est.getAverageEstimate() - elab_est.getLowerConfLimit();
           double elab_sym_err = elab_est.getSymmetricError();
-          double ecm_upper = ecm_est.getUpperConfLimit() - ecm_est.getAverageEstimate();
-          double ecm_lower = ecm_est.getAverageEstimate() - ecm_est.getLowerConfLimit();
+          double ecm_upper =
+              ecm_est.getUpperConfLimit() - ecm_est.getAverageEstimate();
+          double ecm_lower =
+              ecm_est.getAverageEstimate() - ecm_est.getLowerConfLimit();
           double ecm_sym_err = ecm_est.getSymmetricError();
-          double qsqr_upper = qsqr_est.getUpperConfLimit() - qsqr_est.getAverageEstimate();
-          double qsqr_lower = qsqr_est.getAverageEstimate() - qsqr_est.getLowerConfLimit();
+          double qsqr_upper =
+              qsqr_est.getUpperConfLimit() - qsqr_est.getAverageEstimate();
+          double qsqr_lower =
+              qsqr_est.getAverageEstimate() - qsqr_est.getLowerConfLimit();
           double qsqr_sym_err = qsqr_est.getSymmetricError();
-          double qcot_upper = qcot_est.getUpperConfLimit() - qcot_est.getAverageEstimate();
-          double qcot_lower = qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
+          double qcot_upper =
+              qcot_est.getUpperConfLimit() - qcot_est.getAverageEstimate();
+          double qcot_lower =
+              qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
           double qcot_sym_err = qcot_est.getSymmetricError();
 
-          
-          fout << elab_values[0] << "," << elab_upper << "," << elab_lower << "," << elab_sym_err << ","
-               << ecm_values[0] << "," << ecm_upper << "," << ecm_lower << "," << ecm_sym_err << ","
-               << qsqr_values[0] << "," << qsqr_upper << "," << qsqr_lower << "," << qsqr_sym_err << ","
-               << qcot_values[0] << "," << qcot_upper << "," << qcot_lower << "," << qcot_sym_err << endl;
+          fout << elab_values[0] << "," << elab_upper << "," << elab_lower
+               << "," << elab_sym_err << "," << ecm_values[0] << ","
+               << ecm_upper << "," << ecm_lower << "," << ecm_sym_err << ","
+               << qsqr_values[0] << "," << qsqr_upper << "," << qsqr_lower
+               << "," << qsqr_sym_err << "," << qcot_values[0] << ","
+               << qcot_upper << "," << qcot_lower << "," << qcot_sym_err
+               << endl;
         }
       }
-      
+
       fout.close();
     }
     // Clean up BoxQuantization objects

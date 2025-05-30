@@ -408,7 +408,6 @@ public:
   const T& get(const std::vector<int>& ind) const;
   const T& get(const std::vector<unsigned int>& ind) const;
 
-
   void putFromVector(const std::vector<T>& incoming);
 
   uint size() const { return m_store.size(); }
@@ -701,9 +700,11 @@ inline const T& Matrix<T>::get(const std::vector<uint>& ind) const {
 
 template <typename T>
 inline void Matrix<T>::putFromVector(const std::vector<T>& incoming) {
-  if (m_sizes[0] != sqrt(incoming.size()) || m_sizes[1] != sqrt(incoming.size())) {
-    throw(std::invalid_argument("RealSymmetricMatrix: size of matrix does not equal sqrt(len(vector)),"
-                                "or is not square"));
+  if (m_sizes[0] != sqrt(incoming.size()) ||
+      m_sizes[1] != sqrt(incoming.size())) {
+    throw(std::invalid_argument(
+        "RealSymmetricMatrix: size of matrix does not equal sqrt(len(vector)),"
+        "or is not square"));
   }
   for (uint i = 0; i < m_sizes[0]; ++i)
     for (uint j = 0; j < m_sizes[0]; ++j) {
@@ -1309,16 +1310,14 @@ RealSymmetricMatrix::get(const std::vector<uint>& ind) const {
 inline void
 RealSymmetricMatrix::putFromVector(const std::vector<double>& incoming) {
   if (m_size != sqrt(incoming.size())) {
-    throw(std::invalid_argument("RealSymmetricMatrix: size of matrix does not equal sqrt(len(vector))"));
+    throw(std::invalid_argument("RealSymmetricMatrix: size of matrix does not "
+                                "equal sqrt(len(vector))"));
   }
   for (uint i = 0; i < m_size; ++i)
     for (uint j = 0; j < m_size; ++j) {
       this->put(i, j, incoming[i * m_size + j]);
     }
 }
-
-
-
 
 // **************************************************************
 
@@ -1535,10 +1534,11 @@ ComplexHermitianMatrix::get(const std::vector<uint>& ind) const {
                             : conjugate(m_store[get_index(ind[1], ind[0])]);
 }
 
-inline void
-ComplexHermitianMatrix::putFromVector(const std::vector<std::complex<double>>& incoming) {
+inline void ComplexHermitianMatrix::putFromVector(
+    const std::vector<std::complex<double>>& incoming) {
   if (m_size != sqrt(incoming.size())) {
-    throw(std::invalid_argument("ComplexHermitianMatrix: size of matrix does not equal sqrt(len(vector))"));
+    throw(std::invalid_argument("ComplexHermitianMatrix: size of matrix does "
+                                "not equal sqrt(len(vector))"));
   }
   for (uint i = 0; i < m_size; ++i)
     for (uint j = 0; j < m_size; ++j) {

@@ -320,11 +320,10 @@ private:
   static std::map<std::string, EvaluatorPtr> initializeEvalPtrs();
   static std::map<std::string, BlockSetupPtr> initializeBlockSetupPtrs();
 
-  inline static std::map<std::string, EvaluatorPtr>
-        evaluatorMap = initializeEvalPtrs();
-  inline static std::map<std::string, BlockSetupPtr>
-        blockSetupMap = initializeBlockSetupPtrs();
-
+  inline static std::map<std::string, EvaluatorPtr> evaluatorMap =
+      initializeEvalPtrs();
+  inline static std::map<std::string, BlockSetupPtr> blockSetupMap =
+      initializeBlockSetupPtrs();
 
   //  evaluator and quantum number setup subroutines
 

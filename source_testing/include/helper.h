@@ -3,17 +3,24 @@
 #include "matrix.h"
 
 namespace TestHelper {
-  inline bool approx_equal_complex(const std::complex<double>& a, const std::complex<double>& b, double epsilon = 1e-6);
-  inline bool approx_equal_cmatrix(const CMatrix& A, const CMatrix& B, double epsilon = 1e-6);
-  inline bool is_unitary(const CMatrix& M, double epsilon = 1e-6);
-}
+inline bool approx_equal_complex(const std::complex<double>& a,
+                                 const std::complex<double>& b,
+                                 double epsilon = 1e-6);
+inline bool approx_equal_cmatrix(const CMatrix& A, const CMatrix& B,
+                                 double epsilon = 1e-6);
+inline bool is_unitary(const CMatrix& M, double epsilon = 1e-6);
+} // namespace TestHelper
 
-bool TestHelper::approx_equal_complex(const std::complex<double>& a, const std::complex<double>& b, double epsilon) {
-  return std::abs(a.real() - b.real()) < epsilon && std::abs(a.imag() - b.imag()) < epsilon;
+bool TestHelper::approx_equal_complex(const std::complex<double>& a,
+                                      const std::complex<double>& b,
+                                      double epsilon) {
+  return std::abs(a.real() - b.real()) < epsilon &&
+         std::abs(a.imag() - b.imag()) < epsilon;
 }
 
 // Helper for comparing CMatrix objects
-bool TestHelper::approx_equal_cmatrix(const CMatrix& A, const CMatrix& B, double epsilon) {
+bool TestHelper::approx_equal_cmatrix(const CMatrix& A, const CMatrix& B,
+                                      double epsilon) {
   if (A.size(0) != B.size(0) || A.size(1) != B.size(1)) {
     return false;
   }
@@ -28,7 +35,8 @@ bool TestHelper::approx_equal_cmatrix(const CMatrix& A, const CMatrix& B, double
 }
 
 bool TestHelper::is_unitary(const CMatrix& M, double epsilon) {
-  if (M.size(0) != M.size(1) || M.size(0) == 0) { // Must be square and non-empty
+  if (M.size(0) != M.size(1) ||
+      M.size(0) == 0) { // Must be square and non-empty
     return false;
   }
   unsigned n = M.size(0);
@@ -39,7 +47,9 @@ bool TestHelper::is_unitary(const CMatrix& M, double epsilon) {
     for (unsigned j = 0; j < n; ++j) {
       std::complex<double> sum_val(0.0, 0.0);
       for (unsigned k = 0; k < n; ++k) {
-        sum_val += M(i, k) * std::conj(M(j, k)); // (M * M_dagger)_ij = sum_k M_ik * conj(M_jk)
+        sum_val +=
+            M(i, k) *
+            std::conj(M(j, k)); // (M * M_dagger)_ij = sum_k M_ik * conj(M_jk)
       }
       prod.put(i, j, sum_val);
     }
@@ -60,6 +70,3 @@ bool TestHelper::is_unitary(const CMatrix& M, double epsilon) {
 }
 
 #endif
-
-
-
