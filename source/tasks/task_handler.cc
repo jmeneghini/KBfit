@@ -58,6 +58,7 @@ TaskHandler::TaskHandler(XMLHandler& xmlin) {
 
   m_task_map["DoPrint"] = &TaskHandler::doPrint;
   m_task_map["DoFit"] = &TaskHandler::doFit;
+  m_task_map["DoSingleChannel"] = &TaskHandler::doSingleChannel;
 }
 
 // delete data, finish up logging, close log file

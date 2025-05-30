@@ -114,6 +114,7 @@ private:
 
   void doPrint(XMLHandler& xml_in, XMLHandler& output, int taskcount);
   void doFit(XMLHandler& xml_in, XMLHandler& output, int taskcount);
+  void doSingleChannel(XMLHandler& xml_in, XMLHandler& output, int taskcount);
 };
 
 // ***************************************************************

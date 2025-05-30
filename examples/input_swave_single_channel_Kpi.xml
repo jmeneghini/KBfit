@@ -1,0 +1,173 @@
+<KBFit>
+    <Initialize>
+        <ProjectName>KPiSingleChannelSWave</ProjectName>
+        <LogFile>KPiSingleChannelSWave.log</LogFile>
+        <EchoXML/>
+        <MCSamplingInfo>
+            <Bootstrapper>
+                <NumberResamplings>1000</NumberResamplings>
+                <Seed>6754</Seed>
+                <BootSkip>0</BootSkip>
+            </Bootstrapper>
+        </MCSamplingInfo>
+    </Initialize>
+
+    <TaskSequence>
+        <Task>
+            <Action>DoSingleChannel</Action>
+
+            <OutputStub>KPiSingleChannelSWave</OutputStub>
+            <OutputMode>resampled</OutputMode>
+
+<!--            <OutSamplingsFile>test.smp</OutSamplingsFile>-->
+
+
+            <DecayChannels>
+                <DecayChannelInfo>
+                    <Particle1Name>kaon</Particle1Name>
+                    <Spin1TimesTwo>0</Spin1TimesTwo>
+                    <Particle2Name>pion</Particle2Name>
+                    <Spin2TimesTwo>0</Spin2TimesTwo>
+                    <IntrinsicParities>same</IntrinsicParities>
+                </DecayChannelInfo>
+            </DecayChannels>
+
+
+            <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
+
+            <MCEnsembleParameters>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <ReferenceMassTimeSpacingProduct>
+                    <MCObs>pion 0</MCObs>
+                </ReferenceMassTimeSpacingProduct>
+                <LatticeAnisotropy>
+                    <MCObs>xi_pion 0</MCObs>
+                </LatticeAnisotropy>
+                <ParticleMass>
+                    <Name>pion</Name>
+                    <FixedValue>1.0</FixedValue>
+                </ParticleMass>
+                <ParticleMass>
+                    <Name>kaon</Name>
+                    <MCObs>kaon_mpi 0</MCObs>
+                </ParticleMass>
+            </MCEnsembleParameters>
+
+            <KBBlock>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <BoxQuantization>
+                    <TotalMomentumRay>ar</TotalMomentumRay>
+                    <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
+                    <LGIrrep>A1g</LGIrrep>
+                    <LmaxValues>0</LmaxValues>
+                </BoxQuantization>
+                <LabFrameEnergy>
+                    <MCObs>A1g_P0_Elab_mpi 0</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1g_P0_Elab_mpi 1</MCObs>
+                </LabFrameEnergy>
+<!--                <LabFrameEnergy>-->
+<!--                    <MCObs>A1g_P0_Elab_mpi 2</MCObs>-->
+<!--                </LabFrameEnergy>-->
+            </KBBlock>
+
+            <KBBlock>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <BoxQuantization>
+                    <TotalMomentumRay>oa</TotalMomentumRay>
+                    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
+                    <LGIrrep>A1</LGIrrep>
+                    <LmaxValues>0</LmaxValues>
+                </BoxQuantization>
+                <LabFrameEnergy>
+                    <MCObs>A1_P1_Elab_mpi 0</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P1_Elab_mpi 1</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P1_Elab_mpi 2</MCObs>
+                </LabFrameEnergy>
+            </KBBlock>
+
+            <KBBlock>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <BoxQuantization>
+                    <TotalMomentumRay>pd</TotalMomentumRay>
+                    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
+                    <LGIrrep>A1</LGIrrep>
+                    <LmaxValues>0</LmaxValues>
+                </BoxQuantization>
+                <LabFrameEnergy>
+                    <MCObs>A1_P2_Elab_mpi 0</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P2_Elab_mpi 1</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P2_Elab_mpi 2</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P2_Elab_mpi 3</MCObs>
+                </LabFrameEnergy>
+            </KBBlock>
+
+            <KBBlock>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <BoxQuantization>
+                    <TotalMomentumRay>cd</TotalMomentumRay>
+                    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
+                    <LGIrrep>A1</LGIrrep>
+                    <LmaxValues>0</LmaxValues>
+                </BoxQuantization>
+                <LabFrameEnergy>
+                    <MCObs>A1_P3_Elab_mpi 0</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P3_Elab_mpi 1</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P3_Elab_mpi 2</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P3_Elab_mpi 3</MCObs>
+                </LabFrameEnergy>
+            </KBBlock>
+
+            <KBBlock>
+                <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
+                <BoxQuantization>
+                    <TotalMomentumRay>oa</TotalMomentumRay>
+                    <TotalMomentumIntSquared>4</TotalMomentumIntSquared>
+                    <LGIrrep>A1</LGIrrep>
+                    <LmaxValues>0</LmaxValues>
+                </BoxQuantization>
+                <LabFrameEnergy>
+                    <MCObs>A1_P4_Elab_mpi 0</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P4_Elab_mpi 1</MCObs>
+                </LabFrameEnergy>
+                <LabFrameEnergy>
+                    <MCObs>A1_P4_Elab_mpi 2</MCObs>
+                </LabFrameEnergy>
+            </KBBlock>
+
+
+            <KBObservables>
+                <MCSamplingInfo>
+                    <Bootstrapper>
+                        <NumberResamplings>1000</NumberResamplings>
+                        <Seed>6754</Seed>
+                        <BootSkip>0</BootSkip>
+                    </Bootstrapper>
+                </MCSamplingInfo>
+                <Verbose />
+                <SamplingData>
+                    <FileName>../data/k-pi_scatteringDrew.smp</FileName>
+                </SamplingData>
+            </KBObservables>
+        </Task>
+    </TaskSequence>
+</KBFit>
