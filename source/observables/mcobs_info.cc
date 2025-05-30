@@ -271,4 +271,12 @@ MCObsInfo::MCObsInfo(const unsigned int* buf) {
   std::copy(buf + 1, buf + 1 + buf[0], icode.begin());
 }
 
+// HDF5 serialize method
+
+std::string MCObsInfo::serialize() const {
+  // For simple conversion, we'll use the str() method output
+  // which gives a compact XML representation that's unique
+  return str();
+}
+
 // ******************************************************************************

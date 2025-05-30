@@ -2,7 +2,6 @@
 #define MCOBS_INFO_H
 
 #include "args_handler.h"
-#include "io_handler.h"
 #include "xml_handler.h"
 
 enum ComplexArg { RealPart, ImaginaryPart };
@@ -153,6 +152,9 @@ public:
 
   bool operator<(const MCObsInfo& rhs) const;
 
+  // For HDF5 support - serialize method
+  std::string serialize() const;
+
   //  Routines below are used when MCObsInfo is a record key in
   //  an IOMap.  The IOMap class requires that every record key
   //  must occupy the same number of bytes.
@@ -195,9 +197,4 @@ private:
 
 // ***************************************************************
 
-inline size_t numbytes(IOHandler& ioh, const MCObsInfo& rkey) {
-  return rkey.numbytes();
-}
-
-// ***************************************************************
 #endif

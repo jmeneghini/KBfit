@@ -74,6 +74,17 @@ file(GLOB_RECURSE HEADERS ${SOURCE_DIR}/*.h)
 # set(BLAS_DIR "/usr/lib/x86_64-linux-gnu")
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+
+# HDF5
+find_package(HDF5 REQUIRED COMPONENTS C)
+if(HDF5_FOUND)
+    message(STATUS "Found HDF5: ${HDF5_LIBRARIES}")
+    message(STATUS "HDF5 Include Dirs: ${HDF5_INCLUDE_DIRS}")
+    add_compile_definitions(HDF5)
+else()
+    message(FATAL_ERROR "HDF5 not found - required for KBfit")
+endif()
+
 # MINUIT2
 # if on linux, usr/local/, if on mac, opt/homebrew/
 
@@ -132,7 +143,7 @@ endforeach()
 
 # Create an object library for the main sources
 add_library(OptimizedSources OBJECT ${SOURCES})
-target_include_directories(OptimizedSources PUBLIC ${COMMON_INCLUDE_DIRS})
+target_include_directories(OptimizedSources PUBLIC ${COMMON_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS})
 # if in debug, compile optimized sources as such
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(OptimizedSources PRIVATE -O0 -g)
@@ -143,7 +154,7 @@ endif()
 # Create an static library for the box matrix sources (do not optimize)
 add_library(BoxMatrix_lib STATIC ${BOX_MATRIX_SOURCES})
 target_compile_options(BoxMatrix_lib PRIVATE -O0)
-target_include_directories(BoxMatrix_lib PUBLIC ${COMMON_INCLUDE_DIRS})
+target_include_directories(BoxMatrix_lib PUBLIC ${COMMON_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS})
 
 message(STATUS "COMMON_INCLUDE_DIRS: ${COMMON_INCLUDE_DIRS}")
 
@@ -155,6 +166,7 @@ target_link_libraries(KBfit PUBLIC
         OpenMP::OpenMP_CXX
         LAPACK::LAPACK
         ${MINUIT2_LIBDIR}/${MINUIT2_LIB}
+        ${HDF5_LIBRARIES}
 )
 
 # Put binary in my conda bin directory if on AlmaLinux, else usr/local/bin
@@ -197,6 +209,7 @@ if(BUILD_TESTING)
             ${SOURCE_DIR}
             ${ZLIB_INCLUDE_DIRS}
             ${TEST_SOURCE_DIR}
+            ${HDF5_INCLUDE_DIRS}
     )
 
     target_link_libraries(KBfit_tests PRIVATE
@@ -206,6 +219,7 @@ if(BUILD_TESTING)
             LAPACK::LAPACK                    # Link LAPACK for dpotrf_, dsyev_, etc.
             ${ZLIB_LIBRARIES}
             "${MINUIT2_LIBDIR}/${MINUIT2_LIB}" # Link Minuit2 for ROOT::Minuit2:: symbols
+            ${HDF5_LIBRARIES}                 # Link HDF5 libraries for tests
     )
 
     set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD ${CMAKE_CXX_STANDARD})

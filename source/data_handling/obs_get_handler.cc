@@ -1,6 +1,5 @@
 #include "obs_get_handler.h"
 #include "args_handler.h"
-#include "io_handler.h"
 
 using namespace std;
 
