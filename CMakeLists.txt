@@ -45,8 +45,8 @@ endif()
 # CD (cubic diagonal total momentum (n,n,n))
 # LMAX<=6 currently supported; decreasing speeds up compile time.
 # Setting any one to a negative value eliminates that momentum ray.
-#add_compile_definitions(AR_LMAX=6 OA_LMAX=6 PD_LMAX=6 CD_LMAX=6)
-add_compile_definitions(AR_LMAX=1 OA_LMAX=1 PD_LMAX=1 CD_LMAX=1)
+add_compile_definitions(AR_LMAX=6 OA_LMAX=6 PD_LMAX=6 CD_LMAX=6)
+#add_compile_definitions(AR_LMAX=1 OA_LMAX=1 PD_LMAX=1 CD_LMAX=1)
 
 # Set maximum total intrinsic spin (times two) SX2MAX 
 # for AR (at rest), OA (on-axis total momentum (0,0,n)),
@@ -55,8 +55,8 @@ add_compile_definitions(AR_LMAX=1 OA_LMAX=1 PD_LMAX=1 CD_LMAX=1)
 # SX2MAX<=4 currently supported for AR,OA; SX2MAX<=3 for PD,CD.
 # Decreasing these values speeds up compile time.
 # Setting less than 0 eliminates all routines for the momentum ray.
-#add_compile_definitions(AR_SX2MAX=4 OA_SX2MAX=4 PD_SX2MAX=3 CD_SX2MAX=3)
-add_compile_definitions(AR_SX2MAX=1 OA_SX2MAX=1 PD_SX2MAX=1 CD_SX2MAX=1)
+add_compile_definitions(AR_SX2MAX=4 OA_SX2MAX=4 PD_SX2MAX=3 CD_SX2MAX=3)
+#add_compile_definitions(AR_SX2MAX=1 OA_SX2MAX=1 PD_SX2MAX=1 CD_SX2MAX=1)
 
 
 # Find the source files

@@ -9,6 +9,9 @@
 *.gch
 *.pch
 
+# Python related to testing
+*.npy
+
 # Compiled Dynamic libraries
 *.so
 *.dylib

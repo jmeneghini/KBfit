@@ -196,97 +196,97 @@
     <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
 </KBBlock>
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>oa</TotalMomentumRay>
-    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>
-    <LGIrrep>E</LGIrrep>
-    <LmaxValues>1</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>oa</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>1</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>E</LGIrrep>-->
+<!--    <LmaxValues>1</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>pd</TotalMomentumRay>
-    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
-    <LGIrrep>A1</LGIrrep>
-    <LmaxValues>2</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>pd</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>A1</LGIrrep>-->
+<!--    <LmaxValues>2</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>pd</TotalMomentumRay>
-    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
-    <LGIrrep>B1</LGIrrep>
-    <LmaxValues>2</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>pd</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>B1</LGIrrep>-->
+<!--    <LmaxValues>2</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>pd</TotalMomentumRay>
-    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>
-    <LGIrrep>B2</LGIrrep>
-    <LmaxValues>2</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>pd</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>2</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>B2</LGIrrep>-->
+<!--    <LmaxValues>2</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>cd</TotalMomentumRay>
-    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
-    <LGIrrep>A1</LGIrrep>
-    <LmaxValues>1</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>cd</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>A1</LGIrrep>-->
+<!--    <LmaxValues>1</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>cd</TotalMomentumRay>
-    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>
-    <LGIrrep>E</LGIrrep>
-    <LmaxValues>2</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>cd</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>3</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>E</LGIrrep>-->
+<!--    <LmaxValues>2</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
-<KBBlock>
-  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>
-  <BoxQuantization>
-    <TotalMomentumRay>oa</TotalMomentumRay>
-    <TotalMomentumIntSquared>4</TotalMomentumIntSquared>
-    <LGIrrep>A1</LGIrrep>
-    <LmaxValues>2</LmaxValues>
-  </BoxQuantization>
-  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>
-  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>
-  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>
-</KBBlock>
+<!--<KBBlock>-->
+<!--  <MCEnsembleInfo>clover_s32_t256_ud860_s743</MCEnsembleInfo>-->
+<!--  <BoxQuantization>-->
+<!--    <TotalMomentumRay>oa</TotalMomentumRay>-->
+<!--    <TotalMomentumIntSquared>4</TotalMomentumIntSquared>-->
+<!--    <LGIrrep>A1</LGIrrep>-->
+<!--    <LmaxValues>2</LmaxValues>-->
+<!--  </BoxQuantization>-->
+<!--  <LabFrameEnergyMin>3.2</LabFrameEnergyMin>-->
+<!--  <LabFrameEnergyMax>8.7</LabFrameEnergyMax>-->
+<!--  <LabFrameEnergyInc>0.001</LabFrameEnergyInc>-->
+<!--</KBBlock>-->
 
 
 <KBObservables>

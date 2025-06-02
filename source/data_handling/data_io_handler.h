@@ -245,7 +245,7 @@ template <typename H, typename R, typename D> class DataPutHandlerSF {
 public:
   DataPutHandlerSF(H& inptr, const std::string& file_name,
                    const std::string& filetype_id, bool overwrite = false,
-                   bool use_checksums = false);
+                   bool use_checksums = false, char file_format = 'D');
 
   ~DataPutHandlerSF() { delete iomptr; }
 
@@ -277,7 +277,8 @@ template <typename H, typename R, typename D>
 DataPutHandlerSF<H, R, D>::DataPutHandlerSF(H& in_handler,
                                             const std::string& file_name,
                                             const std::string& filetype_id,
-                                            bool overwrite, bool use_checksums)
+                                            bool overwrite, bool use_checksums,
+                                            char file_format)
     : handler(in_handler) {
   XMLHandler headerxml;
   handler.writeHeader(headerxml); // write header info
@@ -285,7 +286,7 @@ DataPutHandlerSF<H, R, D>::DataPutHandlerSF(H& in_handler,
     iomptr = new IOMap<R, D>;
     std::string header(headerxml.str());
     iomptr->openUpdate(file_name, filetype_id, header, 'L', use_checksums,
-                       overwrite);
+                       overwrite, file_format);
     if (!(iomptr->isNewFile())) {
       XMLHandler xmlr;
       xmlr.set_from_string(header);
@@ -504,14 +505,16 @@ void DataGetHandlerMF<H, R, D>::close() {
 
 template <typename H, typename R, typename D>
 bool DataGetHandlerMF<H, R, D>::keepKeys(const std::set<R>& keys_to_keep) {
-  uint ksize = 0;
+  bool all_successful = true;
   for (typename std::list<DataGetHandlerSF<H, R, D>*>::iterator it =
            getptrs.begin();
        it != getptrs.end(); it++) {
-    (*it)->keepKeys(keys_to_keep);
-    ksize += (*it)->size();
+    bool file_result = (*it)->keepKeys(keys_to_keep);
+    if (!file_result) {
+      all_successful = false;
+    }
   }
-  return (ksize == keys_to_keep.size());
+  return all_successful;
 }
 
 template <typename H, typename R, typename D>

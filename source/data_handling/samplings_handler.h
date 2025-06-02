@@ -180,12 +180,12 @@ class SamplingsPutHandler {
 public:
   SamplingsPutHandler(const MCBinsInfo& binfo, const MCSamplingInfo& sampinfo,
                       const std::string& file_name, bool overwrite = false,
-                      bool use_checksums = false)
+                      bool use_checksums = false, char file_format = 'D')
       : m_bin_info(binfo), m_samp_info(sampinfo), m_put(0) {
     m_put = new DataPutHandlerSF<SamplingsPutHandler, MCObsInfo,
                                  std::vector<double>>(
         *this, file_name, std::string("Sigmond--SamplingsFile"), overwrite,
-        use_checksums);
+        use_checksums, file_format);
   }
 
   ~SamplingsPutHandler() { delete m_put; }

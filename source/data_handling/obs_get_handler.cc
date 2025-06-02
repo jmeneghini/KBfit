@@ -1,5 +1,7 @@
 #include "obs_get_handler.h"
 #include "args_handler.h"
+#include "io_handler_fstream.h"
+#include "io_handler_hdf5.h"
 
 using namespace std;
 
@@ -334,8 +336,9 @@ bool MCObsGetHandler::getSamplingsMaybe(const KBObsInfo& obsinfo,
   samplings.clear();
   map<MCEnsembleInfo, SamplingsGetHandler*>::const_iterator it =
       m_sampsdh.find(obsinfo.getMCEnsembleInfo());
-  if (it == m_sampsdh.end())
+  if (it == m_sampsdh.end()) {
     return false;
+  }
   return it->second->getDataMaybe(obsinfo.getMCObsInfo(), samplings);
 }
 
@@ -375,24 +378,42 @@ void MCObsGetHandler::getFileMap(XMLHandler& xmlout) const {
 
 std::pair<MCBinsInfo, MCSamplingInfo>
 MCObsGetHandler::get_info_from_file(const std::string& filename) {
-  ifstream fin(filename.c_str(), ios::binary);
-  if (!fin) {
-    m_logger << "Error opening file " << filename << endl;
-    throw(std::runtime_error("Could not open input sampling file"));
+  // First, try to peek the file ID to determine the format and verify it's a Sigmond file
+  std::string ID;
+  IOFSTRHandler iohA;
+  IOHDF5Handler iohB;
+  bool is_hdf5 = false;
+  
+  string::size_type pos = filename.find("[");
+  string basename;
+  if (pos != string::npos) {
+    basename = filename.substr(0, pos);
+  } else {
+    basename = filename;
   }
-  char idstring[33];
-  if (!fin.read(idstring, 33)) {
-    m_logger << "Error: could not extract ID string from file " << filename
-             << endl;
+  // Try binary format first
+  if (iohA.peekID(ID, basename)) {
+    is_hdf5 = false;
+  }
+  // If that fails, try HDF5 format
+  else if (iohB.peekID(ID, basename)) {
+    is_hdf5 = true;
+  }
+  else {
+    m_logger << "Error: could not extract ID string from file " << filename << endl;
     throw(std::runtime_error("Could not extract ID string from file"));
   }
-  string ID(&idstring[1], 32);
+  
   ID = tidyString(ID);
   string sID("Sigmond--SamplingsFile");
   if (ID != sID) {
     m_logger << endl << "This is NOT a Sigmond samplings file" << endl;
+    m_logger << "File ID found: <" << ID << ">" << endl;
+    m_logger << "Expected ID: <" << sID << ">" << endl;
     throw(std::runtime_error("Invalid Sigmond samplings file"));
   }
+  
+  // Now open the file using IOMap which will auto-detect the format
   IOMap<MCObsInfo, Vector<double>> iom;
   iom.openReadOnly(filename, sID);
   XMLHandler xmlh;

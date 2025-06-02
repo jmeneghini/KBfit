@@ -171,18 +171,9 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
           "SingleChannel task requires exactly one DecayChannelInfo tag"));
     }
 
-    // ensure that the particles are spinless and store the channel info
-    DecayChannelInfo single_channel(dcxml.front());
-    if (single_channel.getSpin1timestwo() != 0) {
-      throw(std::invalid_argument(
-          "Spin1TimesTwo must be 0 for spinless particles"));
-    }
-    if (single_channel.getSpin2timestwo() != 0) {
-      throw(std::invalid_argument(
-          "Spin2TimesTwo must be 0 for spinless particles"));
-    }
-
     // get set of particle names from decay channel
+    DecayChannelInfo single_channel(dcxml.front());
+
     set<string> pnames;
     pnames.insert(single_channel.getParticle1Name());
     pnames.insert(single_channel.getParticle2Name());
