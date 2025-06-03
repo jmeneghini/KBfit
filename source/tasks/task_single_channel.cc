@@ -3,6 +3,7 @@
 #include "chisq_detres.h"
 #include "chisq_fit.h"
 #include "sampling_info.h"
+#include "samplings_handler.h"
 #include "task_handler.h"
 #include "xml_handler.h"
 #include <filesystem>
@@ -24,6 +25,12 @@ using namespace std;
 // *     -- if OutputMode = "resampled", format is                          *
 // *              Elab/mref  value_from_full_sample upper_error down_error  *
 // *                                                                        *
+// *     If SamplingsOutputStub is specified (only works with               *
+// *     OutputMode = "resampled"), samplings files will be written        *
+// *     containing E_lab/mref, E_cm/mref, (q/mref)^2, and                 *
+// *     q/mref_cot_delta for all energy levels. Files are named:          *
+// *     <SamplingsOutputStub>.ens<ensemble_id>                             *
+// *                                                                        *
 // *   Notes:                                                               *
 // *    -- An L^3 spatial lattice is required.  Eventually, the length      *
 // *       times the reference scale is needed.  To determine this,         *
@@ -44,6 +51,8 @@ using namespace std;
 // *      <OutputStub>...</OutputStub>                                      *
 // *                                                                        *
 // *      <OutputMode>full</OutputMode> or "resampled"                      *
+// *                                                                        *
+// *      <SamplingsOutputStub>...</SamplingsOutputStub> (optional)         *
 // *                                                                        *
 // *      <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>        *
 // *                   (or time_spacing_product)                            *
@@ -135,6 +144,11 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     xmlreadif(xmltask, "OutputMode", outmode, "doSingleChannel");
     if ((outmode != "full") && (outmode != "resampled"))
       throw(std::runtime_error("Invalid output mode specified"));
+
+    // get optional samplings output stub
+    string samplings_outstub;
+    xmlreadif(xmltask, "SamplingsOutputStub", samplings_outstub, "doSingleChannel");
+    samplings_outstub = tidyString(samplings_outstub);
 
     //  get sampling mode and names of input files
     XMLHandler xmlr(xmltask, "KBObservables");
@@ -432,6 +446,11 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     // Now move into folder
     filesystem::current_path(project_dir);
 
+    // init the output samplings storage (elab already stored,
+    // but we'll use new keys)
+    vector<KBObsInfo> elab_over_mref_obskeys, ecm_over_mref_obskeys,
+      qsqr_over_mrefsqr_obskeys, qcot_over_mref_cot_delta_obskeys;
+
     // Now start the single-channel computations, block by block (following
     // task_print.cc pattern)
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
@@ -462,12 +481,6 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
       const RVector* particlemass2 =
           &(m_obs->getFullAndSamplingValues(mass2key));
 
-      // Set masses for all resamplings - single channel only
-      for (int b = 0; b <= nsamp; ++b) {
-        bqptr->setRefMassL(mrefL[b]);
-        bqptr->setMassesOverRef(0, (*particlemass1)[b], (*particlemass2)[b]);
-      }
-
       string header = "#" + mcens.str() + " # MomRay " + bqptr->getMomRay() +
                       " # P^2 = " +
                       std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
@@ -485,22 +498,29 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
       if (outmode == "full") {
         fout << "E_lab/mref,E_cm/mref,(q/mref)^2,q/mref_cot_delta" << endl;
       } else {
-        fout << "E_lab/mref,E_lab/mref_upper_err,E_lab/mref_lower_err,E_lab/"
-                "mref_sym_err,"
-             << "E_cm/mref,E_cm/mref_upper_err,E_cm/mref_lower_err,E_cm/"
-                "mref_sym_err,"
-             << "(q/mref)^2,(q/mref)^2_upper_err,(q/mref)^2_lower_err,(q/"
-                "mref)^2_sym_err,"
-             << "q/mref_cot_delta,q/mref_cot_delta_upper_err,q/"
-                "mref_cot_delta_lower_err,"
-             << "q/mref_cot_delta_sym_err" << endl;
+        if (m_obs->isBootstrapMode()) {
+          fout << "E_lab/mref,E_lab/mref_upper_err,E_lab/mref_lower_err,E_lab/"
+                  "mref_sym_err,"
+               << "E_cm/mref,E_cm/mref_upper_err,E_cm/mref_lower_err,E_cm/"
+                  "mref_sym_err,"
+               << "(q/mref)^2,(q/mref)^2_upper_err,(q/mref)^2_lower_err,(q/"
+                  "mref)^2_sym_err,"
+               << "q/mref_cot_delta,q/mref_cot_delta_upper_err,q/"
+                  "mref_cot_delta_lower_err,"
+               << "q/mref_cot_delta_sym_err" << endl;
+        }
+        else { // jackknife only provides symmetric errors
+          fout << "E_lab/mref,E_lab/mref_sym_err,E_cm/mref,E_cm/"
+                  "mref_sym_err,(q/mref)^2,(q/mref)^2_sym_err,q/mref_cot_delta,"
+                  "q/mref_cot_delta_sym_err" << endl;
+        }
       }
 
       // Get energies for this specific block using our proper mapping
       const vector<uint>& energy_indices = block_energy_indices[blocknum];
 
-      // Process each energy in this block (unified logic for both full and
-      // resampled modes)
+      // Process each energy in this block
+      uint obs_key_idx = 0;
       for (uint idx : energy_indices) {
         const RVector& energy_values =
             m_obs->getFullAndSamplingValues(labenergies[idx]);
@@ -521,7 +541,7 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
         }
 
         // Storage for resampling results
-        vector<double> elab_values, ecm_values, qsqr_values, qcot_values;
+        vector<double> ecm_values, qsqr_values, qcot_values;
         uint nsamples = (outmode == "full") ? 1 : nsamp + 1;
 
         // Process full sample and resamplings
@@ -546,74 +566,144 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
           double q_cot_delta = B.get(0, 0).real(); // Take real part
 
           // Store results
-          elab_values.push_back(Elab_ref);
           ecm_values.push_back(Ecm_ref);
           qsqr_values.push_back(qsqr_over_mrefsq);
           qcot_values.push_back(q_cot_delta);
         }
 
+
         // Output results based on mode
         if (outmode == "full") {
-          fout << elab_values[0] << "," << ecm_values[0] << ","
+          fout << energy_values[0] << "," << ecm_values[0] << ","
                << qsqr_values[0] << "," << qcot_values[0] << endl;
         } else { // resampled mode
-          // Calculate error estimates using jackknife or bootstrap
-          MCEstimate elab_est, ecm_est, qsqr_est, qcot_est;
+          // construct relevant observables
+          MCObsInfo elab_obs("E_lab_" + to_string(blocknum), obs_key_idx);
+          MCObsInfo ecm_obs("E_cm_" + to_string(blocknum), obs_key_idx);
+          MCObsInfo qsqr_obs("q_cm_sqr_" + to_string(blocknum), obs_key_idx);
+          MCObsInfo qcot_obs("q_cm_cot_delta_" + to_string(blocknum),
+                             obs_key_idx);
+          KBObsInfo elab_key(mcens, elab_obs), ecm_key(mcens, ecm_obs),
+              qsqr_key(mcens, qsqr_obs), qcot_key(mcens, qcot_obs);
 
-          // Convert vectors to RVector for analysis
-          RVector elab_rvec(elab_values), ecm_rvec(ecm_values);
-          RVector qsqr_rvec(qsqr_values), qcot_rvec(qcot_values);
+          // Store the keys in the KBObsHandler
+          elab_over_mref_obskeys.push_back(elab_key);
+          ecm_over_mref_obskeys.push_back(ecm_key);
+          qsqr_over_mrefsqr_obskeys.push_back(qsqr_key);
+          qcot_over_mref_cot_delta_obskeys.push_back(qcot_key);
 
-          if (m_obs->isJackknifeMode()) {
-            m_obs->jack_analyze(elab_rvec, elab_est);
-            m_obs->jack_analyze(ecm_rvec, ecm_est);
-            m_obs->jack_analyze(qsqr_rvec, qsqr_est);
-            m_obs->jack_analyze(qcot_rvec, qcot_est);
-          } else {
-            m_obs->boot_analyze(elab_rvec, elab_est);
-            m_obs->boot_analyze(ecm_rvec, ecm_est);
-            m_obs->boot_analyze(qsqr_rvec, qsqr_est);
-            m_obs->boot_analyze(qcot_rvec, qcot_est);
-          }
+          // put the full and resampled values into m_obs
+          m_obs->putFullAndSamplings(elab_key, energy_values, true);
+          m_obs->putFullAndSamplings(ecm_key, ecm_values, true);
+          m_obs->putFullAndSamplings(qsqr_key, qsqr_values, true);
+          m_obs->putFullAndSamplings(qcot_key, qcot_values, true);
 
-          // Output format: full_value upper_error down_error
-          double elab_upper =
-              elab_est.getUpperConfLimit() - elab_est.getAverageEstimate();
-          double elab_lower =
-              elab_est.getAverageEstimate() - elab_est.getLowerConfLimit();
+          MCEstimate elab_est = m_obs->getEstimate(elab_key);
+          MCEstimate ecm_est = m_obs->getEstimate(ecm_key);
+          MCEstimate qsqr_est = m_obs->getEstimate(qsqr_key);
+          MCEstimate qcot_est = m_obs->getEstimate(qcot_key);
+
+          // Output format: full_value upper_error lower_error
+
           double elab_sym_err = elab_est.getSymmetricError();
-          double ecm_upper =
-              ecm_est.getUpperConfLimit() - ecm_est.getAverageEstimate();
-          double ecm_lower =
-              ecm_est.getAverageEstimate() - ecm_est.getLowerConfLimit();
           double ecm_sym_err = ecm_est.getSymmetricError();
-          double qsqr_upper =
-              qsqr_est.getUpperConfLimit() - qsqr_est.getAverageEstimate();
-          double qsqr_lower =
-              qsqr_est.getAverageEstimate() - qsqr_est.getLowerConfLimit();
           double qsqr_sym_err = qsqr_est.getSymmetricError();
-          double qcot_upper =
-              qcot_est.getUpperConfLimit() - qcot_est.getAverageEstimate();
-          double qcot_lower =
-              qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
           double qcot_sym_err = qcot_est.getSymmetricError();
 
-          fout << elab_values[0] << "," << elab_upper << "," << elab_lower
+          if (m_obs->isBootstrapMode()) {
+            double elab_upper =
+                elab_est.getUpperConfLimit() - elab_est.getAverageEstimate();
+            double elab_lower =
+                elab_est.getAverageEstimate() - elab_est.getLowerConfLimit();
+            double ecm_upper =
+                ecm_est.getUpperConfLimit() - ecm_est.getAverageEstimate();
+            double ecm_lower =
+                ecm_est.getAverageEstimate() - ecm_est.getLowerConfLimit();
+            double qsqr_upper =
+                qsqr_est.getUpperConfLimit() - qsqr_est.getAverageEstimate();
+            double qsqr_lower =
+                qsqr_est.getAverageEstimate() - qsqr_est.getLowerConfLimit();
+            double qcot_upper =
+                qcot_est.getUpperConfLimit() - qcot_est.getAverageEstimate();
+            double qcot_lower =
+                qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
+
+            fout << energy_values[0] << "," << elab_upper << "," << elab_lower
                << "," << elab_sym_err << "," << ecm_values[0] << ","
                << ecm_upper << "," << ecm_lower << "," << ecm_sym_err << ","
                << qsqr_values[0] << "," << qsqr_upper << "," << qsqr_lower
                << "," << qsqr_sym_err << "," << qcot_values[0] << ","
                << qcot_upper << "," << qcot_lower << "," << qcot_sym_err
                << endl;
+          }
+          else { // jackknife mode
+            fout << energy_values[0] << "," << elab_sym_err << ","
+                 << ecm_values[0] << "," << ecm_sym_err << ","
+                 << qsqr_values[0] << "," << qsqr_sym_err << ","
+                 << qcot_values[0] << "," << qcot_sym_err << endl;
+          }
         }
+        obs_key_idx++;
       }
-
       fout.close();
     }
+    
+    // output elab, ecm, q^2, qcot samplings to file, if requested
+    if (!samplings_outstub.empty() && (outmode == "resampled")) {
+      logger << "Outputting E_lab/mref, E_cm/mref, (q/mref)^2, q/mref_cot_delta to "
+                "samplings files with stub "
+             << samplings_outstub << endl;
+      std::vector<SamplingsPutHandler*> sampput(ensemble_idmap.size(), 0);
+      bool overwrite = true;
+      for (map<MCEnsembleInfo, uint>::const_iterator it =
+               ensemble_idmap.begin();
+           it != ensemble_idmap.end(); ++it) {
+        string fname(samplings_outstub);
+        fname += ".hdf5[/ensemble" + make_string(it->second) + "]";
+        SamplingsPutHandler* sp =
+            new SamplingsPutHandler(m_obs->getBinsInfo(it->first),
+                                    m_obs->getSamplingInfo(), fname, overwrite);
+        sampput[it->second] = sp;
+      }
+      
+      // write elab, ecm, q^2, qcot data for all observables
+      for (uint obs_idx = 0; obs_idx < elab_over_mref_obskeys.size(); ++obs_idx) {
+        const KBObsInfo& elab_key = elab_over_mref_obskeys[obs_idx];
+        const KBObsInfo& ecm_key = ecm_over_mref_obskeys[obs_idx];
+        const KBObsInfo& qsqr_key = qsqr_over_mrefsqr_obskeys[obs_idx];
+        const KBObsInfo& qcot_key = qcot_over_mref_cot_delta_obskeys[obs_idx];
+        
+        uint ensid = ensemble_idmap[elab_key.getMCEnsembleInfo()];
+        
+        // get the samplings from m_obs and write them
+        const RVector& elab_samplings = m_obs->getFullAndSamplingValues(elab_key);
+        const RVector& ecm_samplings = m_obs->getFullAndSamplingValues(ecm_key);
+        const RVector& qsqr_samplings = m_obs->getFullAndSamplingValues(qsqr_key);
+        const RVector& qcot_samplings = m_obs->getFullAndSamplingValues(qcot_key);
+        
+        sampput[ensid]->putData(elab_key.getMCObsInfo(), elab_samplings);
+        sampput[ensid]->putData(ecm_key.getMCObsInfo(), ecm_samplings);
+        sampput[ensid]->putData(qsqr_key.getMCObsInfo(), qsqr_samplings);
+        sampput[ensid]->putData(qcot_key.getMCObsInfo(), qcot_samplings);
+      }
+      
+      // close files
+      for (uint k = 0; k < ensemble_idmap.size(); ++k) {
+        delete sampput[k];
+      }
+    } else if (!samplings_outstub.empty() && (outmode == "full")) {
+      logger << "Warning: SamplingsOutputStub specified but OutputMode is 'full'. "
+                "Samplings output requires OutputMode='resampled'." << endl;
+    }
+
     // Clean up BoxQuantization objects
     for (uint k = 0; k < BQ.size(); ++k)
       delete BQ[k];
+
+    delete dummyKmat;
+
     m_obs->clearSamplings();
+    xmlformat("SingleChannelResults", logger.str(), xmlout);
 
   } catch (const std::exception& xp) {
     string msg("doSingleChannel failed: ");

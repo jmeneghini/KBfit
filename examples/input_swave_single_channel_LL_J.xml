@@ -1,32 +1,23 @@
 <KBFit>
     <Initialize>
-        <ProjectName>LLSingleChannelSWave</ProjectName>
-        <LogFile>LLSingleChannelSWave.log</LogFile>
+        <ProjectName>LLSingleChannelSWaveJ</ProjectName>
+        <LogFile>LLSingleChannelSWaveJ.log</LogFile>
         <EchoXML/>
         <MCSamplingInfo>
-            <Bootstrapper>
-                <NumberResamplings>2000</NumberResamplings>
-                <Seed>3103</Seed>
-                <BootSkip>0</BootSkip>
-            </Bootstrapper>
+            <Jackknife>
+                <NumberBins>200</NumberBins>
+            </Jackknife>
         </MCSamplingInfo>
-        <MCBinsInfo>
-            <MCEnsembleInfo>cls21_s64_t128_D200</MCEnsembleInfo>
-            <TweakEnsemble>
-                <Ommissions>2000</Ommissions>
-                <Rebin>10</Rebin>
-            </TweakEnsemble>
-        </MCBinsInfo>
     </Initialize>
 
     <TaskSequence>
         <Task>
             <Action>DoSingleChannel</Action>
 
-            <OutputStub>LLSingleChannelSWave</OutputStub>
+            <OutputStub>LLSingleChannelSWaveJ</OutputStub>
 <!--            <OutputMode>full</OutputMode>-->
             <OutputMode>resampled</OutputMode>
-            <SamplingsOutputStub>LLSingleChannelSWave</SamplingsOutputStub>
+            <SamplingsOutputStub>LLSingleChannelSWaveJ</SamplingsOutputStub>
 
 
             <DecayChannels>
@@ -98,22 +89,13 @@
 
             <KBObservables>
                 <MCSamplingInfo>
-                    <Bootstrapper>
-                        <NumberResamplings>2000</NumberResamplings>
-                        <Seed>3103</Seed>
-                        <BootSkip>0</BootSkip>
-                    </Bootstrapper>
+                    <Jackknife>
+                        <NumberBins>200</NumberBins>
+                    </Jackknife>
                 </MCSamplingInfo>
-                <MCBinsInfo>
-                    <MCEnsembleInfo>cls21_s64_t128_D200</MCEnsembleInfo>
-                    <TweakEnsemble>
-                        <Ommissions>2000</Ommissions>
-                        <Rebin>10</Rebin>
-                    </TweakEnsemble>
-                </MCBinsInfo>
                 <Verbose />
                 <SamplingData>
-                    <FileName>/home/john/Documents/LatticeQCD/spectrums/ensemble_based/D200/isosinglet_doublystrange/analysis/3fit_spectrum/data/samples/fit_spectrum_levels_sigmond-5-30-25-ratio-Nbin10-SP-4tN-4t0-12tD_B-samplings.hdf5[/samplings]</FileName>
+                    <FileName>/home/john/Documents/LatticeQCD/spectrums/ensemble_based/D200/isosinglet_doublystrange/analysis/3fit_spectrum/data/samples/fit_spectrum_levels_sigmond-5-30-25-ratio-Nbin10-SP-4tN-4t0-12tD_J-samplings.hdf5[/samplings]</FileName>
                 </SamplingData>
             </KBObservables>
 
