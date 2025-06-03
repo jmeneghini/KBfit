@@ -17,9 +17,10 @@
 *.dylib
 *.dll
 
-# KPiPrint files
 KPiPrint_*.*
 Kpi_print*.log
+
+*.log
 
 # Fortran module files
 *.mod
