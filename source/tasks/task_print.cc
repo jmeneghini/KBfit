@@ -494,7 +494,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       if (qctype_enum == BoxQuantization::KtildeB) {
         if (k2 == 1) {
           throw(std::invalid_argument(
-              "KtildeMatrixInverse cannot be used with StildeCB or KtildeB"));
+              "KtildeMatrixInv erse cannot be used with StildeCB or KtildeB"));
         }
       }
       if (qctype_enum == BoxQuantization::KtildeinvB) {

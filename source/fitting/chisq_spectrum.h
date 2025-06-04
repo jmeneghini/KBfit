@@ -8,17 +8,19 @@
 #include "matrix.h"
 #include "xml_handler.h"
 
+
 class SpectrumFit : public ChiSquare {
 
   KBObsHandler* KBOH;
   std::vector<BoxQuantization*> BQ;
-  std::vector<RVector> Ecm_over_mref;
-  std::vector<RVector> m_over_mref;
-  std::vector<RVector> L_mref;
-  std::vector<uint> ensemble_id;
+  std::vector<KBObsInfo> energy_obs_infos;
+  std::vector<KBObsInfo> prior_obs_infos; // masses and reference length
+  BoxQuantization::QuantCondType qctype_enum;
+
   KtildeMatrixCalculator* Kmat;
   KtildeInverseCalculator* Kinv;
   double omega_mu;
+  std::vector<uint> nres_per_block;
 
 public:
   SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
@@ -44,6 +46,14 @@ private:
   // of the fit. The evalResidualsAndInvCovCholesky function just
   // updates the vars in detres; we omit that here.
   void initializeInvCov();
+
+  static void read_obs(XMLHandler& xmlin, const std::string& tag, bool get_name,
+                       MCObsInfo& obskey, std::set<MCObsInfo>& kset,
+                       std::string& name, const MCEnsembleInfo& mcens,
+                       std::map<KBObsInfo, double>& fixed_values);
+
+  static void read_obs(XMLHandler& xmlin, const std::string& tag,
+                       MCObsInfo& obskey, std::set<MCObsInfo>& kset);
 
   friend class TaskHandler;
 };

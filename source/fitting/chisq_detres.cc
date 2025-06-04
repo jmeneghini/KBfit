@@ -55,6 +55,11 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
       return;
     }
 
+    // speecify the folder name for the output
+
+    string outstub;
+    xmlreadif(xmlin, "OutputStub", outstub, "DeterminantResidualFit");
+
     //  first set up the K or K^(-1) matrix
     uint numfitparams;
     int k1 = xmlf.count_among_children("KtildeMatrix");
@@ -202,6 +207,31 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
     }
     if (blockcount == 0) {
       throw(std::runtime_error("No data to analyze"));
+    }
+
+    // get QuantizationCondition
+    string qctype;
+    xmlreadif(xmlf, "QuantizationCondition", qctype, "DeterminantResidualFit");
+    if (qctype.empty()) {
+      throw(std::invalid_argument("QuantizationCondition tag must be present"));
+    }
+    BoxQuantization* bqptr_dummy = BQ[0];
+    try {
+      qctype_enum = bqptr_dummy->getQuantCondTypeFromString(qctype).value();
+      if (qctype_enum == BoxQuantization::KtildeB) {
+        if (k2 == 1) {
+          throw(std::invalid_argument(
+              "KtildeMatrixInverse cannot be used with StildeCB or KtildeB"));
+        }
+      }
+      if (qctype_enum == BoxQuantization::KtildeinvB) {
+        if (k1 == 1) {
+          throw(std::invalid_argument(
+              "KtildeMatrix cannot be used with StildeinvCB or KtildeinvB"));
+        }
+      }
+    } catch (std::bad_optional_access&) {
+      throw(std::invalid_argument("Invalid QuantizationCondition tag"));
     }
 
     //  connect files for input
@@ -390,6 +420,23 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
       indstart += nres;
     }
 
+    //  Create a folder with project name if it does not already exist,
+    //  and inside that folder create a folder with the QuantCond,
+    //  where the output files will be stored.
+    filesystem::path project_dir = filesystem::path(outstub);
+    filesystem::path quant_cond_dir = project_dir / qctype;
+    std::error_code ec;
+    if (!filesystem::exists(quant_cond_dir)) {
+      if (!filesystem::create_directories(quant_cond_dir, ec)) {
+        if (ec) {
+          throw(
+              std::runtime_error("Error creating directory: " + ec.message()));
+        }
+      }
+    }
+    // Now move into folder
+    filesystem::current_path(quant_cond_dir);
+
     // output Ecm_over_mref, qcmsq_over_mref, Bmat samplings to file, if
     // requested
 
@@ -404,7 +451,7 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
                ensemble_idmap.begin();
            it != ensemble_idmap.end(); ++it) {
         string fname(fstub);
-        fname += ".ens" + make_string(it->second);
+        fname += ".hdf5[/ens" + make_string(it->second) + "]";
         SamplingsPutHandler* sp =
             new SamplingsPutHandler(KBOH->getBinsInfo(it->first),
                                     KBOH->getSamplingInfo(), fname, overwrite);
@@ -507,13 +554,7 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
       uint kk = indstart + k;
       res[kk].resize(nssize);
       for (uint b = 0; b < nssize; ++b) {
-        bqptr->getKtildeOrInverseFromEcm(Ecm_over_mref[kk][b], KtildeOrInverse);
-        //      if (b==0){
-        //         for (uint j=0;j<KtildeOrInverse.size();++j)
-        //         for (uint jj=0;jj<=j;++jj) cout <<
-        //         "Ktildeinv("<<j<<","<<jj<<") =
-        //         "<<KtildeOrInverse(j,jj)<<endl;}
-        // res[kk][b] = bqptr->getOmega(omega_mu, KtildeOrInverse, Bmat[kk][b]);
+        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[indstart],);
       }
     }
     for (uint k = 0; k < nbres; ++k) {

@@ -268,6 +268,7 @@ class DeterminantResidualFit : public ChiSquare {
   KtildeInverseCalculator* Kinv;
   double omega_mu;
   std::vector<uint> nres_per_block;
+  BoxQuantization::QuantCondType qctype_enum;
 
 public:
   DeterminantResidualFit(XMLHandler& xmlin, KBObsHandler* kboh,
