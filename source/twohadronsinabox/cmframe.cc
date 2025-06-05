@@ -248,7 +248,7 @@ bool EcmTransform::double_near(double first, double second) {
 }
 
 list<double>
-EcmTransform::getFreeTwoParticleEnergies(double min_Elab_over_mref,
+EcmTransform::getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
                                          double max_Elab_over_mref) const {
   double mm1 = m1_over_mref;
   mm1 *= mm1;
@@ -301,6 +301,19 @@ EcmTransform::getFreeTwoParticleEnergies(double min_Elab_over_mref,
   Efree.sort();
   Efree.unique(double_near);
   return Efree;
+}
+
+list<double>
+EcmTransform::getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+                                         double max_Ecm_over_mref) const {
+  double Elab_min = getElabOverMref(min_Ecm_over_mref);
+  double Elab_max = getElabOverMref(max_Ecm_over_mref);
+  list<double> E_free = getFreeTwoParticleEnergiesInElab(Elab_min, Elab_max); // in Elab
+  // change in place
+  for (list<double>::iterator it = E_free.begin(); it != E_free.end(); ++it) {
+    *it = getEcmOverMref(*it); // convert to Ecm
+  }
+  return E_free;
 }
 
 // ******************************************************************

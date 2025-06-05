@@ -285,6 +285,8 @@ public:
 
   double getEcmOverMrefFromElab(double Elab_over_mref) const;
 
+  double getElabOverMrefFromEcm(double Ecm_over_mref) const;
+
   double getQcmsqOverMrefsqFromElab(double Elab_over_mref) const;
 
   double getQcmsqOverMrefsqFromEcm(double Ecm_over_mref) const;

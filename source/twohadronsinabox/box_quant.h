@@ -392,10 +392,15 @@ public:
 
   std::set<KElementInfo> getElementInfos() const;
 
-  std::list<double> getFreeTwoParticleEnergies(double min_Elab_over_mref,
+  std::list<double> getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
                                                double max_Elab_over_mref) const;
 
+  std::list<double> getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+                                               double max_Ecm_over_mref) const;
+
   double getEcmOverMrefFromElab(double Elab_over_mref) const;
+
+  double getElabOverMrefFromEcm(double Ecm_over_mref) const;
 
   void getQcmsqOverMrefsqFromElab(double Elab_over_mref,
                                   RVector& qcmsq_over_mrefsq) const;
@@ -464,17 +469,30 @@ public:
 
   cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, QuantCondType qctype);
 
-  void getRootsInEcmInterval(double mu, double Ecm_over_mref_min,
+  void getEcmRootsInEcmInterval(double mu, double Ecm_over_mref_min,
                              double Ecm_over_mref_max, QuantCondType qctype,
                              AdaptiveBracketConfig P,
                              std::vector<double>& roots,
                              std::vector<uint>& fn_calls);
 
-  void getRootsInElabInterval(double mu, double Elab_over_mref_min,
+  void getEcmRootsInElabInterval(double mu, double Elab_over_mref_min,
                               double Elab_over_mref_max, QuantCondType qctype,
                               AdaptiveBracketConfig P,
                               std::vector<double>& roots,
                               std::vector<uint>& fn_calls);
+
+  // Delta E in cm frame
+  void getDeltaERootsInEcmInterval(double mu, double Ecm_over_mref_min,
+                             double Ecm_over_mref_max, QuantCondType qctype,
+                             AdaptiveBracketConfig P,
+                             std::vector<double>& roots,
+                             std::vector<uint>& fn_calls);
+  // Delta E in lab frame TODO: this is weird and not useful. Have both return Delta E in lab frame
+  void getDeltaERootsInElabInterval(double mu, double Elab_over_mref_min,
+                             double Elab_over_mref_max, QuantCondType qctype,
+                             AdaptiveBracketConfig P,
+                             std::vector<double>& roots,
+                             std::vector<uint>& fn_calls);
 
 private:
   // case insensitive map from string to QuantCondType
@@ -549,6 +567,18 @@ private:
 
   cmplx get_omega(double mu, double E_over_mref, bool Elab,
                   QuantCondType qctype);
+
+  void get_deltaE_roots_in_interval_bracketed_by_NIs(
+      double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
+      QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+      std::vector<uint>& fn_calls);
+
+  void get_roots_in_interval_bracketed_by_NIs(double mu, double E_over_mref_min,
+                                              double E_over_mref_max, bool Elab,
+                                              QuantCondType qctype,
+                                              AdaptiveBracketConfig P,
+                                              std::vector<double>& roots,
+                                              std::vector<uint>& fn_calls);
 
   uint get_roots_in_interval(double mu, double E_over_mref_min,
                              double E_over_mref_max, bool Elab,

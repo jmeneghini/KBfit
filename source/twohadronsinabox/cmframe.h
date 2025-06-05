@@ -146,8 +146,12 @@ public:
 
   bool areEqualMasses() const { return equalmasses; }
 
-  std::list<double> getFreeTwoParticleEnergies(double min_Elab_over_mref,
-                                               double max_Elab_over_mref) const;
+  std::list<double>
+  getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
+                                   double max_Elab_over_mref) const;
+  std::list<double>
+  getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+                                  double max_Ecm_over_mref) const;
 
 private:
   void assertlabmin(double Elab_over_mref) const {

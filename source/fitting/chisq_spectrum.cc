@@ -106,8 +106,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     map<MCEnsembleInfo, map<string, MCObsInfo>> particle_masses;
     map<KBObsInfo, double> fixed_values;
 
-    std::vector<KBObsInfo> energy_obs_infos;
-
     list<XMLHandler> xmlen = xmlf.find("MCEnsembleParameters");
     for (list<XMLHandler>::iterator it = xmlen.begin(); it != xmlen.end();
          ++it) {
@@ -185,7 +183,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       for (auto & eet : xmlee) {
         read_obs(eet, "EnergyShift", rkey, kset);
         KBObsInfo this_energy_key(mcens, rkey);
-        energy_obs_infos.emplace_back(this_energy_key);
+        energy_kobs_infos.emplace_back(this_energy_key);
         energy_samples_per_ensemble[ensemblecount].push_back(KBOH->getFullAndSamplingValues(this_energy_key));
         nres++;
       }
@@ -206,7 +204,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
 
     // get total number of energy residuals
-    uint numenergies = energy_obs_infos.size();
+    uint numenergies = energy_kobs_infos.size();
     //  connect files for input
 
     KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
@@ -314,6 +312,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         KBOH->putFullAndSamplings(lengthkey, buff);
       }
       prior_obs_infos.push_back(obskey);
+      prior_kobs_infos.push_back(lengthkey);
 
       //  get particle masses (form ratios if energy_ratio false)
 
@@ -324,6 +323,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         current_particle_key.resetObsIndex(current_ensemble_id);
         KBObsInfo masskey(mcens, current_particle_key);
         prior_obs_infos.push_back(current_particle_key);
+        prior_kobs_infos.push_back(masskey);
         const RVector& mass = KBOH->getFullAndSamplingValues(
             masskey); // reads from file, gets into memory
         bool not_fixed = (fixed_values.find(masskey) == fixed_values.end());
@@ -378,23 +378,39 @@ void SpectrumFit::clear() {
 // (L, mass, etc.), just use mean values.
 void SpectrumFit::guessInitialFitParamValues(
     vector<double>& fitparams) const {
-  if (Kmat != 0)
-    fitparams = Kmat->getParameterValues();
-  else
-    fitparams = Kinv->getParameterValues();
+  // 1.  k-matrix parameters
+  const std::vector<double>& k_fit_params =
+      (Kmat ? Kmat->getParameterValues() : Kinv->getParameterValues());
+
+  std::size_t offset = 0;                                  // where we're writing next
+  std::copy(k_fit_params.begin(), k_fit_params.end(),      // copy K-matrix params
+            fitparams.begin() + offset);
+  offset += k_fit_params.size();                           // advance offset
+
+  // 2.  Ensemble-specific parameters:  L, m01 … m0N,  L, m11 … etc.
+  // We'll use their full values to start with.
+  for (std::size_t e = 0; e < length_samples_per_ensemble.size(); ++e) {
+
+    // L for ensemble e
+    fitparams[offset++] = length_samples_per_ensemble[e][0];
+
+    // masses for ensemble e
+    const auto& masses = mass_samples_per_ensemble[e];
+    for (const auto& mass_samples : masses) {
+      fitparams[offset++] = mass_samples[0];
+    }
+  }
 }
 
 void SpectrumFit::getFitParamMCObsInfo(
     vector<MCObsInfo>& fitinfos) const {
-  const vector<KFitParamInfo>* fpptr = 0;
-  if (Kmat != 0)
-    fpptr = &(Kmat->getFitParameterInfos());
-  else
-    fpptr = &(Kinv->getFitParameterInfos());
-  fitinfos.resize(fpptr->size());
-  for (uint k = 0; k < fitinfos.size(); ++k) {
-    fitinfos[k] = MCObsInfo((*fpptr)[k].getMCObsName());
-  }
+  const vector<KFitParamInfo>& k_infos =
+    (Kmat ? Kmat->getFitParameterInfos() : Kinv->getFitParameterInfos());
+  uint offset = 0;
+  for (const auto& info : k_infos)
+    fitinfos[offset++] = MCObsInfo(info.getMCObsName());
+  for (const auto& obs : prior_obs_infos)
+    fitinfos[offset++] = obs;
 }
 
 // might want to modify this at some point once I
@@ -412,23 +428,66 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
 
 // This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
+  // Think im forced to copy for the kmat parameters, unless we're > c++ 20 (std::span)
+  std::vector<double> k_params(fitparams.begin(), fitparams.begin() + n_kmat_params);
+  (Kmat ? Kmat->setParameterValues(k_params) : Kinv->setParameterValues(k_params));
+  std::vector<double> prior_params(fitparams.begin() + n_kmat_params, fitparams.end());
 
+  uint offset = 0;
+  uint block_offset = 0;
+  for (uint ensemble = 0; ensemble < length_samples_per_ensemble.size(); ++ensemble) {
+    // setup the BQ for the ensemble/block
+    // first eval the length residual
+    double length_param = prior_params[offset];
+    residuals[offset]
+        = length_samples_per_ensemble[ensemble][resampling_index] - length_param;
+    offset++;
+    uint mass_offset = 0;
+    for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
+      double mass1 = prior_params[offset];
+      residuals[offset]
+          = mass_samples_per_ensemble[ensemble][mass_offset++][resampling_index] - mass1;
+      offset++;
+      double mass2;
+      if (are_decay_channels_identical[decay_channel]) {
+        mass2 = mass1;
+      }
+      else {
+        mass2 = prior_params[offset];
+        residuals[offset]
+            = mass_samples_per_ensemble[ensemble][mass_offset++][resampling_index] - mass2;
+        offset++;
+      }
+      for (uint block = 0; block < n_blocks_per_ensemble[ensemble ]; ++block) {
+        // set all the masses and lengths for all BQ blocks in the ensemble
+        BQ[block + block_offset]->setRefMassL(length_param);
+        BQ[block + block_offset]->setMassesOverRef(decay_channel, mass1, mass2);
+      }
+    }
+    // now BQs are set up for the ensemble, so we can get the energy predictions
+    uint energy_offset = 0;
+    for (uint block = 0; block < n_blocks_per_ensemble[ensemble]; ++block) {
+      BoxQuantization* this_block_bq = BQ[block + block_offset];
+      std::vector<double> energy_shift_predictions;
+      energy_shift_predictions.reserve(n_energies_per_block[block + block_offset]); // getRoots uses this.
+      std::vector<uint> fn_calls;
+      this_block_bq->getDeltaERootsInElabInterval(omega_mu, Elab_min, Elab_max,
+                                      qctype_enum, root_finder_config,
+                                      energy_shift_predictions, fn_calls);
+      // both the energy obs and predictions are sorted by increasing Ecm
+      for (uint energy_index = 0; energy_index < n_energies_per_block[block + block_offset]; ++energy_index) {
+        residuals[offset++]
+          = energy_samples_per_ensemble[ensemble][energy_offset++][resampling_index]
+            - energy_shift_predictions[energy_index];
+      }
+    }
+    block_offset += n_blocks_per_ensemble[ensemble];
+  }
+  // InvCovCholesky is already initialized and hasn't changed,
+  // so we don't need to recompute it here.
 }
 
 
-void SpectrumFit::initializeFitParamsAndObservables() {
-  // first set number of K_mat parameters
-  if (Kmat != 0) {
-    n_kmat_params = Kmat->getNumberOfParameters();
-    n_decay_channels = Kmat->getNumberOfDecayChannels();
-  }
-  else {
-    n_kmat_params = Kinv->getNumberOfParameters();
-    n_decay_channels = Kinv->getNumberOfDecayChannels();
-  }
-
-
-}
 
 // By introducing the priors for our MC observables,
 // cov(r_i, r_j) simplifies to cov(R_i, R_j), where
@@ -436,18 +495,46 @@ void SpectrumFit::initializeFitParamsAndObservables() {
 void SpectrumFit::initializeInvCovCholesky() {
   std::vector<const RVector*> obs_samples;
   std::vector<MCEnsembleInfo> obs_ensemble_infos;
+  obs_samples.reserve(nresiduals);
+  obs_ensemble_infos.reserve(nresiduals);
 
-  // Populate obs_samples and obs_ensemble_infos
-  // Order: energy observables first, then prior observables
-  for (const auto& energy_info : this->energy_obs_infos) {
-    obs_samples.push_back(&(KBOH->getFullAndSamplingValues(energy_info)));
-    obs_ensemble_infos.push_back(energy_info.getMCEnsembleInfo());
-  }
-  for (const auto& prior_info : this->prior_obs_infos) {
-    obs_samples.push_back(&(KBOH->getFullAndSamplingValues(prior_info)));
-    obs_ensemble_infos.push_back(prior_info.getMCEnsembleInfo());
-  }
+  uint block_offset = 0;
 
+  for (uint ens = 0; ens < length_samples_per_ensemble.size(); ++ens) {
+    // length
+    obs_samples.push_back( &length_samples_per_ensemble[ens]            );
+    obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );  // or whatever ctor
+
+    // masses
+    uint mass_offset = 0;
+    for (uint dc = 0; dc < n_decay_channels; ++dc)
+    {
+      obs_samples.push_back(
+          &mass_samples_per_ensemble[ens][mass_offset++] );
+      obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+
+      if (!are_decay_channels_identical[dc])
+      {
+        obs_samples.push_back(
+            &mass_samples_per_ensemble[ens][mass_offset++] );
+        obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+      }
+    }
+
+    // -- energy Delta E’s --------------------------------------------------------
+    uint energy_offset = 0;
+    for (uint block = 0; block < n_blocks_per_ensemble[ens]; ++block)
+    {
+      uint nE = n_energies_per_block[block + block_offset];
+      for (uint e = 0; e < nE; ++e)
+      {
+        obs_samples.push_back(
+            &energy_samples_per_ensemble[ens][energy_offset++] );
+        obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+      }
+    }
+    block_offset += n_blocks_per_ensemble[ens];
+  }
 
   RealSymmetricMatrix cov(nresiduals, 0.0);
   bool bootstrap_mode = KBOH->isBootstrapMode();

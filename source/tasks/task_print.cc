@@ -694,7 +694,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       fout_nis << "E_lab,E_cm" << endl;
 
-      list<double> ni_energies = bqptr->getFreeTwoParticleEnergies(emin, emax);
+      list<double> ni_energies = bqptr->getFreeTwoParticleEnergiesInElab(emin, emax);
       for (double& ni_energy : ni_energies) {
         double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
         fout_nis << ni_energy << "," << ecm_energy << endl;
@@ -763,7 +763,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       if (do_root_find) {
         std::vector<double> roots;
         std::vector<uint> fn_calls;
-        bqptr->getRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
+        bqptr->getEcmRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
                                       root_config, roots, fn_calls);
         ofstream fout_roots(roots_filename);
 

@@ -17,9 +17,14 @@ class SpectrumFit : public ChiSquare {
   std::vector<std::vector<RVector>> mass_samples_per_ensemble;//
   std::vector<RVector> length_samples_per_ensemble;//
 
+  AdaptiveBracketConfig root_finder_config;//
+  double Elab_max, Elab_min;
+
   // reference length and masses for each ensemble
   // each ensemble gets a single length and multiple decay masses
   std::vector<MCObsInfo> prior_obs_infos;//
+  std::vector<KBObsInfo> prior_kobs_infos;//
+  std::vector<KBObsInfo> energy_kobs_infos;//
 
   KtildeMatrixCalculator* Kmat;//
   KtildeInverseCalculator* Kinv;//
@@ -27,6 +32,7 @@ class SpectrumFit : public ChiSquare {
   std::vector<uint> n_energies_per_block;//
   std::vector<bool> are_decay_channels_identical;//
   std::vector<uint> ensemble_id_per_block;
+  std::vector<uint> n_blocks_per_ensemble;
   uint n_decay_channels;//
   uint n_kmat_params;//
 

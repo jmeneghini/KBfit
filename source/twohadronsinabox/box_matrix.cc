@@ -161,6 +161,10 @@ double BoxMatrix::getEcmOverMrefFromElab(double Elab_over_mref) const {
   return m_cmt.getEcmOverMref(Elab_over_mref);
 }
 
+double BoxMatrix::getElabOverMrefFromEcm(double Ecm_over_mref) const {
+  return m_cmt.getElabOverMref(Ecm_over_mref);
+}
+
 double BoxMatrix::getQcmsqOverMrefsqFromElab(double Elab_over_mref) const {
   return m_cmt.getQcmsqOverMrefsq(Elab_over_mref);
 }
