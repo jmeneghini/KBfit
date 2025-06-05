@@ -294,9 +294,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     XMLHandler xmlr(xmltask, "KBObservables");
     MCSamplingInfo sampinfo(xmlr);
     if (sampinfo != m_obs->getSamplingInfo()) {
-      // m_obs->setSamplingInfo(sampinfo);
-      // logger << "MCSamplingInfo reset in KBObsHandler in
-      // DeterminantResidualFit"<<endl;}
       throw(std::invalid_argument("KBObservables MCSamplingInfo does not match "
                                   "that of the KBObsHandler"));
     }
@@ -350,7 +347,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
     //  assign mu  (negative value means use determinant itself)
     double omega_mu = -1.0;
-    xmlreadif(xmltask, "OmegaMu", omega_mu, "DeterminantResidualFit");
+    xmlreadif(xmltask, "OmegaMu", omega_mu, "DoPrint");
     logger << "Omega mu = " << omega_mu << endl;
 
     //  get format for energies/mass (in terms of product with
@@ -359,7 +356,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     {
       string reply;
       xmlreadif(xmltask, "DefaultEnergyFormat", reply,
-                "DeterminantResidualFit");
+                "DoPrint");
       if ((reply == "reference_ratio") || (reply.empty()))
         energy_ratios = true;
       else if (reply == "time_spacing_product")
@@ -402,7 +399,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       string pname;
       MCObsInfo rkey;
       // get lattice spacing times reference scale info
-      DeterminantResidualFit::read_obs(*it, "ReferenceMassTimeSpacingProduct",
+      ChiSquare::read_obs(*it, "ReferenceMassTimeSpacingProduct",
                                        false, rkey, kset, pname, mcens,
                                        fixed_values);
       ref_at_mass.insert(make_pair(mcens, rkey));
@@ -411,7 +408,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       } // remove ref_at_mass from kset
       // get anisotropy info
       if (xml_tag_count(*it, "LatticeAnisotropy") == 1) {
-        DeterminantResidualFit::read_obs(*it, "LatticeAnisotropy", false, rkey,
+        ChiSquare::read_obs(*it, "LatticeAnisotropy", false, rkey,
                                          kset, pname, mcens, fixed_values);
         anisotropy.insert(make_pair(mcens, rkey));
       }
@@ -420,7 +417,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       list<XMLHandler> xmlp = it->find("ParticleMass");
       for (list<XMLHandler>::iterator pt = xmlp.begin(); pt != xmlp.end();
            ++pt) {
-        DeterminantResidualFit::read_obs(*pt, "ParticleMass", true, rkey, kset,
+        ChiSquare::read_obs(*pt, "ParticleMass", true, rkey, kset,
                                          pname, mcens, fixed_values);
         if (pmap.find(pname) != pmap.end())
           throw(std::invalid_argument("Duplicate particle masses"));
