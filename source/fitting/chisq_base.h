@@ -1,9 +1,12 @@
 #ifndef CHISQ_BASE_H
 #define CHISQ_BASE_H
 
+#include "box_quant.h"
 #include "matrix.h"
 #include "mcobs_info.h"
 #include "xml_handler.h"
+#include "kbobs_info.h"
+#include "ensemble_info.h"
 
 // ********************************************************************************
 // * *
@@ -73,6 +76,7 @@ protected: // derived classes have access to the protected members
   std::vector<double> residuals;
   uint nresamplings;
   uint resampling_index;
+  BoxQuantization::QuantCondType qctype_enum;
 
 public:
   ChiSquare() {}
@@ -106,12 +110,23 @@ public:
   void evalDiagonalResiduals(const std::vector<double>& fitparams,
                              double* diag_residuals);
 
+  static void read_obs(XMLHandler& xmlin, const std::string& tag, bool get_name,
+                       MCObsInfo& obskey, std::set<MCObsInfo>& kset,
+                       std::string& name, const MCEnsembleInfo& mcens,
+                       std::map<KBObsInfo, double>& fixed_values);
+
+  static void read_obs(XMLHandler& xmlin, const std::string& tag,
+                       MCObsInfo& obskey, std::set<MCObsInfo>& kset);
+
+
 protected:
   void initialize_base(uint number_fit_parameters, uint number_residuals,
                        uint number_resamplings);
 
   virtual void
   evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) = 0;
+
+
 };
 
 // *****************************************************************

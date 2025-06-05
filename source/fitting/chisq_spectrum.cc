@@ -49,8 +49,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       return;
     }
 
-    //  first set up the K or K^(-1) matrix
-    uint numfitparams;
+    //  first set up the K or K^(-1) matrix // TODO: allow use of K or Kinv for cayley transfored QCs
     int k1 = xmlf.count_among_children("KtildeMatrix");
     int k2 = xmlf.count_among_children("KtildeMatrixInverse");
     if ((k1 + k2) != 1)
@@ -59,16 +58,18 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     const vector<DecayChannelInfo>* dcptr;
     if (k1 == 1) {
       Kmat = new KtildeMatrixCalculator(xmlf, true);
-      numfitparams = Kmat->getNumberOfParameters();
+      n_kmat_params = Kmat->getNumberOfParameters();
+      n_decay_channels = Kmat->getNumberOfDecayChannels();
       dcptr = &(Kmat->getDecayChannelInfos());
     } else {
       Kinv = new KtildeInverseCalculator(xmlf, true);
-      numfitparams = Kinv->getNumberOfParameters();
+      n_kmat_params = Kinv->getNumberOfParameters();
+      n_decay_channels = Kinv->getNumberOfDecayChannels();
       dcptr = &(Kinv->getDecayChannelInfos());
     }
 
     // get set of particle names
-    set<string> pnames;
+    set<string> pnames; // same for each ensemble
     for (vector<DecayChannelInfo>::const_iterator dct = dcptr->begin();
          dct != dcptr->end(); dct++) {
       pnames.insert(dct->getParticle1Name());
@@ -104,6 +105,8 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     map<MCEnsembleInfo, MCObsInfo> anisotropy;
     map<MCEnsembleInfo, map<string, MCObsInfo>> particle_masses;
     map<KBObsInfo, double> fixed_values;
+
+    std::vector<KBObsInfo> energy_obs_infos;
 
     list<XMLHandler> xmlen = xmlf.find("MCEnsembleParameters");
     for (list<XMLHandler>::iterator it = xmlen.begin(); it != xmlen.end();
@@ -153,7 +156,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     if (ensembles.empty())
       throw(std::invalid_argument("No ensembles listed in input XML"));
 
-    //  Loop over the KB quantization blocks to get the lab-frame
+    //  Loop over the KB quantization blocks to get the shift
     //  energies infos.
 
     vector<MCEnsembleInfo> blockens;
@@ -178,24 +181,31 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       set<MCObsInfo>& kset = needed_keys[mcens];
       uint nres = 0;
       MCObsInfo rkey;
-      list<XMLHandler> xmlee = it->find("LabFrameEnergy");
-      for (list<XMLHandler>::iterator eet = xmlee.begin(); eet != xmlee.end();
-           ++eet) {
-        read_obs(*eet, "LabFrameEnergy", rkey, kset);
-        energy_obs_infos.push_back(KBObsInfo(mcens, rkey));
+      list<XMLHandler> xmlee = it->find("EnergyShift");
+      for (auto & eet : xmlee) {
+        read_obs(eet, "EnergyShift", rkey, kset);
+        KBObsInfo this_energy_key(mcens, rkey);
+        energy_obs_infos.emplace_back(this_energy_key);
+        energy_samples_per_ensemble[ensemblecount].push_back(KBOH->getFullAndSamplingValues(this_energy_key));
         nres++;
       }
       if (nres == 0)
         throw(std::invalid_argument(
             "No energies available in at least one block"));
-      nres_per_block.push_back(nres);
+      n_energies_per_block.push_back(nres);
       blockcount++;
     }
     if (blockcount == 0) {
       throw(std::runtime_error("No data to analyze"));
     }
 
-    // get total number of residuals
+    // set the size of our vectors
+    energy_samples_per_ensemble.resize(ensemblecount);
+    mass_samples_per_ensemble.resize(ensemblecount);
+    length_samples_per_ensemble.resize(ensemblecount);
+
+
+    // get total number of energy residuals
     uint numenergies = energy_obs_infos.size();
     //  connect files for input
 
@@ -261,7 +271,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
     //  read the reference mass time-spacing products for each ensemble into
     //  memory; evaluate reference lengths and particle masses for each ensemble
-
+    uint current_ensemble_id = 0;
     for (map<MCEnsembleInfo, MCObsInfo>::iterator et = ref_at_mass.begin();
          et != ref_at_mass.end(); ++et) {
       const MCEnsembleInfo& mcens = et->first;
@@ -284,7 +294,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       const RVector& atrefmass = KBOH->getFullAndSamplingValues(scalekey);
       if (atrefmass.size() != (nsamp + 1))
         throw(std::runtime_error("Resampling size mismatch in KBfit"));
-      MCObsInfo obskey("LengthReference");
+      MCObsInfo obskey("LengthReference", current_ensemble_id);
       KBObsInfo lengthkey(mcens, obskey);
       {
         RVector buff(nsamp + 1);
@@ -300,15 +310,20 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
           for (uint k = 0; k <= nsamp; ++k)
             buff[k] = atrefmass[k] * double(Llat) * anisotropy[k];
         }
+        length_samples_per_ensemble.push_back(buff);
         KBOH->putFullAndSamplings(lengthkey, buff);
       }
+      prior_obs_infos.push_back(obskey);
 
       //  get particle masses (form ratios if energy_ratio false)
 
       map<string, MCObsInfo>& pmap = particle_masses[mcens];
       for (set<string>::const_iterator pt = pnames.begin(); pt != pnames.end();
            ++pt) {
-        KBObsInfo masskey(mcens, pmap[*pt]);
+        MCObsInfo& current_particle_key = pmap[*pt];
+        current_particle_key.resetObsIndex(current_ensemble_id);
+        KBObsInfo masskey(mcens, current_particle_key);
+        prior_obs_infos.push_back(current_particle_key);
         const RVector& mass = KBOH->getFullAndSamplingValues(
             masskey); // reads from file, gets into memory
         bool not_fixed = (fixed_values.find(masskey) == fixed_values.end());
@@ -320,51 +335,20 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
           for (uint kk = 0; kk < massratio.size(); ++kk)
             massratio[kk] /= atrefmass[kk];
           KBOH->putFullAndSamplings(masskey, massratio, true);
+          mass_samples_per_ensemble[current_ensemble_id].push_back(massratio);
+        } else {
+          mass_samples_per_ensemble[current_ensemble_id].push_back(mass);
         }
       }
+      current_ensemble_id++;
     }
 
-    //  now evaluate Ecm and the box matrices
-    //  for each block and each resampling
+    initialize_base(n_kmat_params, numenergies, nsamplings);
+    
+    // The SpectrumFit is designed to use a fixed covariance matrix calculated once.
+    this->initializeInvCovCholesky();
 
-    uint indstart = 0;
-    for (uint blocknum = 0; blocknum < nres_per_block.size(); ++blocknum) {
-      uint nres = nres_per_block[blocknum];
-      if (verbose) {
-        logger << "Setting up box matrix and Ecm for block number " << blocknum
-               << endl;
-        logger << "Number of energy levels = " << nres << endl;
-      }
-      uint indstop = indstart + nres;
-      BoxQuantization* bqptr = BQ[blocknum];
-      logger << "MomRay " << bqptr->getMomRay()
-             << "   P^2 = " << bqptr->getTotalMomentumIntegerSquared()
-             << " Box Irrep " << bqptr->getLittleGroupBoxIrrep() << endl;
-      const MCEnsembleInfo& mcens = blockens[blocknum];
-      uint mcensid = ensemble_idmap[mcens];
-      uint nsamp = KBOH->getNumberOfResamplings();
-      map<string, MCObsInfo>& pmap = particle_masses[mcens];
-
-      // put all priors into vector
-      KBObsInfo lengthkey(mcens, MCObsInfo("LengthReference"));
-      prior_obs_infos.push_back(lengthkey);
-
-
-      uint nchan = bqptr->getNumberOfDecayChannels();
-      vector<const RVector*> particlemass1(nchan), particlemass2(nchan);
-      for (uint ci = 0; ci < nchan; ++ci) {
-        const DecayChannelInfo& chan = bqptr->getDecayChannelInfo(ci);
-        const string& pname1 = chan.getParticle1Name();
-        const string& pname2 = chan.getParticle2Name();
-        KBObsInfo mass1key(mcens, pmap[pname1]);
-        KBObsInfo mass2key(mcens, pmap[pname2]);
-        particlemass1[ci] = &(KBOH->getFullAndSamplingValues(mass1key));
-        particlemass2[ci] = &(KBOH->getFullAndSamplingValues(mass2key));
-      }
-    }
-
-    KBOH->clearSamplings();
-    initialize_base(numfitparams, numenergies, nsamplings);
+    KBOH->clearSamplings(); // Clear sampling data from memory after initial use
     xmlformat("SpectrumFitConstruction", logger.str(), xmlout);
 
   } catch (const std::exception& xp) {
@@ -416,110 +400,72 @@ void SpectrumFit::getFitParamMCObsInfo(
 // might want to modify this at some point once I
 // better understand its purpose
 void SpectrumFit::do_output(XMLHandler& xmlout) const {
-  xmlout.set_root("DeterminantResidualFit");
+  xmlout.set_root("SpectrumFit");
   XMLHandler xmlK;
   if (Kmat != 0)
     Kmat->output(xmlK);
   else
     Kinv->output(xmlK);
   xmlout.put_child(xmlK);
+  // TODO: Add any other SpectrumFit specific outputs if necessary
 }
 
+// This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
 
 }
 
 
+void SpectrumFit::initializeFitParamsAndObservables() {
+  // first set number of K_mat parameters
+  if (Kmat != 0) {
+    n_kmat_params = Kmat->getNumberOfParameters();
+    n_decay_channels = Kmat->getNumberOfDecayChannels();
+  }
+  else {
+    n_kmat_params = Kinv->getNumberOfParameters();
+    n_decay_channels = Kinv->getNumberOfDecayChannels();
+  }
+
+
+}
+
 // By introducing the priors for our MC observables,
 // cov(r_i, r_j) simplifies to cov(R_i, R_j), where
 // R is the observable
-void SpectrumFit::initializeInvCov() {
-  bool bootstrap = KBOH->isBootstrapMode();
+void SpectrumFit::initializeInvCovCholesky() {
+  std::vector<const RVector*> obs_samples;
+  std::vector<MCEnsembleInfo> obs_ensemble_infos;
 
-  // get params
-  vector<MCObsInfo> param_infos;
-  getFitParamMCObsInfo(param_infos);
-  vector<vector<double>> obs_samples(param_infos.size());
+  // Populate obs_samples and obs_ensemble_infos
+  // Order: energy observables first, then prior observables
+  for (const auto& energy_info : this->energy_obs_infos) {
+    obs_samples.push_back(&(KBOH->getFullAndSamplingValues(energy_info)));
+    obs_ensemble_infos.push_back(energy_info.getMCEnsembleInfo());
+  }
+  for (const auto& prior_info : this->prior_obs_infos) {
+    obs_samples.push_back(&(KBOH->getFullAndSamplingValues(prior_info)));
+    obs_ensemble_infos.push_back(prior_info.getMCEnsembleInfo());
+  }
+
 
   RealSymmetricMatrix cov(nresiduals, 0.0);
-  for (uint k = 0; k < nresiduals; ++k)
+  bool bootstrap_mode = KBOH->isBootstrapMode();
+
+  for (uint k = 0; k < nresiduals; ++k) {
     for (uint j = 0; j <= k; ++j) {
-      if ((j == k) || (Ecm_ensemble_id[k] == Ecm_ensemble_id[j]))
-        cov(k, j) = (bootstrap) ? KBOH->boot_covariance(res[k], res[j])
-                                : KBOH->jack_covariance(res[k], res[j]);
+      // Set covariance to zero if observables are from different ensembles
+      if (obs_ensemble_infos[k] == obs_ensemble_infos[j]) {
+        cov(k, j) = bootstrap_mode ? KBOH->boot_covariance(*(obs_samples[k]), *(obs_samples[j]))
+                                   : KBOH->jack_covariance(*(obs_samples[k]), *(obs_samples[j]));
+      }
+      else {
+        cov(k, j) = 0.0; // different ensembles, 0 covariance
+      }
     }
-}
-
-void SpectrumFit::read_obs(XMLHandler& xmlin, const string& tag,
-                                      bool get_name, MCObsInfo& obskey,
-                                      set<MCObsInfo>& kset, string& name,
-                                      const MCEnsembleInfo& mcens,
-                                      map<KBObsInfo, double>& fixed_values) {
-  try {
-    XMLHandler xmlt(xmlin, tag);
-    name.clear();
-    if (get_name) {
-      xmlread(xmlt, "Name", name, tag);
-    }
-    uint mcount = xmlt.count("MCObs") + xmlt.count("MCObservable");
-    uint fcount = xmlt.count("FixedValue");
-    if ((mcount + fcount) != 1)
-      throw(std::invalid_argument("No MCObs/MCObservable or FixedValue"));
-    if (mcount == 1) {
-      obskey = MCObsInfo(xmlt);
-      if ((obskey.isImaginaryPart()) || (obskey.isSimple()))
-        throw(std::invalid_argument("MCObsInfo must be nonsimple and real"));
-      if (obskey == MCObsInfo("KBScale"))
-        throw(std::invalid_argument(
-            "KBScale is reserved and cannot be an input MCObsInfo"));
-      if (kset.find(obskey) != kset.end())
-        throw(std::invalid_argument("duplicate MCObsInfo"));
-      kset.insert(obskey);
-    } else {
-      double fixedvalue;
-      xmlread(xmlt, "FixedValue", fixedvalue, tag);
-      string kbname(tag);
-      if (!name.empty())
-        kbname += "_" + name;
-      obskey = MCObsInfo(kbname);
-      KBObsInfo kbkey(mcens, obskey);
-      fixed_values.insert(make_pair(kbkey, fixedvalue));
-    }
-  } catch (const std::exception& xp) {
-    string msg = string("For tag ") + tag;
-    throw(std::invalid_argument(msg + string(": ") + xp.what()));
   }
-}
 
-//  This routine does the following:
-//    -- searches only within an XML tag with name specified in "tag"
-//    -- an <MCObs> or <MCObservable> must be encountered, then "obskey"
-//        is assigned this tag; if "obskey" is already in "kset", an
-//        exception is thrown, but if not, then "obskey" is inserted
-//        into "kset".
-//    -- "obskey" must be nonsimple and real.
-
-void SpectrumFit::read_obs(XMLHandler& xmlin, const string& tag,
-                                      MCObsInfo& obskey, set<MCObsInfo>& kset) {
-  try {
-    XMLHandler xmlt(xmlin, tag);
-    uint mcount = xmlt.count("MCObs") + xmlt.count("MCObservable");
-    uint fcount = xmlt.count("FixedValue");
-    if ((mcount != 1) || (fcount != 0))
-      throw(std::invalid_argument(
-          "No MCObs/MCObservable or disallowed FixedValue"));
-    obskey = MCObsInfo(xmlt);
-    if ((obskey.isImaginaryPart()) || (obskey.isSimple()))
-      throw(std::invalid_argument("MCObsInfo must be nonsimple and real"));
-    if (obskey == MCObsInfo("KBScale"))
-      throw(std::invalid_argument(
-          "KBScale is reserved and cannot be an input MCObsInfo"));
-    if (kset.find(obskey) != kset.end())
-      throw(std::invalid_argument("duplicate MCObsInfo"));
-    kset.insert(obskey);
-  } catch (const std::exception& xp) {
-    string msg = string("For tag ") + tag;
-    throw(std::invalid_argument(msg + string(": ") + xp.what()));
-  }
+  CholeskyDecomposer CD;
+  CD.getCholeskyOfInverse(cov, inv_cov_cholesky);
 }
 

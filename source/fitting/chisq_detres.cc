@@ -554,7 +554,7 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
       uint kk = indstart + k;
       res[kk].resize(nssize);
       for (uint b = 0; b < nssize; ++b) {
-        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[indstart],);
+        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[indstart][b], qctype_enum).real();
       }
     }
     for (uint k = 0; k < nbres; ++k) {
@@ -574,15 +574,6 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
     }
 
   CholeskyDecomposer CD;
-
-  // cout << "   *************** "<<endl;
-  // for (uint k=0;k<fitparams.size();++k)
-  //    cout << "fitparam["<<k<<"] = "<<fitparams[k]<<endl;
-  // for (uint k=0;k<residuals.size();++k)
-  //    cout << "residual["<<k<<"] = "<<residuals[k]<<endl;
-  // for (uint k=0;k<residuals.size();++k)
-  // for (uint kk=k;kk<residuals.size();++kk)
-  //    cout << "cov["<<k<<","<<kk<<"] = "<<cov(k,kk)<<endl;
 
   CD.getCholeskyOfInverse(cov, inv_cov_cholesky);
 }
@@ -624,94 +615,6 @@ DeterminantResidualFit::getFitParamInfos() const {
     return Kmat->getFitParameterInfos();
   else
     return Kinv->getFitParameterInfos();
-}
-
-//  This routine does the following:
-//    -- searches only within an XML tag with name specified in "tag"
-//    -- if "get_name" is true, then a <Name> tag is sought, and the
-//        value of this tag is returned in "name"; if "get_name" false,
-//        a blank string is returned in "name"
-//    -- if an <MCObs> or <MCObservable> is encountered, then "obskey"
-//        is assigned this tag; if "obskey" is already in "kset", an
-//        exception is thrown, but if not, then "obskey" is inserted
-//        into "kset".
-//    -- if a <FixedValue> tag is encountered, then the fixed value is
-//        read; "obskey" is assigned an MCObsInfo constructed using
-//        "tag" and "name", and the fixed value is put into the "fixed_values"
-//        map; the "obskey" is NOT inserted into "kset"
-//    -- "obskey" must be nonsimple and real.
-
-void DeterminantResidualFit::read_obs(XMLHandler& xmlin, const string& tag,
-                                      bool get_name, MCObsInfo& obskey,
-                                      set<MCObsInfo>& kset, string& name,
-                                      const MCEnsembleInfo& mcens,
-                                      map<KBObsInfo, double>& fixed_values) {
-  try {
-    XMLHandler xmlt(xmlin, tag);
-    name.clear();
-    if (get_name) {
-      xmlread(xmlt, "Name", name, tag);
-    }
-    uint mcount = xmlt.count("MCObs") + xmlt.count("MCObservable");
-    uint fcount = xmlt.count("FixedValue");
-    if ((mcount + fcount) != 1)
-      throw(std::invalid_argument("No MCObs/MCObservable or FixedValue"));
-    if (mcount == 1) {
-      obskey = MCObsInfo(xmlt);
-      if ((obskey.isImaginaryPart()) || (obskey.isSimple()))
-        throw(std::invalid_argument("MCObsInfo must be nonsimple and real"));
-      if (obskey == MCObsInfo("KBScale"))
-        throw(std::invalid_argument(
-            "KBScale is reserved and cannot be an input MCObsInfo"));
-      if (kset.find(obskey) != kset.end())
-        throw(std::invalid_argument("duplicate MCObsInfo"));
-      kset.insert(obskey);
-    } else {
-      double fixedvalue;
-      xmlread(xmlt, "FixedValue", fixedvalue, tag);
-      string kbname(tag);
-      if (!name.empty())
-        kbname += "_" + name;
-      obskey = MCObsInfo(kbname);
-      KBObsInfo kbkey(mcens, obskey);
-      fixed_values.insert(make_pair(kbkey, fixedvalue));
-    }
-  } catch (const std::exception& xp) {
-    string msg = string("For tag ") + tag;
-    throw(std::invalid_argument(msg + string(": ") + xp.what()));
-  }
-}
-
-//  This routine does the following:
-//    -- searches only within an XML tag with name specified in "tag"
-//    -- an <MCObs> or <MCObservable> must be encountered, then "obskey"
-//        is assigned this tag; if "obskey" is already in "kset", an
-//        exception is thrown, but if not, then "obskey" is inserted
-//        into "kset".
-//    -- "obskey" must be nonsimple and real.
-
-void DeterminantResidualFit::read_obs(XMLHandler& xmlin, const string& tag,
-                                      MCObsInfo& obskey, set<MCObsInfo>& kset) {
-  try {
-    XMLHandler xmlt(xmlin, tag);
-    uint mcount = xmlt.count("MCObs") + xmlt.count("MCObservable");
-    uint fcount = xmlt.count("FixedValue");
-    if ((mcount != 1) || (fcount != 0))
-      throw(std::invalid_argument(
-          "No MCObs/MCObservable or disallowed FixedValue"));
-    obskey = MCObsInfo(xmlt);
-    if ((obskey.isImaginaryPart()) || (obskey.isSimple()))
-      throw(std::invalid_argument("MCObsInfo must be nonsimple and real"));
-    if (obskey == MCObsInfo("KBScale"))
-      throw(std::invalid_argument(
-          "KBScale is reserved and cannot be an input MCObsInfo"));
-    if (kset.find(obskey) != kset.end())
-      throw(std::invalid_argument("duplicate MCObsInfo"));
-    kset.insert(obskey);
-  } catch (const std::exception& xp) {
-    string msg = string("For tag ") + tag;
-    throw(std::invalid_argument(msg + string(": ") + xp.what()));
-  }
 }
 
 // *********************************************************************

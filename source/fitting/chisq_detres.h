@@ -268,7 +268,6 @@ class DeterminantResidualFit : public ChiSquare {
   KtildeInverseCalculator* Kinv;
   double omega_mu;
   std::vector<uint> nres_per_block;
-  BoxQuantization::QuantCondType qctype_enum;
 
 public:
   DeterminantResidualFit(XMLHandler& xmlin, KBObsHandler* kboh,
@@ -291,13 +290,6 @@ private:
   virtual void
   evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams);
 
-  static void read_obs(XMLHandler& xmlin, const std::string& tag, bool get_name,
-                       MCObsInfo& obskey, std::set<MCObsInfo>& kset,
-                       std::string& name, const MCEnsembleInfo& mcens,
-                       std::map<KBObsInfo, double>& fixed_values);
-
-  static void read_obs(XMLHandler& xmlin, const std::string& tag,
-                       MCObsInfo& obskey, std::set<MCObsInfo>& kset);
 
   friend class TaskHandler;
 };
