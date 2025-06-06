@@ -327,9 +327,9 @@ char IOHDF5Handler::query_obj(const std::string& objname) const {
     if (exists <= 0)
       return 'N';
   }
-  H5O_info_t objinfo;
+  H5O_info2_t objinfo;
   herr_t errhandle =
-      H5Oget_info_by_name(*cwdptr, objname.c_str(), &objinfo, H5P_DEFAULT);
+      H5Oget_info_by_name(*cwdptr, objname.c_str(), &objinfo, H5O_INFO_ALL, H5P_DEFAULT);
   if (errhandle < 0) {
     check_for_herr_failure(errhandle, "query_obj failed");
   }
@@ -363,8 +363,8 @@ std::set<std::string> IOHDF5Handler::getAllDirNames() const {
 void IOHDF5Handler::collect_data_names(
     hid_t loc_id, const std::string& path, const char* name,
     set<std::string>& collected_names) const {
-  H5O_info_t info;
-  herr_t status = H5Oget_info(loc_id, &info);
+  H5O_info2_t info;
+  herr_t status = H5Oget_info(loc_id, &info, H5O_INFO_ALL);
   if (status < 0) {
     check_for_herr_failure(status, "collect_data_names failed");
   }
@@ -399,6 +399,11 @@ void IOHDF5Handler::collect_data_names(
                                  nextname, size_t(nsize), H5P_DEFAULT);
       hid_t next_id = H5Oopen(loc_id, nextname, H5P_DEFAULT);
       check_for_hid_failure(next_id, " failure in collect_data_names");
+      H5O_info2_t info;
+      herr_t status = H5Oget_info(next_id, &info, H5O_INFO_ALL);
+      if (status < 0) {
+        check_for_herr_failure(status, "collect_data_names failed");
+      }
       collect_data_names(next_id, newpath, nextname, collected_names);
       status = H5Oclose(next_id);
       delete[] nextname;
@@ -409,8 +414,8 @@ void IOHDF5Handler::collect_data_names(
 void IOHDF5Handler::collect_dir_names(
     hid_t loc_id, const std::string& path, const char* name,
     set<std::string>& collected_dir_names) const {
-  H5O_info_t info;
-  herr_t status = H5Oget_info(loc_id, &info);
+  H5O_info2_t info;
+  herr_t status = H5Oget_info(loc_id, &info, H5O_INFO_ALL);
   if (status < 0) {
     check_for_herr_failure(status, "collect_dir_names failed");
   }
@@ -477,8 +482,8 @@ void IOHDF5Handler::collect_data_names_in_currdir(
                                nextname, size_t(nsize), H5P_DEFAULT);
     hid_t next_id = H5Oopen(loc_id, nextname, H5P_DEFAULT);
     check_for_hid_failure(next_id, " failure in collect_data_names");
-    H5O_info_t info;
-    herr_t status = H5Oget_info(next_id, &info);
+    H5O_info2_t info;
+    herr_t status = H5Oget_info(next_id, &info, H5O_INFO_ALL);
     if (status < 0) {
       check_for_herr_failure(status, "collect_data_names_in_currdir failed");
     }
