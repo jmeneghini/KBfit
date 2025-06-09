@@ -95,6 +95,20 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         throw(std::invalid_argument("Invalid <DefaultEnergyFormat> tag"));
     }
 
+    // Get root finding info
+    int root_counts = xmlin.count_among_children("RootFinder");
+    if (root_counts > 1)
+      throw(
+          std::invalid_argument("Multiple RootFinder tags cannot be present"));
+    bool do_root_find = root_counts;
+    if (do_root_find) {
+      XMLHandler xmlroot(xmlin, "RootFinder");
+      root_finder_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
+    }
+    // otherwise, use default config
+    // TODO: output rootfinding info to logger
+    logger << "RootFinder configuration: " << endl;
+
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
     //  parameters should be associated with the ensemble.
@@ -110,6 +124,8 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     for (list<XMLHandler>::iterator it = xmlen.begin(); it != xmlen.end();
          ++it) {
       MCEnsembleInfo mcens(*it);
+      EnsembleFitData this_ensemble_data(mcens);
+
       if (ensembles.find(mcens) != ensembles.end())
         throw(std::invalid_argument("Duplicate MC ensemble"));
       ensembles.insert(mcens);
@@ -128,6 +144,8 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         read_obs(*it, "LatticeAnisotropy", false, rkey, kset, pname, mcens,
                  fixed_values);
         anisotropy.insert(make_pair(mcens, rkey));
+      } else { // if fixed to 1, don't add as a prior
+        this_ensemble_data.is_length_fixed = true;
       }
       // get particle mass infos
       map<string, MCObsInfo> pmap;
@@ -163,10 +181,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     list<XMLHandler> xmlkb = xmlf.find("KBBlock");
     uint blockcount = 0;
     uint ensemblecount = 0;
+    uint ensembleblockcount = 0;
     for (list<XMLHandler>::iterator it = xmlkb.begin(); it != xmlkb.end();
          ++it) {
       BoxQuantization* bqptr = new BoxQuantization(*it, Kmat, Kinv);
-      BQ.push_back(bqptr);
       MCEnsembleInfo mcens(*it);
       if (ensembles.find(*it) == ensembles.end())
         throw(
@@ -174,7 +192,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       blockens.push_back(mcens);
       if (ensemble_idmap.find(mcens) == ensemble_idmap.end()) {
         ensemble_idmap.insert(make_pair(mcens, ensemblecount));
+        ensemble_fit_data[ensemblecount].n_blocks = ensembleblockcount;
         ensemblecount++;
+        ensembleblockcount = 0; // reset block count for this ensemble
+        // assumes that the xml would be ordered by ensemble, then blocks
       }
       set<MCObsInfo>& kset = needed_keys[mcens];
       uint nres = 0;
@@ -182,26 +203,24 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       list<XMLHandler> xmlee = it->find("EnergyShift");
       for (auto & eet : xmlee) {
         read_obs(eet, "EnergyShift", rkey, kset);
+
         KBObsInfo this_energy_key(mcens, rkey);
-        energy_kobs_infos.emplace_back(this_energy_key);
-        energy_samples_per_ensemble[ensemblecount].push_back(KBOH->getFullAndSamplingValues(this_energy_key));
+        ensemble_fit_data[ensemblecount].dElab_samples.push_back(
+                KBOH->getFullAndSamplingValues(this_energy_key));
+        ensemble_fit_data[ensemblecount].energy_obs_infos.push_back(rkey);
         nres++;
       }
       if (nres == 0)
         throw(std::invalid_argument(
             "No energies available in at least one block"));
-      n_energies_per_block.push_back(nres);
+      ensemble_fit_data[ensemblecount].n_energies_per_block.push_back(nres);
+      ensemble_fit_data[ensemblecount].BQ_blocks.push_back(bqptr);
       blockcount++;
+      ensembleblockcount++;
     }
     if (blockcount == 0) {
       throw(std::runtime_error("No data to analyze"));
     }
-
-    // set the size of our vectors
-    energy_samples_per_ensemble.resize(ensemblecount);
-    mass_samples_per_ensemble.resize(ensemblecount);
-    length_samples_per_ensemble.resize(ensemblecount);
-
 
     // get total number of energy residuals
     uint numenergies = energy_kobs_infos.size();
@@ -503,7 +522,7 @@ void SpectrumFit::initializeInvCovCholesky() {
   for (uint ens = 0; ens < length_samples_per_ensemble.size(); ++ens) {
     // length
     obs_samples.push_back( &length_samples_per_ensemble[ens]            );
-    obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );  // or whatever ctor
+    obs_ensemble_infos.emplace_back(ens );  // or whatever ctor
 
     // masses
     uint mass_offset = 0;
@@ -511,13 +530,13 @@ void SpectrumFit::initializeInvCovCholesky() {
     {
       obs_samples.push_back(
           &mass_samples_per_ensemble[ens][mass_offset++] );
-      obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+      obs_ensemble_infos.emplace_back(ens );
 
       if (!are_decay_channels_identical[dc])
       {
         obs_samples.push_back(
             &mass_samples_per_ensemble[ens][mass_offset++] );
-        obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+        obs_ensemble_infos.emplace_back(ens );
       }
     }
 
@@ -530,7 +549,7 @@ void SpectrumFit::initializeInvCovCholesky() {
       {
         obs_samples.push_back(
             &energy_samples_per_ensemble[ens][energy_offset++] );
-        obs_ensemble_infos.push_back( MCEnsembleInfo(ens) );
+        obs_ensemble_infos.emplace_back(ens);
       }
     }
     block_offset += n_blocks_per_ensemble[ens];

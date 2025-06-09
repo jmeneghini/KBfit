@@ -8,33 +8,67 @@
 #include "matrix.h"
 #include "xml_handler.h"
 
+enum class EnergyType {
+  Elab,
+  Ecm,
+  dElab
+};
+
+struct EnsembleFitData {
+  // this ensemble_info and id
+  MCEnsembleInfo ensemble_info;
+
+  // --- observations ---
+  // energy data
+  std::vector<RVector> Elab_samples;
+  std::vector<RVector> dElab_samples;//
+  std::vector<RVector> Ecm_samples;
+  EnergyType residual_energy_type = EnergyType::dElab;//
+  std::vector<MCObsInfo> energy_obs_infos;//
+
+  // length data
+  RVector length_samples;
+
+  // mass data
+  std::vector<RVector> mass_samples;
+
+  // blocks
+  std::vector<BoxQuantization*> BQ_blocks;//
+
+  // prior info
+  // each ensemble gets a single length and multiple decay masses
+  MCObsInfo length_prior;
+  bool is_length_fixed; //
+
+  std::vector<MCObsInfo> mass_priors;
+  std::vector<bool> is_mass_fixed;
+  std::vector<bool> are_decay_channels_identical;
+
+  // useful counters
+  uint n_blocks;//
+  std::vector<uint> n_energies_per_block;//
+
+  // Constructor
+  explicit EnsembleFitData(const MCEnsembleInfo& info)
+    : ensemble_info(info) {}
+};
+
 
 class SpectrumFit : public ChiSquare {
 
   KBObsHandler* KBOH;
-  std::vector<BoxQuantization*> BQ;
-  std::vector<std::vector<RVector>> energy_samples_per_ensemble;//
-  std::vector<std::vector<RVector>> mass_samples_per_ensemble;//
-  std::vector<RVector> length_samples_per_ensemble;//
 
   AdaptiveBracketConfig root_finder_config;//
   double Elab_max, Elab_min;
 
-  // reference length and masses for each ensemble
-  // each ensemble gets a single length and multiple decay masses
-  std::vector<MCObsInfo> prior_obs_infos;//
-  std::vector<KBObsInfo> prior_kobs_infos;//
-  std::vector<KBObsInfo> energy_kobs_infos;//
-
   KtildeMatrixCalculator* Kmat;//
   KtildeInverseCalculator* Kinv;//
-  double omega_mu;//
-  std::vector<uint> n_energies_per_block;//
-  std::vector<bool> are_decay_channels_identical;//
-  std::vector<uint> ensemble_id_per_block;
-  std::vector<uint> n_blocks_per_ensemble;
-  uint n_decay_channels;//
   uint n_kmat_params;//
+  uint n_decay_channels;
+
+  double omega_mu;//
+
+  std::vector<EnsembleFitData> ensemble_fit_data;
 
 public:
   SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
