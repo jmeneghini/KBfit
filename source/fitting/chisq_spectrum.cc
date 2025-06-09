@@ -70,10 +70,12 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
     // get set of particle names
     set<string> pnames; // same for each ensemble
-    for (vector<DecayChannelInfo>::const_iterator dct = dcptr->begin();
-         dct != dcptr->end(); dct++) {
-      pnames.insert(dct->getParticle1Name());
-      pnames.insert(dct->getParticle2Name());
+    are_decay_channels_identical.resize(n_decay_channels);
+    for (uint dc = 0; dc < n_decay_channels; ++dc) {
+      const DecayChannelInfo& dci = (*dcptr)[dc];
+      pnames.insert(dci.getParticle1Name());
+      pnames.insert(dci.getParticle2Name());
+      are_decay_channels_identical[dc] = (dci.getParticle1Name() == dci.getParticle2Name());
     }
 
     //  assign mu  (negative value means use determinant itself)
@@ -105,7 +107,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       XMLHandler xmlroot(xmlin, "RootFinder");
       root_finder_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
     }
-    // otherwise, use default config
+    // otherwise, default config
     // TODO: output rootfinding info to logger
     logger << "RootFinder configuration: " << endl;
 
@@ -144,7 +146,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         read_obs(*it, "LatticeAnisotropy", false, rkey, kset, pname, mcens,
                  fixed_values);
         anisotropy.insert(make_pair(mcens, rkey));
-      } else { // if fixed to 1, don't add as a prior
+      } else if (xml_tag_count(*it, "LatticeAnisotropy") > 1) {
+        throw(std::invalid_argument(
+            "Multiple LatticeAnisotropy tags cannot be present"));
+      } else { // if no anisotropy, fix to 1, don't add as a prior
         this_ensemble_data.is_length_fixed = true;
       }
       // get particle mass infos
@@ -181,7 +186,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     list<XMLHandler> xmlkb = xmlf.find("KBBlock");
     uint blockcount = 0;
     uint ensemblecount = 0;
-    uint ensembleblockcount = 0;
     for (list<XMLHandler>::iterator it = xmlkb.begin(); it != xmlkb.end();
          ++it) {
       BoxQuantization* bqptr = new BoxQuantization(*it, Kmat, Kinv);
@@ -192,9 +196,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       blockens.push_back(mcens);
       if (ensemble_idmap.find(mcens) == ensemble_idmap.end()) {
         ensemble_idmap.insert(make_pair(mcens, ensemblecount));
-        ensemble_fit_data[ensemblecount].n_blocks = ensembleblockcount;
+        ensemble_fit_data.resize(ensemblecount + 1);
+        ensemble_fit_data[ensemblecount].ensemble_info = mcens;
+        ensemble_fit_data[ensemblecount].n_blocks = 0; // Will be incremented below
         ensemblecount++;
-        ensembleblockcount = 0; // reset block count for this ensemble
         // assumes that the xml would be ordered by ensemble, then blocks
       }
       set<MCObsInfo>& kset = needed_keys[mcens];
@@ -205,25 +210,28 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         read_obs(eet, "EnergyShift", rkey, kset);
 
         KBObsInfo this_energy_key(mcens, rkey);
-        ensemble_fit_data[ensemblecount].dElab_samples.push_back(
+        ensemble_fit_data[ensemble_idmap[mcens]].dElab_samples.push_back(
                 KBOH->getFullAndSamplingValues(this_energy_key));
-        ensemble_fit_data[ensemblecount].energy_obs_infos.push_back(rkey);
+        ensemble_fit_data[ensemble_idmap[mcens]].energy_obs_infos.push_back(rkey);
         nres++;
       }
       if (nres == 0)
         throw(std::invalid_argument(
             "No energies available in at least one block"));
-      ensemble_fit_data[ensemblecount].n_energies_per_block.push_back(nres);
-      ensemble_fit_data[ensemblecount].BQ_blocks.push_back(bqptr);
+      ensemble_fit_data[ensemble_idmap[mcens]].n_energies_per_block.push_back(nres);
+      ensemble_fit_data[ensemble_idmap[mcens]].BQ_blocks.push_back(bqptr);
+      ensemble_fit_data[ensemble_idmap[mcens]].n_blocks++;
       blockcount++;
-      ensembleblockcount++;
     }
     if (blockcount == 0) {
       throw(std::runtime_error("No data to analyze"));
     }
 
     // get total number of energy residuals
-    uint numenergies = energy_kobs_infos.size();
+    uint numenergies = 0;
+    for (uint k = 0; k < ensemble_fit_data.size(); ++k) {
+      numenergies += ensemble_fit_data[k].n_energies_per_block.size();
+    }
     //  connect files for input
 
     KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
@@ -232,11 +240,12 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
     // get QuantizationCondition
     string qctype;
-    xmlreadif(xmlf, "QuantizationCondition", qctype, "DoPrint");
+    xmlreadif(xmlf, "QuantizationCondition", qctype, "SpectrumFit");
     if (qctype.empty()) {
       throw(std::invalid_argument("QuantizationCondition tag must be present"));
     }
-    BoxQuantization* bqptr_dummy = BQ[0];
+    BoxQuantization* bqptr_dummy = ensemble_fit_data[0].BQ_blocks[0];
+    // TODO: allow either KtildeMatrix or KtildeMatrixInverse for cayley transformed QCs
     try {
       qctype_enum = bqptr_dummy->getQuantCondTypeFromString(qctype).value();
       if (qctype_enum == BoxQuantization::KtildeB) {
@@ -289,15 +298,14 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     //  read the reference mass time-spacing products for each ensemble into
     //  memory; evaluate reference lengths and particle masses for each ensemble
     uint current_ensemble_id = 0;
-    for (map<MCEnsembleInfo, MCObsInfo>::iterator et = ref_at_mass.begin();
-         et != ref_at_mass.end(); ++et) {
-      const MCEnsembleInfo& mcens = et->first;
+    for (const auto& et : ref_at_mass) {
+      const MCEnsembleInfo& mcens = et.first;
       uint nsamp = KBOH->getNumberOfResamplings();
-      KBObsInfo atrefmasskey(mcens, et->second);
+      KBObsInfo atrefmasskey(mcens, et.second);
       const RVector& atrefmass0 = KBOH->getFullAndSamplingValues(atrefmasskey);
       if (atrefmass0.size() != (nsamp + 1))
         throw(std::runtime_error("Resampling size mismatch in KBfit"));
-      KBObsInfo scalekey(mcens, MCObsInfo("KBScale"));
+      KBObsInfo scalekey(mcens, MCObsInfo("KBScale")); // ref mass
       KBOH->putFullAndSamplings(scalekey, atrefmass0, true);
       KBOH->eraseSamplings(atrefmasskey);
 
@@ -327,36 +335,97 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
           for (uint k = 0; k <= nsamp; ++k)
             buff[k] = atrefmass[k] * double(Llat) * anisotropy[k];
         }
-        length_samples_per_ensemble.push_back(buff);
-        KBOH->putFullAndSamplings(lengthkey, buff);
+        
+        // Check if length is fixed
+        bool length_fixed = (fixed_values.find(lengthkey) != fixed_values.end());
+        ensemble_fit_data[current_ensemble_id].is_length_fixed = length_fixed;
+        
+        if (length_fixed) {
+          // Store fixed value
+          ensemble_fit_data[current_ensemble_id].fixed_length_value = fixed_values[lengthkey];
+        } else {
+          // Store as observable
+          ensemble_fit_data[current_ensemble_id].length_samples = buff;
+          KBOH->putFullAndSamplings(lengthkey, buff);
+          ensemble_fit_data[current_ensemble_id].length_prior = obskey;
+        }
       }
-      prior_obs_infos.push_back(obskey);
-      prior_kobs_infos.push_back(lengthkey);
 
-      //  get particle masses (form ratios if energy_ratio false)
+      //  get particle masses for each decay channel (form ratios if energy_ratio false)
+      //  Only add non-fixed masses to observables, store fixed values separately
 
       map<string, MCObsInfo>& pmap = particle_masses[mcens];
-      for (set<string>::const_iterator pt = pnames.begin(); pt != pnames.end();
-           ++pt) {
-        MCObsInfo& current_particle_key = pmap[*pt];
-        current_particle_key.resetObsIndex(current_ensemble_id);
-        KBObsInfo masskey(mcens, current_particle_key);
-        prior_obs_infos.push_back(current_particle_key);
-        prior_kobs_infos.push_back(masskey);
-        const RVector& mass = KBOH->getFullAndSamplingValues(
-            masskey); // reads from file, gets into memory
-        bool not_fixed = (fixed_values.find(masskey) == fixed_values.end());
-        if ((!energy_ratios) && (not_fixed)) {
-          RVector massratio(mass);
-          if (massratio.size() != atrefmass.size())
-            throw(
-                std::runtime_error("Size mismatch while forming mass ratios"));
-          for (uint kk = 0; kk < massratio.size(); ++kk)
-            massratio[kk] /= atrefmass[kk];
-          KBOH->putFullAndSamplings(masskey, massratio, true);
-          mass_samples_per_ensemble[current_ensemble_id].push_back(massratio);
+      
+      // Initialize fixed mass values vector (2 particles per decay channel max)
+      ensemble_fit_data[current_ensemble_id].fixed_mass_values.resize(n_decay_channels * 2, 0.0);
+      ensemble_fit_data[current_ensemble_id].is_mass_fixed.resize(n_decay_channels * 2, false);
+      
+      // Process masses for each decay channel
+      for (uint dc = 0; dc < n_decay_channels; ++dc) {
+        const DecayChannelInfo& dci = (*dcptr)[dc];
+        
+        // First particle in decay channel
+        string particle1_name = dci.getParticle1Name();
+        MCObsInfo& particle1_key = pmap[particle1_name];
+        particle1_key.resetObsIndex(current_ensemble_id);
+        KBObsInfo mass1key(mcens, particle1_key);
+        
+        const RVector& mass1 = KBOH->getFullAndSamplingValues(mass1key);
+        bool mass1_fixed = (fixed_values.find(mass1key) != fixed_values.end());
+        uint mass1_idx = dc * 2;
+        
+        ensemble_fit_data[current_ensemble_id].is_mass_fixed[mass1_idx] = mass1_fixed;
+        
+        if (mass1_fixed) {
+          // Store fixed value
+          ensemble_fit_data[current_ensemble_id].fixed_mass_values[mass1_idx] = fixed_values[mass1key];
         } else {
-          mass_samples_per_ensemble[current_ensemble_id].push_back(mass);
+          // Add to observables
+          ensemble_fit_data[current_ensemble_id].mass_priors.push_back(particle1_key);
+          if ((!energy_ratios)) {
+            RVector massratio(mass1);
+            if (massratio.size() != atrefmass.size())
+              throw(std::runtime_error("Size mismatch while forming mass ratios"));
+            for (uint kk = 0; kk < massratio.size(); ++kk)
+              massratio[kk] /= atrefmass[kk];
+            KBOH->putFullAndSamplings(mass1key, massratio, true);
+            ensemble_fit_data[current_ensemble_id].mass_samples.push_back(massratio);
+          } else {
+            ensemble_fit_data[current_ensemble_id].mass_samples.push_back(mass1);
+          }
+        }
+        
+        // Second particle in decay channel (only if different from first)
+        if (!are_decay_channels_identical[dc]) {
+          string particle2_name = dci.getParticle2Name();
+          MCObsInfo& particle2_key = pmap[particle2_name];
+          particle2_key.resetObsIndex(current_ensemble_id);
+          KBObsInfo mass2key(mcens, particle2_key);
+          
+          const RVector& mass2 = KBOH->getFullAndSamplingValues(mass2key);
+          bool mass2_fixed = (fixed_values.find(mass2key) != fixed_values.end());
+          uint mass2_idx = dc * 2 + 1;
+          
+          ensemble_fit_data[current_ensemble_id].is_mass_fixed[mass2_idx] = mass2_fixed;
+          
+          if (mass2_fixed) {
+            // Store fixed value
+            ensemble_fit_data[current_ensemble_id].fixed_mass_values[mass2_idx] = fixed_values[mass2key];
+          } else {
+            // Add to observables
+            ensemble_fit_data[current_ensemble_id].mass_priors.push_back(particle2_key);
+            if ((!energy_ratios)) {
+              RVector massratio(mass2);
+              if (massratio.size() != atrefmass.size())
+                throw(std::runtime_error("Size mismatch while forming mass ratios"));
+              for (uint kk = 0; kk < massratio.size(); ++kk)
+                massratio[kk] /= atrefmass[kk];
+              KBOH->putFullAndSamplings(mass2key, massratio, true);
+              ensemble_fit_data[current_ensemble_id].mass_samples.push_back(massratio);
+            } else {
+              ensemble_fit_data[current_ensemble_id].mass_samples.push_back(mass2);
+            }
+          }
         }
       }
       current_ensemble_id++;
@@ -386,36 +455,40 @@ SpectrumFit::~SpectrumFit() {
 }
 
 void SpectrumFit::clear() {
-  for (uint k = 0; k < BQ.size(); ++k)
-    delete BQ[k];
+  for (uint ens = 0; ens < ensemble_fit_data.size(); ++ens) {
+    for (uint k = 0; k < ensemble_fit_data[ens].BQ_blocks.size(); ++k)
+      delete ensemble_fit_data[ens].BQ_blocks[k];
+    ensemble_fit_data[ens].BQ_blocks.clear();
+  }
   delete Kmat;
   delete Kinv;
-  BQ.clear();
+  ensemble_fit_data.clear();
 }
 
 // Need to add non-Kmatrix fit parameters below here
 // (L, mass, etc.), just use mean values.
 void SpectrumFit::guessInitialFitParamValues(
     vector<double>& fitparams) const {
-  // 1.  k-matrix parameters
+  // 1. K-matrix parameters
   const std::vector<double>& k_fit_params =
       (Kmat ? Kmat->getParameterValues() : Kinv->getParameterValues());
 
-  std::size_t offset = 0;                                  // where we're writing next
-  std::copy(k_fit_params.begin(), k_fit_params.end(),      // copy K-matrix params
-            fitparams.begin() + offset);
-  offset += k_fit_params.size();                           // advance offset
+  std::size_t offset = 0;
+  // Copy K-matrix params in one go
+  std::copy(k_fit_params.begin(), k_fit_params.end(), fitparams.begin());
+  offset += k_fit_params.size();
 
-  // 2.  Ensemble-specific parameters:  L, m01 … m0N,  L, m11 … etc.
-  // We'll use their full values to start with.
-  for (std::size_t e = 0; e < length_samples_per_ensemble.size(); ++e) {
+  // 2. Ensemble-specific parameters: only non-fixed ones
+  for (std::size_t e = 0; e < ensemble_fit_data.size(); ++e) {
+    const EnsembleFitData& ens_data = ensemble_fit_data[e]; // Cache reference
 
-    // L for ensemble e
-    fitparams[offset++] = length_samples_per_ensemble[e][0];
+    // Length (only if not fixed)
+    if (!ens_data.is_length_fixed) {
+      fitparams[offset++] = ens_data.length_samples[0];
+    }
 
-    // masses for ensemble e
-    const auto& masses = mass_samples_per_ensemble[e];
-    for (const auto& mass_samples : masses) {
+    // Masses (only non-fixed ones)
+    for (const auto& mass_samples : ens_data.mass_samples) {
       fitparams[offset++] = mass_samples[0];
     }
   }
@@ -425,11 +498,25 @@ void SpectrumFit::getFitParamMCObsInfo(
     vector<MCObsInfo>& fitinfos) const {
   const vector<KFitParamInfo>& k_infos =
     (Kmat ? Kmat->getFitParameterInfos() : Kinv->getFitParameterInfos());
+  
   uint offset = 0;
-  for (const auto& info : k_infos)
+  // Copy K-matrix parameter infos
+  for (const auto& info : k_infos) {
     fitinfos[offset++] = MCObsInfo(info.getMCObsName());
-  for (const auto& obs : prior_obs_infos)
-    fitinfos[offset++] = obs;
+  }
+  
+  // Copy ensemble parameter infos
+  for (const auto& ens_data : ensemble_fit_data) {
+    // Length info (only if not fixed)
+    if (!ens_data.is_length_fixed) {
+      fitinfos[offset++] = ens_data.length_prior;
+    }
+    
+    // Mass infos (only non-fixed ones)
+    for (const auto& mass_prior : ens_data.mass_priors) {
+      fitinfos[offset++] = mass_prior;
+    }
+  }
 }
 
 // might want to modify this at some point once I
@@ -447,60 +534,95 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
 
 // This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
-  // Think im forced to copy for the kmat parameters, unless we're > c++ 20 (std::span)
-  std::vector<double> k_params(fitparams.begin(), fitparams.begin() + n_kmat_params);
-  (Kmat ? Kmat->setParameterValues(k_params) : Kinv->setParameterValues(k_params));
-  std::vector<double> prior_params(fitparams.begin() + n_kmat_params, fitparams.end());
+  // Set K-matrix parameters directly without copying
+  if (Kmat) {
+    Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
+  } else {
+    Kinv->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
+  }
+  
+  // Use pointer arithmetic to avoid copying prior_params vector
+  const double* prior_params = fitparams.data() + n_kmat_params;
 
   uint offset = 0;
-  uint block_offset = 0;
-  for (uint ensemble = 0; ensemble < length_samples_per_ensemble.size(); ++ensemble) {
-    // setup the BQ for the ensemble/block
-    // first eval the length residual
-    double length_param = prior_params[offset];
-    residuals[offset]
-        = length_samples_per_ensemble[ensemble][resampling_index] - length_param;
-    offset++;
-    uint mass_offset = 0;
-    for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
-      double mass1 = prior_params[offset];
-      residuals[offset]
-          = mass_samples_per_ensemble[ensemble][mass_offset++][resampling_index] - mass1;
+  
+  // Pre-allocate reusable vectors for energy predictions to avoid repeated allocations
+  static thread_local std::vector<double> energy_shift_predictions;
+  static thread_local std::vector<uint> fn_calls;
+
+  for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
+    const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference
+    
+    // Get length parameter
+    double length_param;
+    if (ens_data.is_length_fixed) {
+      length_param = ens_data.fixed_length_value;
+    } else {
+      length_param = prior_params[offset];
+      residuals[offset] = ens_data.length_samples[resampling_index] - length_param;
       offset++;
-      double mass2;
+    }
+    
+    uint mass_sample_idx = 0;
+    for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
+      const uint mass_base_idx = decay_channel * 2; // Cache calculation
+      double mass1, mass2;
+      
+      // Get mass1 (first particle in decay channel)
+      if (ens_data.is_mass_fixed[mass_base_idx]) {
+        mass1 = ens_data.fixed_mass_values[mass_base_idx];
+      } else {
+        mass1 = prior_params[offset];
+        residuals[offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass1;
+        offset++;
+        mass_sample_idx++;
+      }
+      
+      // Get mass2 (second particle in decay channel)
       if (are_decay_channels_identical[decay_channel]) {
         mass2 = mass1;
+      } else {
+        const uint mass2_idx = mass_base_idx + 1;
+        if (ens_data.is_mass_fixed[mass2_idx]) {
+          mass2 = ens_data.fixed_mass_values[mass2_idx];
+        } else {
+          mass2 = prior_params[offset];
+          residuals[offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass2;
+          offset++;
+          mass_sample_idx++;
+        }
       }
-      else {
-        mass2 = prior_params[offset];
-        residuals[offset]
-            = mass_samples_per_ensemble[ensemble][mass_offset++][resampling_index] - mass2;
-        offset++;
-      }
-      for (uint block = 0; block < n_blocks_per_ensemble[ensemble ]; ++block) {
-        // set all the masses and lengths for all BQ blocks in the ensemble
-        BQ[block + block_offset]->setRefMassL(length_param);
-        BQ[block + block_offset]->setMassesOverRef(decay_channel, mass1, mass2);
+      
+      // Set masses for all blocks in this ensemble
+      for (uint block = 0; block < ens_data.n_blocks; ++block) {
+        BoxQuantization* bq = ens_data.BQ_blocks[block]; // Cache pointer
+        bq->setRefMassL(length_param);
+        bq->setMassesOverRef(decay_channel, mass1, mass2);
       }
     }
-    // now BQs are set up for the ensemble, so we can get the energy predictions
+    
+    // Calculate energy residuals
     uint energy_offset = 0;
-    for (uint block = 0; block < n_blocks_per_ensemble[ensemble]; ++block) {
-      BoxQuantization* this_block_bq = BQ[block + block_offset];
-      std::vector<double> energy_shift_predictions;
-      energy_shift_predictions.reserve(n_energies_per_block[block + block_offset]); // getRoots uses this.
-      std::vector<uint> fn_calls;
+    for (uint block = 0; block < ens_data.n_blocks; ++block) {
+      BoxQuantization* this_block_bq = ens_data.BQ_blocks[block];
+      const uint n_energies = ens_data.n_energies_per_block[block]; // Cache value
+      
+      // Reuse pre-allocated vectors
+      energy_shift_predictions.clear();
+      energy_shift_predictions.reserve(n_energies);
+      fn_calls.clear();
+      
       this_block_bq->getDeltaERootsInElabInterval(omega_mu, Elab_min, Elab_max,
                                       qctype_enum, root_finder_config,
                                       energy_shift_predictions, fn_calls);
+      
+      // Calculate residuals for this block
       // both the energy obs and predictions are sorted by increasing Ecm
-      for (uint energy_index = 0; energy_index < n_energies_per_block[block + block_offset]; ++energy_index) {
-        residuals[offset++]
-          = energy_samples_per_ensemble[ensemble][energy_offset++][resampling_index]
-            - energy_shift_predictions[energy_index];
+      for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
+        residuals[offset++] = ens_data.dElab_samples[energy_offset++][resampling_index]
+                            - energy_shift_predictions[energy_index];
       }
     }
-    block_offset += n_blocks_per_ensemble[ensemble];
   }
   // InvCovCholesky is already initialized and hasn't changed,
   // so we don't need to recompute it here.
@@ -517,46 +639,44 @@ void SpectrumFit::initializeInvCovCholesky() {
   obs_samples.reserve(nresiduals);
   obs_ensemble_infos.reserve(nresiduals);
 
-  uint block_offset = 0;
+  for (uint ens = 0; ens < ensemble_fit_data.size(); ++ens) {
+    const EnsembleFitData& ens_data = ensemble_fit_data[ens]; // Cache reference
+    
+    // length (only if not fixed)
+    if (!ens_data.is_length_fixed) {
+      obs_samples.push_back(&ens_data.length_samples);
+      obs_ensemble_infos.push_back(ens_data.ensemble_info);
+    }
 
-  for (uint ens = 0; ens < length_samples_per_ensemble.size(); ++ens) {
-    // length
-    obs_samples.push_back( &length_samples_per_ensemble[ens]            );
-    obs_ensemble_infos.emplace_back(ens );  // or whatever ctor
+    // masses (only non-fixed ones)
+    uint mass_sample_idx = 0;
+    for (uint dc = 0; dc < n_decay_channels; ++dc) {
+      const uint mass_base_idx = dc * 2; // Cache calculation
+      
+      if (!ens_data.is_mass_fixed[mass_base_idx]) {
+        obs_samples.push_back(&ens_data.mass_samples[mass_sample_idx++]);
+        obs_ensemble_infos.push_back(ens_data.ensemble_info);
+      }
 
-    // masses
-    uint mass_offset = 0;
-    for (uint dc = 0; dc < n_decay_channels; ++dc)
-    {
-      obs_samples.push_back(
-          &mass_samples_per_ensemble[ens][mass_offset++] );
-      obs_ensemble_infos.emplace_back(ens );
-
-      if (!are_decay_channels_identical[dc])
-      {
-        obs_samples.push_back(
-            &mass_samples_per_ensemble[ens][mass_offset++] );
-        obs_ensemble_infos.emplace_back(ens );
+      if (!are_decay_channels_identical[dc] && !ens_data.is_mass_fixed[mass_base_idx + 1]) {
+        obs_samples.push_back(&ens_data.mass_samples[mass_sample_idx++]);
+        obs_ensemble_infos.push_back(ens_data.ensemble_info);
       }
     }
 
-    // -- energy Delta E’s --------------------------------------------------------
+    // energy Delta E's - all energies from all blocks
     uint energy_offset = 0;
-    for (uint block = 0; block < n_blocks_per_ensemble[ens]; ++block)
-    {
-      uint nE = n_energies_per_block[block + block_offset];
-      for (uint e = 0; e < nE; ++e)
-      {
-        obs_samples.push_back(
-            &energy_samples_per_ensemble[ens][energy_offset++] );
-        obs_ensemble_infos.emplace_back(ens);
+    for (uint block = 0; block < ens_data.n_blocks; ++block) {
+      const uint nE = ens_data.n_energies_per_block[block]; // Cache value
+      for (uint e = 0; e < nE; ++e) {
+        obs_samples.push_back(&ens_data.dElab_samples[energy_offset++]);
+        obs_ensemble_infos.push_back(ens_data.ensemble_info);
       }
     }
-    block_offset += n_blocks_per_ensemble[ens];
   }
 
   RealSymmetricMatrix cov(nresiduals, 0.0);
-  bool bootstrap_mode = KBOH->isBootstrapMode();
+  const bool bootstrap_mode = KBOH->isBootstrapMode(); // Cache boolean
 
   for (uint k = 0; k < nresiduals; ++k) {
     for (uint j = 0; j <= k; ++j) {
@@ -565,9 +685,7 @@ void SpectrumFit::initializeInvCovCholesky() {
         cov(k, j) = bootstrap_mode ? KBOH->boot_covariance(*(obs_samples[k]), *(obs_samples[j]))
                                    : KBOH->jack_covariance(*(obs_samples[k]), *(obs_samples[j]));
       }
-      else {
-        cov(k, j) = 0.0; // different ensembles, 0 covariance
-      }
+      // else cov(k,j) remains 0.0 (already initialized)
     }
   }
 

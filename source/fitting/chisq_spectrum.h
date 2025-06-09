@@ -18,7 +18,19 @@ struct EnsembleFitData {
   // this ensemble_info and id
   MCEnsembleInfo ensemble_info;
 
-  // --- observations ---
+  // --- Hot path data (accessed frequently in residuals calculation) ---
+  // blocks - most frequently accessed
+  std::vector<BoxQuantization*> BQ_blocks;//
+  std::vector<uint> n_energies_per_block;//
+  uint n_blocks = 0;//
+
+  // fixed parameter flags and values (hot path)
+  bool is_length_fixed = false; //
+  std::vector<bool> is_mass_fixed;
+  double fixed_length_value;                  // Fixed length value if is_length_fixed is true
+  std::vector<double> fixed_mass_values;      // Fixed mass values indexed by decay channel*2 + particle
+
+  // --- observations (medium frequency access) ---
   // energy data
   std::vector<RVector> Elab_samples;
   std::vector<RVector> dElab_samples;//
@@ -26,27 +38,14 @@ struct EnsembleFitData {
   EnergyType residual_energy_type = EnergyType::dElab;//
   std::vector<MCObsInfo> energy_obs_infos;//
 
-  // length data
-  RVector length_samples;
+  // length and mass data
+  RVector length_samples;                     // Only if not fixed (observable)
+  std::vector<RVector> mass_samples;          // Only non-fixed masses (observables)
 
-  // mass data
-  std::vector<RVector> mass_samples;
-
-  // blocks
-  std::vector<BoxQuantization*> BQ_blocks;//
-
+  // --- Cold path data (accessed infrequently) ---
   // prior info
-  // each ensemble gets a single length and multiple decay masses
   MCObsInfo length_prior;
-  bool is_length_fixed; //
-
   std::vector<MCObsInfo> mass_priors;
-  std::vector<bool> is_mass_fixed;
-  std::vector<bool> are_decay_channels_identical;
-
-  // useful counters
-  uint n_blocks;//
-  std::vector<uint> n_energies_per_block;//
 
   // Constructor
   explicit EnsembleFitData(const MCEnsembleInfo& info)
@@ -69,6 +68,8 @@ class SpectrumFit : public ChiSquare {
   double omega_mu;//
 
   std::vector<EnsembleFitData> ensemble_fit_data;
+  
+  std::vector<bool> are_decay_channels_identical;
 
 public:
   SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
@@ -88,10 +89,9 @@ public:
   void do_output(XMLHandler& xmlout) const override;
 
 private:
+  // Performance-critical method called for every function evaluation during fitting
   void evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams)
   override;
-
-  void initializeFitParamsAndObservables();
 
   // Calculated once at start, then ChiSquare will use it for remainder
   // of the fit. The evalResidualsAndInvCovCholesky function just
