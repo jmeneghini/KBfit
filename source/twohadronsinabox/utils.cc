@@ -138,12 +138,12 @@ void calcMatrixInverse(const CMatrix& H, CMatrix& Hinv) {
 //     Mform false is the form for H = K inverse
 
 void calcCayleyTransformMatrix(const ComplexHermitianMatrix& H,
-                               CMatrix& CTMatrix, bool Mform) {
+                               CMatrix& CTMatrix, bool isKmat) {
   CTMatrix.clear();
   int n = H.size();
   if (n == 0)
     return;
-  double d = (Mform) ? 1.0 : -1.0;
+  double d = (isKmat) ? 1.0 : -1.0;
   CMatrix A(n, n);
   complex<double> z;
   // form A = -d+i*M

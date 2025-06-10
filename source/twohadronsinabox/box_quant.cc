@@ -694,15 +694,13 @@ void BoxQuantization::getStildeFromElab(double Elab_over_mref,
                                         CMatrix& Stilde) {
   RealSymmetricMatrix KtildeOrInverse;
   getKtildeOrInverseFromElab(Elab_over_mref, KtildeOrInverse);
-  bool Mform = (m_Kmat != 0);
-  calcCayleyTransformMatrix(KtildeOrInverse, Stilde, Mform);
+  calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
 }
 
 void BoxQuantization::getStildeFromEcm(double Ecm_over_mref, CMatrix& Stilde) {
   RealSymmetricMatrix KtildeOrInverse;
   getKtildeOrInverseFromEcm(Ecm_over_mref, KtildeOrInverse);
-  bool Mform = (m_Kmat != 0);
-  calcCayleyTransformMatrix(KtildeOrInverse, Stilde, Mform);
+  calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
 }
 
 //  computes the eigenvalues of the quantization matrix

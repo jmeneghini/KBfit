@@ -111,6 +111,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     // TODO: output rootfinding info to logger
     logger << "RootFinder configuration: " << endl;
 
+    // Initialize energy search interval 
+    Elab_min = 0.0;   
+    Elab_max = 10.0;
+
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
     //  parameters should be associated with the ensemble.
@@ -227,16 +231,27 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       throw(std::runtime_error("No data to analyze"));
     }
 
-    // get total number of energy residuals
+    // Calculate total number of fit parameters and residuals
+    uint total_fit_params = n_kmat_params;  // K-matrix parameters
+    uint total_residuals = 0;
     uint numenergies = 0;
+    
     for (uint k = 0; k < ensemble_fit_data.size(); ++k) {
-      numenergies += ensemble_fit_data[k].n_energies_per_block.size();
+      // Count non-fixed ensemble parameters (these become fit parameters AND generate residuals)
+      if (!ensemble_fit_data[k].is_length_fixed) {
+        total_fit_params++;
+        total_residuals++;
+      }
+      uint non_fixed_masses = ensemble_fit_data[k].mass_samples.size();  // Only non-fixed masses
+      total_fit_params += non_fixed_masses;
+      total_residuals += non_fixed_masses;
+      
+      // Count energy residuals (these are observations, don't contribute to fit parameters)
+      for (uint n_energies : ensemble_fit_data[k].n_energies_per_block) {
+        numenergies += n_energies;
+        total_residuals += n_energies;
+      }
     }
-    //  connect files for input
-
-    KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
-    logger << KBOH->getCurrentLog().str();
-    KBOH->clearLog();
 
     // get QuantizationCondition
     string qctype;
@@ -264,6 +279,12 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       throw(std::invalid_argument("Invalid QuantizationCondition tag"));
     }
 
+    //  connect files for input
+
+    KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
+    logger << KBOH->getCurrentLog().str();
+    KBOH->clearLog();
+
     //  get number of resamplings.  For bootstrap, all ensembles
     //  must have same bootstrap parameters.  For jackknife,
     //  all ensembles must have the SAME number of bins.
@@ -283,7 +304,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       throw(std::runtime_error(
           "Samplings numbers do not match for all ensembles"));
 
-    // Bmat.resize(numresiduals);
     vector<const RVector*> labenergyvalues(numenergies);
     vector<vector<RVector>> qcmsq_over_mrefsq(numenergies);
 
@@ -431,7 +451,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       current_ensemble_id++;
     }
 
-    initialize_base(n_kmat_params, numenergies, nsamplings);
+    initialize_base(total_fit_params, total_residuals, nsamplings);
     
     // The SpectrumFit is designed to use a fixed covariance matrix calculated once.
     this->initializeInvCovCholesky();
@@ -545,10 +565,9 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
   const double* prior_params = fitparams.data() + n_kmat_params;
 
   uint offset = 0;
-  
-  // Pre-allocate reusable vectors for energy predictions to avoid repeated allocations
-  static thread_local std::vector<double> energy_shift_predictions;
-  static thread_local std::vector<uint> fn_calls;
+
+  std::vector<double> energy_shift_predictions;
+  std::vector<uint> fn_calls;
 
   for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
     const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference

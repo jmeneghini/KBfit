@@ -24,7 +24,7 @@ void calcMatrixInverse(const CMatrix& M, CMatrix& Minv);
 //     Mform false is the form for H = K inverse
 
 void calcCayleyTransformMatrix(const ComplexHermitianMatrix& H,
-                               CMatrix& CTMatrix, bool Mform);
+                               CMatrix& CTMatrix, bool isKmat);
 
 void calcCayleyTransformMatrix(const RealSymmetricMatrix& H, CMatrix& CTMatrix,
                                bool Mform);
