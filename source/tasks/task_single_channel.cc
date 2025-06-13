@@ -525,7 +525,7 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
         const RVector& energy_values =
             m_obs->getFullAndSamplingValues(labenergies[idx]);
 
-        // Convert energy to ratio if needed (following chisq_detres.cc pattern)
+        // Convert energy to ratio if needed
         const RVector* labenergy = &energy_values;
         if (!energy_ratios) {
           KBObsInfo scalekey(mcens, MCObsInfo("KBScale"));
@@ -603,6 +603,11 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
           MCEstimate qsqr_est = m_obs->getEstimate(qsqr_key);
           MCEstimate qcot_est = m_obs->getEstimate(qcot_key);
 
+          double elab_avg = elab_est.getAverageEstimate();
+          double ecm_avg = ecm_est.getAverageEstimate();
+          double qsqr_avg = qsqr_est.getAverageEstimate();
+          double qcot_avg = qcot_est.getAverageEstimate();
+
           // Output format: full_value upper_error lower_error
 
           double elab_sym_err = elab_est.getSymmetricError();
@@ -628,19 +633,19 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
             double qcot_lower =
                 qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
 
-            fout << energy_values[0] << "," << elab_upper << "," << elab_lower
-               << "," << elab_sym_err << "," << ecm_values[0] << ","
+            fout << elab_avg << "," << elab_upper << "," << elab_lower
+               << "," << elab_sym_err << "," << ecm_avg << ","
                << ecm_upper << "," << ecm_lower << "," << ecm_sym_err << ","
-               << qsqr_values[0] << "," << qsqr_upper << "," << qsqr_lower
-               << "," << qsqr_sym_err << "," << qcot_values[0] << ","
+               << qsqr_avg << "," << qsqr_upper << "," << qsqr_lower
+               << "," << qsqr_sym_err << "," << qcot_avg << ","
                << qcot_upper << "," << qcot_lower << "," << qcot_sym_err
                << endl;
           }
           else { // jackknife mode
-            fout << energy_values[0] << "," << elab_sym_err << ","
-                 << ecm_values[0] << "," << ecm_sym_err << ","
-                 << qsqr_values[0] << "," << qsqr_sym_err << ","
-                 << qcot_values[0] << "," << qcot_sym_err << endl;
+            fout << elab_avg << "," << elab_sym_err << ","
+                 << ecm_avg << "," << ecm_sym_err << ","
+                 << qsqr_avg << "," << qsqr_sym_err << ","
+                 << qcot_avg << "," << qcot_sym_err << endl;
           }
         }
         obs_key_idx++;

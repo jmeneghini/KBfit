@@ -12,6 +12,7 @@
 #include "array.h"
 #include "byte_handler.h"
 #include <complex>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -346,6 +347,9 @@ private:
                     const std::vector<std::string>& paths,
                     std::vector<std::string>& stringvalues) const;
 
+  // Helper function to delete a dataset if it exists (for overwriting)
+  void delete_dataset_if_exists(const std::string& objname);
+
   // constants
 
   static const int IO_ERR_NO_SUCH_FILE;
@@ -432,6 +436,9 @@ void IOHDF5Handler::write_atomics(const std::string& objname, const T* output,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
+  
+  // Delete existing dataset if it exists (for overwriting)
+  delete_dataset_if_exists(objname);
   hsize_t dsize = nT;
   hid_t dataspace_id = H5Screate_simple(1, &dsize, NULL);
   std::string obj(tidyString(objname));
@@ -496,6 +503,9 @@ void IOHDF5Handler::write_array(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
+  
+  // Delete existing dataset if it exists (for overwriting)
+  delete_dataset_if_exists(objname);
   uint rank = output.numDimensions();
   hsize_t* dims = new hsize_t[rank];
   for (uint k = 0; k < rank; ++k)
@@ -534,6 +544,9 @@ void IOHDF5Handler::write_complex_array(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
+  
+  // Delete existing dataset if it exists (for overwriting)
+  delete_dataset_if_exists(objname);
   uint rank = output.numDimensions() + 1;
   hsize_t* dims = new hsize_t[rank];
   dims[0] = 2; // real and imaginary parts

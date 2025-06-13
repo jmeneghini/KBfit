@@ -57,7 +57,7 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
     }
 
     // speecify the folder name for the output
-
+    // TODO: change outputs
     string outstub;
     xmlreadif(xmlin, "OutputStub", outstub, "DeterminantResidualFit");
 
@@ -555,7 +555,7 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
       uint kk = indstart + k;
       res[kk].resize(nssize);
       for (uint b = 0; b < nssize; ++b) {
-        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[indstart][b], qctype_enum).real();
+        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[kk][b], qctype_enum).real();
       }
     }
     for (uint k = 0; k < nbres; ++k) {

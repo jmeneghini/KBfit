@@ -15,41 +15,35 @@ enum class EnergyType {
 };
 
 struct EnsembleFitData {
-  // this ensemble_info and id
-  MCEnsembleInfo ensemble_info;
+  // this ensemble_info and id - default to independent
+  MCEnsembleInfo ensemble_info = MCEnsembleInfo(0);
 
-  // --- Hot path data (accessed frequently in residuals calculation) ---
-  // blocks - most frequently accessed
-  std::vector<BoxQuantization*> BQ_blocks;//
-  std::vector<uint> n_energies_per_block;//
+  // blocks
+  std::vector<BoxQuantization*> BQ_blocks = {}; // Box quantization blocks
+  std::vector<uint> n_energies_per_block = {}; // Number of energies per block
   uint n_blocks = 0;//
 
-  // fixed parameter flags and values (hot path)
+  // fixed parameter flags and values
   bool is_length_fixed = false; //
-  std::vector<bool> is_mass_fixed;
-  double fixed_length_value;                  // Fixed length value if is_length_fixed is true
-  std::vector<double> fixed_mass_values;      // Fixed mass values indexed by decay channel*2 + particle
+  std::vector<bool> is_mass_fixed = {}; // Indexed by decay channel*2 + particle
+  double fixed_length_value = 0.0;            // Fixed length value if is_length_fixed is true
+  std::vector<double> fixed_mass_values = {};  // Fixed mass values indexed by decay channel*2 + particle
 
-  // --- observations (medium frequency access) ---
+  // --- observations ---
   // energy data
-  std::vector<RVector> Elab_samples;
-  std::vector<RVector> dElab_samples;//
-  std::vector<RVector> Ecm_samples;
+  std::vector<RVector> Elab_samples = {}; // Elab samples for each ensemble
+  std::vector<RVector> dElab_samples = {};
+  std::vector<RVector> Ecm_samples = {};
   EnergyType residual_energy_type = EnergyType::dElab;//
-  std::vector<MCObsInfo> energy_obs_infos;//
+  std::vector<MCObsInfo> energy_obs_infos = {};
 
   // length and mass data
   RVector length_samples;                     // Only if not fixed (observable)
-  std::vector<RVector> mass_samples;          // Only non-fixed masses (observables)
+  std::vector<RVector> mass_samples = {};      // Only non-fixed masses (observables)
 
-  // --- Cold path data (accessed infrequently) ---
   // prior info
-  MCObsInfo length_prior;
-  std::vector<MCObsInfo> mass_priors;
-
-  // Constructor
-  explicit EnsembleFitData(const MCEnsembleInfo& info)
-    : ensemble_info(info) {}
+  MCObsInfo length_prior = MCObsInfo("default", 0);
+  std::vector<MCObsInfo> mass_priors = {}; // Indexed by decay channel*2 + particle
 };
 
 

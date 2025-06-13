@@ -113,7 +113,7 @@
                 </MCBinsInfo>
                 <Verbose />
                 <SamplingData>
-                    <FileName>/home/john/Documents/LatticeQCD/spectrums/ensemble_based/D200/isosinglet_doublystrange/analysis/3fit_spectrum/data/samples/fit_spectrum_levels_sigmond-5-30-25-ratio-Nbin10-SP-4tN-4t0-12tD_B-samplings.hdf5[/samplings]</FileName>
+                    <FileName>/home/john/Documents/LatticeQCD/spectrums/ensemble_based/D200/isosinglet_doublystrange/analysis/3fit_spectrum/data/samples/fit_spectrum_levels_sigmond-6-9-25-ratio-refmass-lambda-Nbin10-SP-4tN-4t0-12tD_B-samplings.hdf5[/samplings]</FileName>
                 </SamplingData>
             </KBObservables>
 

@@ -153,8 +153,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       } else if (xml_tag_count(*it, "LatticeAnisotropy") > 1) {
         throw(std::invalid_argument(
             "Multiple LatticeAnisotropy tags cannot be present"));
-      } else { // if no anisotropy, fix to 1, don't add as a prior
-        this_ensemble_data.is_length_fixed = true;
       }
       // get particle mass infos
       map<string, MCObsInfo> pmap;
@@ -260,19 +258,18 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       throw(std::invalid_argument("QuantizationCondition tag must be present"));
     }
     BoxQuantization* bqptr_dummy = ensemble_fit_data[0].BQ_blocks[0];
-    // TODO: allow either KtildeMatrix or KtildeMatrixInverse for cayley transformed QCs
     try {
       qctype_enum = bqptr_dummy->getQuantCondTypeFromString(qctype).value();
       if (qctype_enum == BoxQuantization::KtildeB) {
         if (k2 == 1) {
           throw(std::invalid_argument(
-              "KtildeMatrixInverse cannot be used with StildeCB or KtildeB"));
+              "KtildeMatrixInverse cannot be used with KtildeB"));
         }
       }
       if (qctype_enum == BoxQuantization::KtildeinvB) {
         if (k1 == 1) {
           throw(std::invalid_argument(
-              "KtildeMatrix cannot be used with StildeinvCB or KtildeinvB"));
+              "KtildeMatrix cannot be used with KtildeinvB"));
         }
       }
     } catch (std::bad_optional_access&) {
@@ -341,7 +338,20 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         throw(std::runtime_error("Resampling size mismatch in KBfit"));
       MCObsInfo obskey("LengthReference", current_ensemble_id);
       KBObsInfo lengthkey(mcens, obskey);
-      {
+      
+      // Convert energy values to reference mass ratios if in time_spacing_product mode
+      if (!energy_ratios) {
+        EnsembleFitData& ens_data = ensemble_fit_data[current_ensemble_id];
+        for (uint energy_idx = 0; energy_idx < ens_data.dElab_samples.size(); ++energy_idx) {
+          RVector& energy_samples = ens_data.dElab_samples[energy_idx];
+          if (energy_samples.size() != atrefmass.size())
+            throw(std::runtime_error("Size mismatch while forming energy ratios"));
+          for (uint kk = 0; kk < energy_samples.size(); ++kk) {
+            energy_samples[kk] /= atrefmass[kk];
+          }
+        }
+      }
+      { // TODO: this may be problematic, since we have mref for isotropic case
         RVector buff(nsamp + 1);
         if (anisotropy.find(mcens) == anisotropy.end()) { // isotropic case
           for (uint k = 0; k <= nsamp; ++k)

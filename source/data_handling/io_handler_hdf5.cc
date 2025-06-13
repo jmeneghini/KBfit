@@ -778,6 +778,9 @@ void IOHDF5Handler::write(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
+  
+  // Delete existing dataset if it exists (for overwriting)
+  delete_dataset_if_exists(objname);
   int n = output.length();
   hid_t typid =
       H5Tcreate(H5T_STRING, n + 1); // add 1 for terminating null character
@@ -1188,6 +1191,22 @@ void IOHDF5Handler::peek_strings(const std::string& filename,
   // Restore previous error handler
   H5Eset_auto(H5E_DEFAULT, hdf5error_func, hdf5error_data);
   H5Fclose(file_id);
+}
+
+// Helper function to delete a dataset if it exists (for overwriting)
+void IOHDF5Handler::delete_dataset_if_exists(const std::string& objname) {
+  if (!openflag || read_only) {
+    return;
+  }
+  
+  // Check if the dataset exists
+  if (queryData(objname)) {
+    std::string obj(tidyString(objname));
+    hid_t* cwdptr = (obj[0] == '/') ? (&fid) : (&currid);
+    herr_t status = H5Ldelete(*cwdptr, objname.c_str(), H5P_DEFAULT);
+    // Don't check for errors here - if deletion fails, creation will fail too
+    // and provide a more meaningful error message
+  }
 }
 
 // ********************************************************************
