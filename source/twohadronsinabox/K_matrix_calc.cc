@@ -142,7 +142,8 @@ void KtildeMatrixCalculator::initialize_a_fitform(const KElementInfo& kinfo,
     uint count1 = xmle.count_among_children("Polynomial");
     uint count2 = xmle.count_among_children("SumOfPoles");
     uint count3 = xmle.count_among_children("SumOfPolesPlusPolynomial");
-    if ((count1 + count2 + count3) != 1)
+    uint count4 = xmle.count_among_children("Expression");
+    if ((count1 + count2 + count3 + count4) != 1)
       throw(std::invalid_argument(string("FitForm has invalid XML content: ") +
                                   xmle.str()));
     if (count1 == 1) {
@@ -151,9 +152,12 @@ void KtildeMatrixCalculator::initialize_a_fitform(const KElementInfo& kinfo,
     } else if (count2 == 1) {
       XMLHandler xmlf(xmle, "SumOfPoles");
       fptr = new SumOfPoles(xmlf);
-    } else {
+    } else if (count3 == 1) {
       XMLHandler xmlf(xmle, "SumOfPolesPlusPolynomial");
       fptr = new SumOfPolesPlusPolynomial(xmlf);
+    } else {
+      XMLHandler xmlf(xmle, "Expression");
+      fptr = new Expression(xmlf);
     }
     fptr->Kinitialize(kinfo, m_paramindices);
     m_fit.insert(make_pair(kinfo, fptr));
@@ -399,11 +403,17 @@ void KtildeInverseCalculator::initialize_a_fitform(const KElementInfo& kinfo,
   try {
     XMLHandler xmle(xmlin, "FitForm");
     uint count1 = xmle.count_among_children("Polynomial");
-    if (count1 != 1)
+    uint count2 = xmle.count_among_children("Expression");
+    if ((count1 + count2) != 1)
       throw(std::invalid_argument(string("FitForm has invalid XML content: ") +
                                   xmle.str()));
-    XMLHandler xmlf(xmle, "Polynomial");
-    fptr = new Polynomial(xmlf);
+    if (count1 == 1) {
+      XMLHandler xmlf(xmle, "Polynomial");
+      fptr = new Polynomial(xmlf);
+    } else {
+      XMLHandler xmlf(xmle, "Expression");
+      fptr = new Expression(xmlf);
+    }
     fptr->Kinitialize(kinfo, m_paramindices);
     m_fit.insert(make_pair(kinfo, fptr));
   }

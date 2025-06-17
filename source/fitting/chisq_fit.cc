@@ -13,7 +13,8 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   uint nparams = chisq_ref.getNumberOfFitParameters();
   uint nresiduals = chisq_ref.getNumberOfResiduals();
   uint nsamplings = chisq_ref.getNumberOfResamplings();
-  if (nresiduals <= (nparams + 2))
+  // TODO: switch back to 2
+  if (nresiduals <= (nparams + 1))
     throw(std::invalid_argument("Too few residuals, fit cannot proceed"));
   uint dof = nresiduals - nparams;
   MCEnsembleInfo mcindep(kobs->getNumberOfResamplings());

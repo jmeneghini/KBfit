@@ -87,6 +87,14 @@ else()
     message(FATAL_ERROR "HDF5 not found - required for KBfit")
 endif()
 
+# muParser
+find_library(MUPARSER_LIBRARY NAMES muparser libmuparser PATHS /usr/lib /usr/lib/x86_64-linux-gnu)
+if(MUPARSER_LIBRARY)
+    message(STATUS "Found muParser: ${MUPARSER_LIBRARY}")
+else()
+    message(FATAL_ERROR "muParser not found - required for StringExpressionFitForm")
+endif()
+
 # MINUIT2
 # if on linux, usr/local/, if on mac, opt/homebrew/
 
@@ -169,6 +177,7 @@ target_link_libraries(KBfit PUBLIC
         LAPACK::LAPACK
         ${MINUIT2_LIBDIR}/${MINUIT2_LIB}
         ${HDF5_LIBRARIES}
+        ${MUPARSER_LIBRARY}
 )
 
 # Put binary in my conda bin directory if on AlmaLinux, else usr/local/bin
@@ -222,6 +231,7 @@ if(BUILD_TESTING)
             ${ZLIB_LIBRARIES}
             "${MINUIT2_LIBDIR}/${MINUIT2_LIB}" # Link Minuit2 for ROOT::Minuit2:: symbols
             ${HDF5_LIBRARIES}                 # Link HDF5 libraries for tests
+            ${MUPARSER_LIBRARY}               # Link muParser for StringExpressionFitForm
     )
 
     set_target_properties(KBfit_tests PROPERTIES CXX_STANDARD ${CMAKE_CXX_STANDARD})

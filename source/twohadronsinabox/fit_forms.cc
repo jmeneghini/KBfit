@@ -1,4 +1,10 @@
 #include "fit_forms.h"
+#include <cmath>
+#include <cctype>
+#include <algorithm>
+#include <regex>
+#include <set>
+#include <limits>
 
 using namespace std;
 
@@ -226,6 +232,173 @@ void SumOfPolesPlusPolynomial::Kinitialize(
     const KElementInfo& kinfo, std::map<KFitParamInfo, uint>& paramindices) {
   m_sumpoles.Kinitialize(kinfo, paramindices);
   m_poly.Kinitialize(kinfo, paramindices);
+}
+
+// ***************************************************************************************
+
+Expression::Expression() 
+    : m_expression("0"), m_x_value(0.0), m_parser_initialized(false) {}
+
+Expression::Expression(const std::string& expression)
+    : m_expression(expression), m_x_value(0.0), m_parser_initialized(false) {
+  parseExpression();
+}
+
+Expression::Expression(XMLHandler& xmlin) : m_parser_initialized(false) {
+  try {
+    XMLHandler xmlf(xmlin, "Expression");
+    
+    // Read expression
+    xmlread(xmlf, "String", m_expression, "Expression");
+    
+    m_x_value = 0.0;
+    
+    // Parse the expression to extract parameter names
+    parseExpression();
+  } catch (const std::exception& xp) {
+    throw(std::invalid_argument(
+        std::string("Could not initialize Expression: ") + xp.what()));
+  }
+}
+
+Expression::Expression(const Expression& in)
+    : m_expression(in.m_expression), 
+      m_param_names(in.m_param_names), m_param_indices(in.m_param_indices),
+      m_x_value(0.0), m_parser_initialized(false) {}
+
+Expression& Expression::operator=(const Expression& in) {
+  m_expression = in.m_expression;
+  m_param_names = in.m_param_names;
+  m_param_indices = in.m_param_indices;
+  m_x_value = 0.0;
+  m_parser_initialized = false;
+  return *this;
+}
+
+void Expression::parseExpression() {
+  // Extract variable names from the expression string using regex
+  // This approach finds all potential variable names before setting up muParser
+  try {
+    m_param_names.clear();
+    
+    // Use regex to find all potential variable names (alphanumeric + underscore, not starting with digit)
+    std::regex var_regex(R"([a-zA-Z_][a-zA-Z0-9_]*)");
+    std::sregex_iterator iter(m_expression.begin(), m_expression.end(), var_regex);
+    std::sregex_iterator end;
+    
+    std::set<std::string> unique_vars;
+    for (; iter != end; ++iter) {
+      std::string var = iter->str();
+      // Skip common mathematical functions and constants
+      if (var != "x" && var != "sin" && var != "cos" && var != "tan" && 
+          var != "exp" && var != "log" && var != "sqrt" && var != "abs" &&
+          var != "pi" && var != "e" && var != "ln" && var != "log10" &&
+          var != "sinh" && var != "cosh" && var != "tanh" && var != "asin" &&
+          var != "acos" && var != "atan" && var != "atan2" && var != "pow" &&
+          var != "min" && var != "max" && var != "sum" && var != "avg") {
+        unique_vars.insert(var);
+      }
+    }
+    
+    // Convert set to vector
+    for (const auto& var : unique_vars) {
+      m_param_names.push_back(var);
+    }
+    
+    // Now set up muParser with all discovered variables
+    setupMuParser();
+    
+    // Test parsing
+    m_parser.SetExpr(m_expression);
+    m_parser.Eval(); // This will throw if there are syntax errors
+    
+  } catch (mu::Parser::exception_type &e) {
+    throw std::invalid_argument("Expression parsing error: " + std::string(e.GetMsg()));
+  } catch (const std::exception& e) {
+    throw std::invalid_argument("Expression parsing error: " + std::string(e.what()));
+  }
+}
+
+void Expression::setupMuParser() const {
+  if (m_parser_initialized) {
+    return; // Already initialized
+  }
+
+  // Clear only variables, keep built-in functions and operators
+  m_parser.ClearVar();
+  
+  // Define the independent variable
+  m_parser.DefineVar("x", &m_x_value);
+  
+  // Resize parameter values vector if needed
+  if (m_param_values.size() != m_param_names.size()) {
+    m_param_values.resize(m_param_names.size(), 0.0);
+  }
+  
+  // Define parameter variables
+  for (size_t i = 0; i < m_param_names.size(); ++i) {
+    m_parser.DefineVar(m_param_names[i], &m_param_values[i]);
+  }
+  
+  // Set the expression
+  m_parser.SetExpr(m_expression);
+  m_parser_initialized = true;
+}
+
+double Expression::evaluate(const std::vector<double>& params, double Ecm_over_mref) const {
+  try {
+    // Set up muParser if not already done
+    setupMuParser();
+    
+    // Set the independent variable directly to Ecm_over_mref
+    m_x_value = Ecm_over_mref;
+    
+    // Set parameter values
+    for (size_t i = 0; i < m_param_names.size(); ++i) {
+      if (i < m_param_indices.size() && m_param_indices[i] < params.size()) {
+        if (i < m_param_values.size()) {
+          m_param_values[i] = params[m_param_indices[i]];
+        }
+      } else {
+        if (i < m_param_values.size()) {
+          m_param_values[i] = 0.0; // Set to zero as fallback
+        }
+      }
+    }
+    
+    // Evaluate the expression using muParser
+    double result = m_parser.Eval();
+    
+    return result;
+    
+  } catch (mu::Parser::exception_type &e) {
+    return std::numeric_limits<double>::quiet_NaN();
+  } catch (const std::exception& e) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+}
+
+void Expression::output(XMLHandler& xmlout) const {
+  xmlout.set_root("Expression");
+  xmlout.put_child("String", m_expression);
+}
+
+void Expression::Kinitialize(const KElementInfo& kelem,
+                                         std::map<KFitParamInfo, uint>& paramindices) {
+  m_param_indices.resize(m_param_names.size());
+  
+  for (size_t i = 0; i < m_param_names.size(); ++i) {
+    // Create a KFitParamInfo for this parameter using the string constructor
+    KFitParamInfo kpinfo(m_param_names[i], kelem);
+    
+    auto it = paramindices.find(kpinfo);
+    if (it != paramindices.end()) {
+      m_param_indices[i] = it->second;
+    } else {
+      m_param_indices[i] = paramindices.size();
+      paramindices.insert(std::make_pair(kpinfo, m_param_indices[i]));
+    }
+  }
 }
 
 // ***************************************************************************************

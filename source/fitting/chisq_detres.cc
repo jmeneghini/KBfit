@@ -489,7 +489,8 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
             string belemname = bqptr->getKeyString(row, col);
             for (uint resind = indstart; resind < indstop; ++resind) {
               const MCObsInfo& ekey = labenergies[resind].getMCObsInfo();
-              MCObsInfo bkey(belemname + "[" + ekey.getObsName() + "]",
+              // TODO: revert quick/dirty fix for too long of names; just enumerate the energies
+              MCObsInfo bkey(belemname + "[" + to_string(resind) + "]",
                              ekey.getObsIndex());
               uint nb = Bmat[resind].size();
               RVector buffre(nb), buffim(nb);

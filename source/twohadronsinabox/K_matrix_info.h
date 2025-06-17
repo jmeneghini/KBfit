@@ -283,6 +283,8 @@ public:
 
   KFitParamInfo(const KIndex& kindex, uint pole_index, uint Jtimestwo);
 
+  KFitParamInfo(const std::string& param_name, const KElementInfo& keleminfo);
+
   KFitParamInfo(const KFitParamInfo& in);
 
   KFitParamInfo& operator=(const KFitParamInfo& in);
@@ -317,6 +319,8 @@ private:
   void set_pole_energy(uint pole_index, uint Jtimestwo);
 
   void set_pole_coupling(const KIndex& kindex, uint pole_index, uint Jtimestwo);
+
+  void set_string_expr_param(const KElementInfo& keleminfo, uint param_hash);
 };
 
 inline KFitParamInfo::KFitParamInfo()
@@ -333,6 +337,16 @@ inline KFitParamInfo::KFitParamInfo(uint pole_index, uint Jtimestwo) {
 inline KFitParamInfo::KFitParamInfo(const KIndex& kindex, uint pole_index,
                                     uint Jtimestwo) {
   set_pole_coupling(kindex, pole_index, Jtimestwo);
+}
+
+inline KFitParamInfo::KFitParamInfo(const std::string& param_name,
+                                    const KElementInfo& keleminfo) {
+  // Create a simple hash of the parameter name
+  uint param_hash = 0;
+  for (char c : param_name) {
+    param_hash = param_hash * 31 + static_cast<uint>(c);
+  }
+  set_string_expr_param(keleminfo, param_hash);
 }
 
 inline KFitParamInfo::KFitParamInfo(const KFitParamInfo& in)

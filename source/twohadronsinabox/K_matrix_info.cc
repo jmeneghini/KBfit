@@ -171,7 +171,8 @@ KFitParamInfo::KFitParamInfo(XMLHandler& xmlin) {
   uint count1 = xmlk.count_among_children("PolynomialTerm");
   uint count2 = xmlk.count_among_children("PoleEnergy");
   uint count3 = xmlk.count_among_children("PoleCoupling");
-  if ((count1 + count2 + count3) != 1)
+  uint count4 = xmlk.count_among_children("StringExpressionParameter");
+  if ((count1 + count2 + count3 + count4) != 1)
     throw(std::invalid_argument("Invalid KFitParamInfo XML"));
   if (count1 == 1) {
     XMLHandler xmlt(xmlk, "PolynomialTerm");
@@ -185,13 +186,24 @@ KFitParamInfo::KFitParamInfo(XMLHandler& xmlin) {
     xmlreadchild(xmlt, "Index", poleindex);
     xmlreadchild(xmlt, "JTimesTwo", Jtimestwo);
     set_pole_energy(poleindex, Jtimestwo);
-  } else {
+  } else if (count3 == 1) {
     XMLHandler xmlt(xmlk, "PoleCoupling");
     uint poleindex, Jtimestwo;
     xmlreadchild(xmlt, "Index", poleindex);
     xmlreadchild(xmlt, "JTimesTwo", Jtimestwo);
     KIndex kindex(xmlt);
     set_pole_coupling(kindex, poleindex, Jtimestwo);
+  } else {
+    XMLHandler xmlt(xmlk, "StringExpressionParameter");
+    std::string param_name;
+    xmlreadchild(xmlt, "ParameterName", param_name);
+    KElementInfo keleminfo(xmlt);
+    // Create a hash of the parameter name
+    uint param_hash = 0;
+    for (char c : param_name) {
+      param_hash = param_hash * 31 + static_cast<uint>(c);
+    }
+    set_string_expr_param(keleminfo, param_hash);
   }
 }
 
@@ -249,6 +261,18 @@ void KFitParamInfo::set_pole_coupling(const KIndex& kindex, uint pole_index,
   m_store2 = kindex.m_store;
 }
 
+//    if string expression parameter:
+//         - rightmost 28 bits of m_store1 contain a hash of the parameter name
+//         - m_store2 contains the m_store of the K-matrix element
+//               the parameter is associated with
+
+void KFitParamInfo::set_string_expr_param(const KElementInfo& keleminfo, uint param_hash) {
+  m_store1 = 3;
+  m_store1 <<= 28;
+  m_store1 |= (param_hash & 0xFFFFFFFu);
+  m_store2 = keleminfo.m_store;
+}
+
 string KFitParamInfo::output(int indent) const {
   XMLHandler xmlout;
   output(xmlout);
@@ -291,6 +315,15 @@ void KFitParamInfo::output(XMLHandler& xmlout) const {
     kindex.output(xmlk);
     xmlt.put_child(xmlk);
     xmlout.put_child(xmlt);
+  } else if (type == 3) {
+    uint param_hash = m_store1 & 0xFFFFFFFu;
+    KElementInfo keleminfo(m_store2);
+    XMLHandler xmlt("StringExpressionParameter");
+    xmlt.put_child("ParameterHash", make_string(param_hash));
+    XMLHandler xmlk;
+    keleminfo.output(xmlk);
+    xmlt.put_child(xmlk);
+    xmlout.put_child(xmlt);
   }
 }
 
@@ -316,6 +349,16 @@ string KFitParamInfo::getMCObsName() const {
     return string("KPoleC") + make_stringtuple(poleindex, Jtimestwo) +
            make_stringtuple(kindex.getL(), kindex.getStimestwo(),
                             kindex.getChannelIndex());
+  } else if (type == 3) {
+    // String expression parameter
+    uint param_hash = m_store1 & 0xFFFFFFFu;
+    KElementInfo keleminfo(m_store2);
+    return string("KStrExpr") + make_stringtuple(param_hash, keleminfo.getJtimestwo()) +
+           make_stringtuple(keleminfo.getRowL(), keleminfo.getRowStimestwo(),
+                            keleminfo.getRowChannelIndex()) +
+           make_stringtuple(keleminfo.getColumnL(),
+                            keleminfo.getColumnStimestwo(),
+                            keleminfo.getColumnChannelIndex());
   }
   return string("");
 }
@@ -348,6 +391,16 @@ void KFitParamInfo::setFromMCObsName(const std::string& obsname) {
       read_stringtuple(tuples[1], L, Stimestwo, a);
       KIndex kindex(L, Stimestwo, a);
       set_pole_coupling(kindex, poleindex, Jtimestwo);
+    } else if (obsname.substr(0, 8) == string("KStrExpr")) {
+      vector<string> tuples(extract_stringtuples(obsname));
+      if (tuples.size() != 3)
+        throw(std::invalid_argument("Error"));
+      int param_hash, Jtimestwo, L, Stimestwo, a, Lp, Stimestwop, ap;
+      read_stringtuple(tuples[0], param_hash, Jtimestwo);
+      read_stringtuple(tuples[1], L, Stimestwo, a);
+      read_stringtuple(tuples[2], Lp, Stimestwop, ap);
+      KElementInfo keleminfo(Jtimestwo, L, Stimestwo, a, Lp, Stimestwop, ap);
+      set_string_expr_param(keleminfo, param_hash);
     } else
       throw(std::invalid_argument("Error"));
   } catch (const std::exception& xp) {
