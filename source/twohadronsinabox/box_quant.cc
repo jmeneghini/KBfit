@@ -703,8 +703,20 @@ void BoxQuantization::getStildeFromEcm(double Ecm_over_mref, CMatrix& Stilde) {
   calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
 }
 
-//  computes the eigenvalues of the quantization matrix
-//  specified by the "qmtype" enum
+//  computes the quantization matrix and its eigenvaleus
+//  specified by the "qctype" enum
+
+void BoxQuantization::getQCMatrixFromElab(
+    double Elab_over_mref, CMatrix& QC,
+    QuantCondType qctype) {
+  get_qc_matrix(Elab_over_mref, true, qctype, QC);
+}
+
+void BoxQuantization::getQCMatrixFromEcm(
+    double Ecm_over_mref, CMatrix& QC,
+    QuantCondType qctype) {
+  get_qc_matrix(Ecm_over_mref, false, qctype, QC);
+}
 
 std::vector<cmplx>
 BoxQuantization::getQCEigenvaluesFromElab(double Elab_over_mref,
@@ -726,9 +738,21 @@ cmplx BoxQuantization::getOmegaFromElab(double mu, double Elab_over_mref,
   return get_omega(mu, Elab_over_mref, true, qctype);
 }
 
+cmplx BoxQuantization::getOmegaFromElab(double mu, double Elab_over_mref,
+                                       const ComplexHermitianMatrix& B,
+                                       QuantCondType qctype) {
+  return get_omega(mu, Elab_over_mref, B, true, qctype);
+}
+
 cmplx BoxQuantization::getOmegaFromEcm(double mu, double Ecm_over_mref,
                                        QuantCondType qctype) {
   return get_omega(mu, Ecm_over_mref, false, qctype);
+}
+
+cmplx BoxQuantization::getOmegaFromEcm(double mu, double Ecm_over_mref,
+                                       const ComplexHermitianMatrix& B,
+                                       QuantCondType qctype) {
+  return get_omega(mu, Ecm_over_mref, B, false, qctype);
 }
 
 list<double>
@@ -1128,6 +1152,109 @@ void BoxQuantization::get_qc_matrix(double E_over_mref, bool Elab,
   }
 }
 
+void BoxQuantization::get_qc_matrix(double E_over_mref, 
+                                    const ComplexHermitianMatrix& B,
+                                    bool Elab, QuantCondType qctype,
+                                    CMatrix& Q) {
+  if (qctype == QuantCondType::StildeCB) {
+    // Compute Cayley transform of B: CB = (1 + i*B) * (1 - i*B)^(-1)
+    CMatrix CB;
+    calcCayleyTransformMatrix(B, CB, true);
+    // Compute Stilde from K-matrix
+    CMatrix Stilde;
+    RealSymmetricMatrix KtildeOrInverse;
+    if (Elab) {
+      getKtildeOrInverseFromElab(E_over_mref, KtildeOrInverse);
+    } else {
+      getKtildeOrInverseFromEcm(E_over_mref, KtildeOrInverse);
+    }
+    calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
+    
+    int N = CB.size(0);
+    Q.resize(N, N);
+    cmplx one(1.0, 0.0);
+    // evaluate Q = 1 + Stilde * CB
+    for (int row = 0; row < N; ++row)
+      for (int col = 0; col < N; ++col) {
+        cmplx z(0.0, 0.0);
+        for (int m = 0; m < N; ++m) {
+          z += Stilde(row, m) * CB(m, col);
+        }
+        if (row == col)
+          z += one;
+        Q.put(row, col, z);
+      }
+  } else if (qctype == QuantCondType::StildeinvCB) {
+    // Compute Cayley transform of B: CB = (1 + i*B) * (1 - i*B)^(-1)
+    CMatrix CB;
+    calcCayleyTransformMatrix(B, CB, true);
+    // Compute Stilde from K-matrix
+    CMatrix Stilde;
+    RealSymmetricMatrix KtildeOrInverse;
+    if (Elab) {
+      getKtildeOrInverseFromElab(E_over_mref, KtildeOrInverse);
+    } else {
+      getKtildeOrInverseFromEcm(E_over_mref, KtildeOrInverse);
+    }
+    calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
+    
+    int N = CB.size(0);
+    Q.resize(N, N);
+    // evaluate Q = Stildeinv + CB
+    for (int row = 0; row < N; ++row)
+      for (int col = 0; col < N; ++col) {
+        Q.put(row, col, std::conj(Stilde(col, row)) + CB(row, col));
+      }
+  } else if (qctype == QuantCondType::KtildeB) {
+    if (isKtildeInverseMode()) {
+      throw(std::invalid_argument("Cannot compute 1-Ktilde*B quantization "
+                                  "condition in KtildeInverse mode"));
+    }
+    // Get Ktilde matrix
+    RealSymmetricMatrix Ktilde;
+    if (Elab) {
+      getKtildeFromElab(E_over_mref, Ktilde);
+    } else {
+      getKtildeFromEcm(E_over_mref, Ktilde);
+    }
+    
+    int N = B.size();
+    Q.resize(N, N);
+    cmplx one(1.0, 0.0);
+    // evaluate Q = 1 - Ktilde * B
+    for (int row = 0; row < N; ++row)
+      for (int col = 0; col < N; ++col) {
+        cmplx z(0.0, 0.0);
+        for (int m = 0; m < N; ++m) {
+          z -= Ktilde(row, m) * B(m, col);
+        }
+        if (row == col)
+          z += one;
+        Q.put(row, col, z);
+      }
+  } else if (qctype == QuantCondType::KtildeinvB) {
+    if (isKtildeMode()) {
+      throw(std::invalid_argument(
+          "Cannot compute Ktildeinv-B quantization condition in Ktilde mode"));
+    }
+    // Get Ktildeinv matrix
+    RealSymmetricMatrix Ktildeinv;
+    if (Elab) {
+      getKtildeinvFromElab(E_over_mref, Ktildeinv);
+    } else {
+      getKtildeinvFromEcm(E_over_mref, Ktildeinv);
+    }
+    
+    int N = B.size();
+    Q.resize(N, N);
+    // evaluate Q = Ktildeinv - B
+    for (int row = 0; row < N; ++row)
+      for (int col = 0; col < N; ++col) {
+        Q.put(row, col, cmplx(Ktildeinv(row, col), 0.0) - B(row, col));
+      }
+  }
+}
+
 std::vector<cmplx> BoxQuantization::get_qc_eigenvalues(double E_over_mref,
                                                        bool Elab,
                                                        QuantCondType qctype) {
@@ -1150,6 +1277,22 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
   // mu < 0.0, dont calculate omega
   return DC.getDeterminant(Q);
 }
+
+// Version that takes an explicit B matrix instead of computing it internally
+cmplx BoxQuantization::get_omega(double mu, double E_over_mref,
+                                  const ComplexHermitianMatrix& B,
+                                  bool Elab,
+                                  QuantCondType qctype) {
+  CMatrix Q;
+  get_qc_matrix(E_over_mref, B, Elab, qctype, Q);
+  DeterminantCalculator DC;
+  if (mu >= 0.0) {
+    return DC.getOmega(mu, Q);
+  }
+  // mu < 0.0, dont calculate omega
+  return DC.getDeterminant(Q);
+}
+
 
 void BoxQuantization::get_deltaE_roots_in_interval_bracketed_by_NIs(
       double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,

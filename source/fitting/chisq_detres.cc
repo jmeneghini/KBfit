@@ -535,9 +535,9 @@ void DeterminantResidualFit::clear() {
 
 void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
     const vector<double>& fitparams) {
-  // cout.precision(12);
-  // cout << "evalResidualsAndInvCovCholeksy:  resampling_index =
-  // "<<resampling_index<<endl;
+  cout.precision(12);
+  cout << "evalResidualsAndInvCovCholeksy:"
+          "  resampling_index =" << resampling_index <<endl;
   if (Kmat != 0)
     Kmat->setParameterValues(fitparams);
   else
@@ -551,12 +551,12 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
     uint nbres = nres_per_block[blocknum];
     BoxQuantization* bqptr = BQ[blocknum];
     uint nssize = Ecm_over_mref[indstart].size();
-    RealSymmetricMatrix KtildeOrInverse;
     for (uint k = 0; k < nbres; ++k) {
       uint kk = indstart + k;
       res[kk].resize(nssize);
       for (uint b = 0; b < nssize; ++b) {
-        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[kk][b], qctype_enum).real();
+        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[kk][b],
+                                            Bmat[kk][b], qctype_enum).real();
       }
     }
     for (uint k = 0; k < nbres; ++k) {
