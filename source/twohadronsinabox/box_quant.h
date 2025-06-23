@@ -452,8 +452,14 @@ public:
 
   void outputCTMatricesFromEcm(double Ecm_over_mref, std::ostream& fout);
 
-  //  computes the eigenvalues of the quantization matrix
+  //  computes the quantization matrix and its eigenvaleus
   //  specified by the "qctype" enum
+
+  void getQCMatrixFromElab(double Elab_over_mref, CMatrix& QC,
+                            QuantCondType qctype);
+
+  void getQCMatrixFromEcm(double Ecm_over_mref, CMatrix& QC,
+                            QuantCondType qctype);
 
   std::vector<cmplx> getQCEigenvaluesFromElab(double Elab_over_mref,
                                               QuantCondType qctype);
@@ -467,7 +473,13 @@ public:
   cmplx getOmegaFromElab(double mu, double Elab_over_mref,
                          QuantCondType qctype);
 
+  cmplx getOmegaFromElab(double mu, double Ecm_over_mref,
+                        const ComplexHermitianMatrix& B, QuantCondType qctype);
+
   cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, QuantCondType qctype);
+
+  cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, 
+                        const ComplexHermitianMatrix& B, QuantCondType qctype);
 
   void getEcmRootsInEcmInterval(double mu, double Ecm_over_mref_min,
                              double Ecm_over_mref_max, QuantCondType qctype,
@@ -555,6 +567,11 @@ private:
   void get_qc_matrix(double E_over_mref, bool Elab, QuantCondType qctype,
                      CMatrix& Q);
 
+  void get_qc_matrix(double E_over_mref,
+                     const ComplexHermitianMatrix& B,
+                     bool Elab, QuantCondType qctype,
+                     CMatrix& Q);
+
   template <typename T>
   std::set<BoxQuantBasisState> find_excluded_states_from_ktilde(T* evalptr);
 
@@ -566,6 +583,10 @@ private:
                                         QuantCondType qctype);
 
   cmplx get_omega(double mu, double E_over_mref, bool Elab,
+                  QuantCondType qctype);
+
+  cmplx get_omega(double mu, double E_over_mref,
+                  const ComplexHermitianMatrix& B, bool Elab,
                   QuantCondType qctype);
 
   void get_deltaE_roots_in_interval_bracketed_by_NIs(
