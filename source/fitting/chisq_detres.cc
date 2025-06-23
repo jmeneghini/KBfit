@@ -535,9 +535,8 @@ void DeterminantResidualFit::clear() {
 
 void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
     const vector<double>& fitparams) {
-  // cout.precision(12);
-  // cout << "evalResidualsAndInvCovCholeksy:  resampling_index =
-  // "<<resampling_index<<endl;
+  cout.precision(12);
+  cout << "evalResidualsAndInvCovCholeksy:  resampling_index =" <<resampling_index<<endl;
   if (Kmat != 0)
     Kmat->setParameterValues(fitparams);
   else

@@ -7,6 +7,71 @@
 
 using namespace std;
 
+// Function to display help information
+void show_help() {
+  cout << endl;
+  cout << "=====================================================" << endl;
+  cout << "                     KBfit                           " << endl;
+  cout << "=====================================================" << endl;
+  cout << endl;
+  cout << "DESCRIPTION:" << endl;
+  cout << "  KBfit is a lattice QCD analysis tool for studying two-hadron" << endl;
+  cout << "  interactions in a finite box using the Luscher method." << endl;
+  cout << "  It performs K-matrix fitting, along with helpers to assist in" << endl;
+  cout << "  the analysis." << endl;
+  cout << endl;
+  cout << "USAGE:" << endl;
+  cout << "  KBfit <input_file.xml>" << endl;
+  cout << "  KBfit -h | --help" << endl;
+  cout << endl;
+  cout << "ARGUMENTS:" << endl;
+  cout << "  input_file.xml    XML input file containing analysis configuration" << endl;
+  cout << "  -h, --help        Show this help message and exit" << endl;
+  cout << endl;
+  cout << "AVAILABLE TASKS:" << endl;
+  cout << "  DoPrint           Print quantization condition results and spectra" << endl;
+  cout << "  DoFit             Perform K-matrix fitting to lattice data" << endl;
+  cout << "  DoSingleChannel   Single-channel scattering analysis" << endl;
+  cout << endl;
+  cout << "XML INPUT STRUCTURE:" << endl;
+  cout << "  The input XML file must have the following structure:" << endl;
+  cout << endl;
+  cout << "  <KBFit>" << endl;
+  cout << "    <Initialize>" << endl;
+  cout << "      <ProjectName>YourProjectName</ProjectName>" << endl;
+  cout << "      <LogFile>output.log</LogFile>              [optional]" << endl;
+  cout << "      <EchoXML/>                                 [optional]" << endl;
+  cout << "      <MCSamplingInfo>                           [required]" << endl;
+  cout << "        <Jackknife/> OR <Bootstrapper>...</Bootstrapper>" << endl;
+  cout << "      </MCSamplingInfo>" << endl;
+  cout << "    </Initialize>" << endl;
+  cout << endl;
+  cout << "    <TaskSequence>" << endl;
+  cout << "      <Task>" << endl;
+  cout << "        <Action>DoPrint|DoFit|DoSingleChannel</Action>" << endl;
+  cout << "        <!-- Task-specific configuration -->" << endl;
+  cout << "      </Task>" << endl;
+  cout << "      <!-- Additional tasks as needed -->" << endl;
+  cout << "    </TaskSequence>" << endl;
+  cout << "  </KBFit>" << endl;
+  cout << endl;
+  cout << "NOTES:" << endl;
+  cout << "  - If <ProjectName> is missing, a default name will be created" << endl;
+  cout << "  - If <LogFile> is missing, a default log file name is used" << endl;
+  cout << "  - <MCSamplingInfo> is mandatory and controls the resampling method" << endl;
+  cout << "  - <EchoXML/> causes the input XML to be written to the log file" << endl;
+  cout << "  - Example XML files are available in the examples/ directory" << endl;
+  cout << endl;
+  cout << "OUTPUT:" << endl;
+  cout << "  - Log file with detailed analysis results" << endl;
+  cout << "  - CSV files with numerical results (task-dependent)" << endl;
+  cout << "  - HDF5 files for sampling results (when applicable)" << endl;
+  cout << endl;
+  cout << "For more detailed information, please refer to the" << endl;
+  cout << "example XML files in the examples/ directory." << endl;
+  cout << endl;
+}
+
 // ******************************************************************************
 // * *
 // *                 Main driver program to run "KBfit" *
@@ -70,8 +135,17 @@ int main(int argc, const char* argv[]) {
     tokens[k - 1] = string(argv[k]);
   }
 
+  // Check for help arguments
+  if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
+    show_help();
+    return 0;
+  }
+
+  // Check for correct number of arguments
   if (tokens.size() != 1) {
-    cout << "Error: requires a file name as the only argument" << endl;
+    cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
+    cout << "Usage: KBfit <input_file.xml>" << endl;
+    cout << "       KBfit -h | --help" << endl;
     return 1;
   }
 

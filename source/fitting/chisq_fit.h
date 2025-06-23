@@ -8,6 +8,38 @@
 #include "xml_handler.h"
 #include <iostream>
 #include <string>
+#include <iomanip>
+#include <chrono>
+
+// ****************************************************************
+// just a simple progress bar for the console output
+// it shows the progress of a loop, with an estimated time of arrival
+// ****************************************************************
+
+void inline show_progress(std::size_t i, std::size_t total,
+                          std::chrono::steady_clock::time_point t0,
+                          std::ostream& out = std::cerr)
+{
+  const int bar_width = 44;                       // adjust to taste
+  double frac = static_cast<double>(i) / total;   // 0.0 … 1.0
+
+  int done = static_cast<int>(bar_width * frac);
+  int todo = bar_width - done;
+
+  // ETA:
+  using clock = std::chrono::steady_clock;
+  auto now   = clock::now();
+  double secs = std::chrono::duration<double>(now - t0).count();
+  double eta  = secs / (frac ? frac : 1) - secs;
+
+  out << '\r' << "["
+      << std::string(done, '=') << std::string(todo, ' ')
+      << "] " << std::setw(5) << static_cast<int>(frac * 100) << "% "
+      << "(ETA " << std::fixed << std::setprecision(0) << eta << " s)";
+  out.flush();
+}
+
+
 
 // *****************************************************************
 // *                                                               *

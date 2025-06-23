@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Choose compiler ───────────────────────────────────────────────────────────
 if(APPLE)
     set(LLVM_DIR "/opt/homebrew/opt/llvm")
     set(CMAKE_C_COMPILER "${LLVM_DIR}/bin/clang")
@@ -128,7 +129,7 @@ elseif(LSB_RELEASE_EXISTS EQUAL 0)
     set(MINUIT2_LIB "libMinuit2.so")
 else()
     message(STATUS "On CMU QCD Cluster")
-    set(CMAKE_INSTALL_PREFIX /home/jmeneghini/latqcd_miniconda3)
+    set(CMAKE_INSTALL_PREFIX /home/jmeneghini/miniconda3/envs/spectrum)
     set(MINUIT2_INCDIR "/usr/include/root/")
     set(ROOT_INCDIR "")
     set(MINUIT2_LIBDIR "/usr/lib64/root/")
@@ -180,7 +181,7 @@ target_link_libraries(KBfit PUBLIC
         ${MUPARSER_LIBRARY}
 )
 
-# Put binary in my conda bin directory if on AlmaLinux, else usr/local/bin
+# Put binary in my conda bin directory if on AlmaLinux or , else usr/local/bin
 
 install(TARGETS KBfit 
         RUNTIME DESTINATION bin)
