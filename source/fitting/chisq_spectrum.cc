@@ -108,8 +108,8 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       root_finder_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
     }
     // otherwise, default config
-    // TODO: output rootfinding info to logger
     logger << "RootFinder configuration: " << endl;
+    logger << root_finder_config.toString() << endl;
 
     // Initialize energy search interval 
     Elab_min = 0.0;   

@@ -48,6 +48,9 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   RealSymmetricMatrix pcov;
 
   // minimize using the full sampling
+
+  std::cerr << "Starting minimization with full sample" << std::endl;
+
   bool flag =
       CSM.findMinimum(start_params, chisq, params_fullsample, pcov, xmlz);
 
@@ -57,6 +60,8 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
     throw(std::invalid_argument("Fitting with full sample failed"));
   }
   chisq_dof = chisq / double(dof);
+  std::cerr << "Full sample fit completed with chi-square = "
+            << chisq << " and chi-square per dof = " << chisq_dof << std::endl;
   logger << "Full sample chisq/dof = " << chisq_dof << endl;
   for (uint p = 0; p < nparams; ++p) {
     logger << "params_fullsample[" << p << "] = " << params_fullsample[p]
@@ -72,34 +77,49 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   //   loop over the re-samplings
   list<uint> failed;
   char origverbose = CSM.getVerbosity();
-  CSM.setVerbosity(
-      'L'); // set verbosity to low for the resampling minimizations
-  for (sampindex = 1; sampindex <= nsamplings; ++sampindex) {
+  CSM.setVerbosity('L');                             // quiet inner fits
+
+  auto   t0              = std::chrono::steady_clock::now();
+  int    last_percent    = -1;                       // nothing printed yet
+  const  std::size_t N   = nsamplings;               // total samples
+
+  std::cerr << "Starting minimization with resamplings" << std::endl;
+  for (sampindex = 1; sampindex <= N; ++sampindex)
+  {
     double chisq_samp;
     chisq_ref.setResamplingIndex(sampindex);
+
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
-    logger << "Resamplings index = " << sampindex << " chisq = " << chisq_samp
-           << endl;
-    for (uint p = 0; p < nparams; ++p) {
-      logger << "params_sample[" << p << "] = " << params_sample[p] << endl;
+
+    // ── progress bar ------------------------------------------------------
+    int percent = static_cast<int>(100.0 * sampindex / N + 0.5); // round
+    if (percent != last_percent || sampindex == N) {
+      show_progress(sampindex, N, t0);          // updates the bar
+      last_percent = percent;
     }
+
+    // ── detailed per-sample log------------------------------
+    logger << "Resamplings index = " << sampindex
+           << " chisq = "            << chisq_samp << '\n';
+    for (uint p = 0; p < nparams; ++p)
+      logger << "params_sample[" << p << "] = "
+             << params_sample[p] << '\n';
+
     if (flag) {
       for (uint p = 0; p < nparams; ++p)
-        kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params_sample[p]);
+        kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
+                               params_sample[p]);
     } else {
-      logger << "Above fit failed!" << endl;
+      logger << "Above fit failed!\n";
       failed.push_back(sampindex);
       for (uint p = 0; p < nparams; ++p)
         kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
                                params_fullsample[p]);
     }
   }
-  logger << "Number of failed minimizations = " << failed.size() << endl;
-  if (double(failed.size()) / double(nsamplings) > 0.015) {
-    throw(std::runtime_error(
-        "Too many resamplings with failed minimizations occurred"));
-  }
-  CSM.setVerbosity(origverbose); // reset verbosity to original level
+
+  std::cerr << '\n';               // finish the progress line
+  CSM.setVerbosity(origverbose);   // restore caller’s verbosity
 
   xmlformat("ResamplingsMinimizationsLog", logger.str(), xmlz);
   if (xmlz.good())

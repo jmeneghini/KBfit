@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 /*---------------------------------------------------------------
-  EvalCache::operator() – memoise Ω(x)
+  caches evaluated values of the function, keeping count of # of evaluations
 ----------------------------------------------------------------*/
 const AdaptiveBracketRootFinder::Zval&
 AdaptiveBracketRootFinder::EvalCache::operator()(double x) {
@@ -21,7 +21,7 @@ AdaptiveBracketRootFinder::EvalCache::operator()(double x) {
 }
 
 /*---------------------------------------------------------------
-  makeAdaptiveBracketConfigFromXML
+  construct from config from XML
 ----------------------------------------------------------------*/
 AdaptiveBracketConfig
 AdaptiveBracketRootFinder::makeConfigFromXML(XMLHandler& xmlin) {

@@ -376,6 +376,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       XMLHandler xmlroot(xmltask, "RootFinder");
       root_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
     }
+    logger << "RootFinder configuration: " << endl;
+    logger << root_config.toString() << endl;
 
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
@@ -491,7 +493,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       if (qctype_enum == BoxQuantization::KtildeB) {
         if (k2 == 1) {
           throw(std::invalid_argument(
-              "KtildeMatrixInv erse cannot be used with StildeCB or KtildeB"));
+              "KtildeMatrixInverse cannot be used with StildeCB or KtildeB"));
         }
       }
       if (qctype_enum == BoxQuantization::KtildeinvB) {
