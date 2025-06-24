@@ -421,37 +421,18 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
       indstart += nres;
     }
 
-    //  Create a folder with project name if it does not already exist,
-    //  and inside that folder create a folder with the QuantCond,
-    //  where the output files will be stored.
-    filesystem::path project_dir = filesystem::path(outstub);
-    filesystem::path quant_cond_dir = project_dir / qctype;
-    std::error_code ec;
-    if (!filesystem::exists(quant_cond_dir)) {
-      if (!filesystem::create_directories(quant_cond_dir, ec)) {
-        if (ec) {
-          throw(
-              std::runtime_error("Error creating directory: " + ec.message()));
-        }
-      }
-    }
-    // Now move into folder
-    filesystem::current_path(quant_cond_dir);
-
     // output Ecm_over_mref, qcmsq_over_mref, Bmat samplings to file, if
     // requested
-
-    string fstub(tidyString(outfile_stub));
-    if (!fstub.empty()) {
+    if (!outfile_stub.empty()) {
       logger << "Outputting Ecm/mref, qcmsq/mrefsq, Box matrix elements to "
                 "samplings files with stub "
-             << fstub << endl;
+             << outfile_stub << endl;
       std::vector<SamplingsPutHandler*> sampput(ensemble_idmap.size(), 0);
       bool overwrite = true;
       for (map<MCEnsembleInfo, uint>::const_iterator it =
                ensemble_idmap.begin();
            it != ensemble_idmap.end(); ++it) {
-        string fname(fstub);
+        string fname = outfile_stub;
         fname += ".hdf5[/ens" + make_string(it->second) + "]";
         SamplingsPutHandler* sp =
             new SamplingsPutHandler(KBOH->getBinsInfo(it->first),
@@ -535,9 +516,6 @@ void DeterminantResidualFit::clear() {
 
 void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
     const vector<double>& fitparams) {
-  cout.precision(12);
-  cout << "evalResidualsAndInvCovCholeksy:"
-          "  resampling_index =" << resampling_index <<endl;
   if (Kmat != 0)
     Kmat->setParameterValues(fitparams);
   else

@@ -4,6 +4,36 @@ using namespace std;
 
 // *************************************************************************
 
+std::filesystem::path createKBOutputDirectory(const std::string& base_directory,
+                                              const std::string& quantization_condition) {
+  std::filesystem::path output_path;
+  
+  // Start with base directory if specified, this typically is the project name
+  if (!base_directory.empty()) {
+    output_path = std::filesystem::path(base_directory);
+  }
+  else {
+    // current working directory
+    output_path = std::filesystem::current_path();
+  }
+
+  // Add quantization condition subdirectory if specified
+  if (!quantization_condition.empty()) {
+    output_path = output_path / quantization_condition;
+  }
+  
+  // Create the directory structure
+  std::error_code ec;
+  if (!std::filesystem::exists(output_path)) {
+    if (!std::filesystem::create_directories(output_path, ec)) {
+      if (ec) {
+        throw(std::runtime_error("Error creating directory: " + ec.message()));
+      }
+    }
+  }
+  return output_path;
+}
+
 // set up the known tasks, create logfile, open stream for logging
 
 TaskHandler::TaskHandler(XMLHandler& xmlin) {
@@ -25,13 +55,29 @@ TaskHandler::TaskHandler(XMLHandler& xmlin) {
     throw(std::invalid_argument("Failure reading sampling information"));
   }
 
+  // get the user specified output dir
+  if (xmli.count_among_children("OutputDirectory") == 1) {
+    xmlread(xmli, "OutputDirectory", m_output_directory, "TaskHandler");
+  } else
+    m_output_directory = string(".");
+
   string logfile;
   if (xmli.count_among_children("LogFile") == 1)
     xmlread(xmli, "LogFile", logfile, "TaskHandler");
   else
     logfile = string("kbfit_log_") + nowstr + ".xml";
 
-  clog.open(logfile.c_str());
+  // put log file in the output directory
+  
+  filesystem::path logfile_path;
+  if (logfile.find('/') == string::npos && logfile.find('\\') == string::npos) {
+    filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
+    logfile_path = project_dir / logfile;
+  } else {
+    logfile_path = filesystem::path(logfile);
+  }
+
+  clog.open(logfile_path.c_str());
   if (!clog.is_open()) {
     cout << "Could not open log file " << logfile << " for output" << endl;
     throw(std::invalid_argument("Could not write to log file"));
@@ -43,6 +89,7 @@ TaskHandler::TaskHandler(XMLHandler& xmlin) {
     xmlread(xmli, "ProjectName", projname, "TaskHandler");
   } else
     projname = string("KBFit Project ") + nowstr;
+  m_project_name = projname;
   clog << " <ProjectName>" << projname << "</ProjectName>" << endl;
   clog << " <StartDateTime>" << nowstr << "</StartDateTime>" << endl;
 

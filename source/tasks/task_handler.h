@@ -6,6 +6,15 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <filesystem>
+
+// ***************************************************************
+
+//  Create a directory with the project name and quantization condition
+//  if it does not already exist.
+
+std::filesystem::path createKBOutputDirectory(const std::string& base_directory = "",
+                                              const std::string& quantization_condition = "");
 
 class TaskHandlerData; // base class for persistent data
 
@@ -24,6 +33,7 @@ class TaskHandlerData; // base class for persistent data
 // * *
 // *       <Initialize> *
 // *         <ProjectName>NameOfProject</ProjectName> *
+// *         <OutputDirectory>output_directory</OutputDirectory> *
 // *         <LogFile>output.log</LogFile> *
 // *         <EchoXML/> *
 // *         <MCSamplingInfo> ... </MCSamplingInfo> *
@@ -40,12 +50,17 @@ class TaskHandlerData; // base class for persistent data
 // * *
 // *   (a) If <ProjectName> is missing, a default name will be created. *
 // * *
-// *   (b) If <LogFile> is missing, a default name for the log file is used. *
+// *   (b) If <OutputDirectory> is missing, the current working directory *
+// *       is used. *
 // * *
-// *   (c) If <EchoXML> is missing, the input XML will not be written to the *
+// *   (c) If <LogFile> is missing, a default name for the log file is used. *
+// *       The log file is put in the output directory if no path separators *
+// *       are found in the log file name.                                   *
+// * *
+// *   (d) If <EchoXML> is missing, the input XML will not be written to the *
 // *       log file. *
 // * *
-// *   (d) The tag <MCSamplingInfo> is mandatory.  It controls the default *
+// *   (e) The tag <MCSamplingInfo> is mandatory.  It controls the default *
 // *       resampling method:  jackknife or bootstrap.  This default method *
 // *       is assumed for all reading and writing sampling results to and *
 // *       from files.  Note that both jackknife and bootstrap resampling *
@@ -73,6 +88,8 @@ class TaskHandler {
 
   KBObsHandler* m_obs;
   std::ofstream clog;
+  std::string m_project_name;
+  std::string m_output_directory;
 
   typedef void (TaskHandler::*task_ptr)(XMLHandler&, XMLHandler&, int);
   std::map<std::string, task_ptr> m_task_map;

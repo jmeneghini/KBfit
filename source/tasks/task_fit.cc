@@ -345,6 +345,15 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
   if (fittype == "DeterminantResidualFit") {
     try {
       XMLHandler xmlf(xmltask, "DeterminantResidualFit");
+
+      // get the quantization condition for the output directory
+      string qctype;
+      xmlreadif(xmltask, "QuantizationCondition", qctype, "DeterminantResidualFit");
+      filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+
+      EcmQcmBoxSampStub = (output_path / EcmQcmBoxSampStub).string();
+      outsampfile = (output_path / outsampfile).string();
+
       XMLHandler xmlcon;
       DeterminantResidualFit DRF(xmlf, m_obs, xmlcon, EcmQcmBoxSampStub);
       xmlout.put_child(xmlcon);

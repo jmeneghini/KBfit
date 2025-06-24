@@ -140,6 +140,7 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
 
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
+    
     string outmode = "full";
     xmlreadif(xmltask, "OutputMode", outmode, "doSingleChannel");
     if ((outmode != "full") && (outmode != "resampled"))
@@ -428,23 +429,9 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     logger << "Found " << labenergies.size() << " energy observables across "
            << blockcount << " blocks" << endl;
 
-    //  Create a folder with project name if it does not already exist.
-    //  The output files will be stored here.
-    string project_name = outstub;
 
-    filesystem::path project_dir = filesystem::path(project_name);
-
-    std::error_code ec;
-    if (!filesystem::exists(project_dir)) {
-      if (!filesystem::create_directories(project_dir, ec)) {
-        if (ec) {
-          throw(
-              std::runtime_error("Error creating directory: " + ec.message()));
-        }
-      }
-    }
-    // Now move into folder
-    filesystem::current_path(project_dir);
+    // Create output directory
+    filesystem::path output_path = createKBOutputDirectory(m_output_directory);
 
     // init the output samplings storage (elab already stored,
     // but we'll use new keys)
@@ -456,7 +443,9 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
       const MCEnsembleInfo& mcens = blockens[blocknum];
 
+      
       string filename = "Block" + make_string(blocknum) + ".csv";
+      filesystem::path full_filepath = output_path / filename;
 
       BoxQuantization* bqptr = BQ[blocknum];
 
@@ -486,7 +475,7 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
                       std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
                       " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
 
-      ofstream fout(filename);
+      ofstream fout(full_filepath.string());
 
       fout << header << "\n\n";
 
@@ -655,15 +644,24 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     
     // output elab, ecm, q^2, qcot samplings to file, if requested
     if (!samplings_outstub.empty() && (outmode == "resampled")) {
+      // If samplings_outstub contains no path separators, put it in the project directory
+      filesystem::path samplings_path;
+      if (samplings_outstub.find('/') == string::npos && samplings_outstub.find('\\') == string::npos) {
+        filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
+        samplings_path = project_dir / samplings_outstub;
+      } else {
+        samplings_path = filesystem::path(samplings_outstub);
+      }
+      
       logger << "Outputting E_lab/mref, E_cm/mref, (q/mref)^2, q/mref_cot_delta to "
                 "samplings files with stub "
-             << samplings_outstub << endl;
+             << samplings_path.string() << endl;
       std::vector<SamplingsPutHandler*> sampput(ensemble_idmap.size(), 0);
       bool overwrite = true;
       for (map<MCEnsembleInfo, uint>::const_iterator it =
                ensemble_idmap.begin();
            it != ensemble_idmap.end(); ++it) {
-        string fname(samplings_outstub);
+        string fname = samplings_path.string();
         fname += ".hdf5[/ensemble" + make_string(it->second) + "]";
         SamplingsPutHandler* sp =
             new SamplingsPutHandler(m_obs->getBinsInfo(it->first),

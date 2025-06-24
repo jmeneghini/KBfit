@@ -5,6 +5,7 @@
 #include "xml_handler.h"
 #include <map>
 #include <muParser.h>
+#include <string>
 
 // ***********************************************************************
 // *                                                                     *
@@ -249,8 +250,9 @@ public:
   Expression(const Expression& in);
   Expression& operator=(const Expression& in);
   virtual ~Expression() {}
-  virtual double evaluate(const std::vector<double>& params, double Ecm_over_mref) const;
-  virtual void output(XMLHandler& xmlout) const; // XML output
+  double evaluate(const std::vector<double>& params, double Ecm_over_mref) const override;
+  void output(XMLHandler& xmlout) const override; // XML output
+  std::vector<std::string> getParameterNames() const;
   using FitForm::output;
 
 private:

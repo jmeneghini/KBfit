@@ -50,8 +50,6 @@ using namespace std;
 // *                                                                        *
 // *     <Action>DoPrint</Action>                                           *
 // *                                                                        *
-// *      <OutputStub>...</OutputStub>                                      *
-// *                                                                        *
 // *      <OutputMode>full</OutputMode> or "resampled"                      *
 // *                                                                        *
 // *      <OmegaMu>8.0</OmegaMu>  (optional)                                *
@@ -270,9 +268,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     KtildeMatrixCalculator* Kmat = 0;
     KtildeInverseCalculator* Kinv = 0;
 
-    string outstub;
-    xmlread(xmltask, "OutputStub", outstub, "doPrint");
-    outstub = tidyString(outstub);
 
     // check if we're printing eigenvalues
     int count_print_eigenvals =
@@ -283,8 +278,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     }
     bool do_print_eigenvals = count_print_eigenvals;
 
-    if (outstub.empty())
-      throw(std::runtime_error("No output stub specified"));
     string outmode = "full";
     xmlreadif(xmltask, "OutputMode", outmode, "doPrint");
     if ((outmode != "full") && (outmode != "resampled"))
@@ -604,28 +597,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       }
     }
 
-    //  Create a folder with project name if it does not already exist,
-    //  and inside that folder creat a folder with the QuantCond,
-    //  where the output files will be stored.
-    string project_name = outstub;
-    string quant_cond_name = qctype;
-
-    filesystem::path project_dir = filesystem::path(project_name);
-    filesystem::path quant_cond_dir = project_dir / quant_cond_name;
-
-    std::error_code ec;
-    if (!filesystem::exists(quant_cond_dir)) {
-      if (!filesystem::create_directories(quant_cond_dir, ec)) {
-        if (ec) {
-          throw(
-              std::runtime_error("Error creating directory: " + ec.message()));
-        }
-      }
-    }
-    // Now move into folder
-    filesystem::current_path(quant_cond_dir);
-
-    //  Now start the output, block by block
+    //  Create output directory structure using the new utility function
+    filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
 
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
       const MCEnsembleInfo& mcens = blockens[blocknum];
@@ -636,7 +609,14 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
           "NonInteractingEnergies_Block" + make_string(blocknum) + ".csv";
       string roots_filename = "Roots_Block" + make_string(blocknum) + ".csv";
 
+      // Create full file paths
+      filesystem::path omega_filepath = output_path / omega_filename;
+      filesystem::path eigenvals_filepath = output_path / eigenvals_filename;
+      filesystem::path nis_filepath = output_path / nis_filename;
+      filesystem::path roots_filepath = output_path / roots_filename;
+
       BoxQuantization* bqptr = BQ[blocknum];
+      logger << "Output directory = " << output_path << endl;
       logger << "Filename = " << omega_filename << endl;
       if (do_print_eigenvals) {
         logger << "Filename = " << eigenvals_filename << endl;
@@ -687,7 +667,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
                       std::to_string(bqptr->getTotalMomentumIntegerSquared()) +
                       " # Box Irrep " + bqptr->getLittleGroupBoxIrrep();
 
-      ofstream fout_nis(nis_filename);
+      ofstream fout_nis(nis_filepath.string());
 
       fout_nis << header << "\n\n";
 
@@ -748,7 +728,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         ecmvals.push_back(ecm_energy);
       }
 
-      ofstream fout_omega(omega_filename);
+      ofstream fout_omega(omega_filepath.string());
 
       fout_omega << header << "\n\n";
 
@@ -767,7 +747,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         std::vector<uint> fn_calls;
         bqptr->getEcmRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
                                       root_config, roots, fn_calls);
-        ofstream fout_roots(roots_filename);
+        ofstream fout_roots(roots_filepath.string());
 
         fout_roots << header << "\n\n";
 
@@ -814,7 +794,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       fout_omega.close();
 
       if (do_print_eigenvals) {
-        ofstream fout_eigenvals(eigenvals_filename);
+        ofstream fout_eigenvals(eigenvals_filepath.string());
         fout_eigenvals << header << "\n\n";
 
         fout_eigenvals.precision(12);
@@ -868,7 +848,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         //     fout_omega << endl;
         //   }
         // }
-        fout_omega.close();
+        fout_eigenvals.close();
       }
     }
 

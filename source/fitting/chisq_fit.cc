@@ -143,6 +143,14 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
     XMLHandler xmlpi;
     fitparaminfos[p].output(xmlpi);
     xmlp.put_child(xmlpi);
+    // if param has a name, output it
+    string obs_name = fitparaminfos[p].getObsName();
+    auto& registry = ParameterNameRegistry::getInstance();
+    string param_name =
+        registry.getParameterNameFromMCObsName(obs_name);
+    if (!param_name.empty()) {
+      xmlp.put_child("ParameterName", param_name);
+    }
     bestfit_params[p] = kobs->getEstimate(kbfitparaminfos[p]);
     XMLHandler xmlfp;
     bestfit_params[p].output(xmlfp);

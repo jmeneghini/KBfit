@@ -2,6 +2,7 @@
 #define K_MATRIX_INFO_H
 
 #include "xml_handler.h"
+#include "param_registry.h"
 
 //  This class is a compound index containing (L, 2S, a)
 //     m_store encodes the L (4 bits), total S times two (4 bits),
@@ -283,7 +284,10 @@ public:
 
   KFitParamInfo(const KIndex& kindex, uint pole_index, uint Jtimestwo);
 
-  KFitParamInfo(const std::string& param_name, const KElementInfo& keleminfo);
+  // using hash instead of uint to have a constructor for expressions that
+  // doesn't conflict with the above polynomial constructor
+  KFitParamInfo(const KElementInfo& keleminfo, std::string param_name,
+                ParameterNameRegistry& param_registry);
 
   KFitParamInfo(const KFitParamInfo& in);
 
@@ -339,13 +343,9 @@ inline KFitParamInfo::KFitParamInfo(const KIndex& kindex, uint pole_index,
   set_pole_coupling(kindex, pole_index, Jtimestwo);
 }
 
-inline KFitParamInfo::KFitParamInfo(const std::string& param_name,
-                                    const KElementInfo& keleminfo) {
-  // Create a simple hash of the parameter name
-  uint param_hash = 0;
-  for (char c : param_name) {
-    param_hash = param_hash * 31 + static_cast<uint>(c);
-  }
+inline KFitParamInfo::KFitParamInfo(const KElementInfo& keleminfo, std::string param_name,
+                                    ParameterNameRegistry& param_registry) {
+  uint param_hash = param_registry.registerParameter(param_name);
   set_string_expr_param(keleminfo, param_hash);
 }
 
