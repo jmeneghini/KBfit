@@ -5,6 +5,7 @@
 #include <bit>
 #include <complex>
 #include <functional>
+#include <iomanip>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -23,6 +24,22 @@ struct AdaptiveBracketConfig {
 
   double plateau_mod2_threshold = 0.75; // “flat” if |Z|² above this
   int plateau_count_before_jump = 3;    // consecutive flats before ×2
+
+  std::string toString() const {
+    std::ostringstream os;
+    os << std::fixed << std::setprecision(3);
+    os << "AdaptiveBracketConfig{"
+       << "initial_step_percent="   << initial_step_percent
+       << ", x_tol="                << std::scientific << x_tol
+       << ", zero_tol="             << zero_tol
+       << ", min_step_percent="     << min_step_percent
+       << ", max_step_percent="     << max_step_percent
+       << ", step_scale_limit="     << std::fixed << step_scale_limit
+       << ", plateau_mod2_threshold=" << plateau_mod2_threshold
+       << ", plateau_count_before_jump=" << plateau_count_before_jump
+       << "}";
+    return os.str();
+  }
 };
 
 /*---------------------------------------------------------------
@@ -54,6 +71,9 @@ public:
   bool findRoots(double a, double b, std::vector<double>& roots) override;
 
   std::size_t evalCount() const { return eval_count_; }
+
+  /*---- getters/printers -------------------------------------------------*/
+  const AdaptiveBracketConfig& getConfig() const { return params_; }
 
 private:
   /*---- cached Ω evaluation ---------------------------------------------*/
