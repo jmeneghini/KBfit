@@ -28,15 +28,11 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
     XMLHandler xmlr(xmlin, "KBObservables");
     MCSamplingInfo sampinfo(xmlr);
     if (sampinfo != KBOH->getSamplingInfo()) {
-      // KBOH->setSamplingInfo(sampinfo);
-      // logger << "MCSamplingInfo reset in KBObsHandler in
-      // DeterminantResidualFit"<<endl;}
       throw(std::invalid_argument("KBObservables MCSamplingInfo does not match "
                                   "that of the KBObsHandler"));
     }
 
     //  read the input file lists to find the data
-
     set<string> sampfiles;
     if (xmlr.query_unique_to_among_children("SamplingData")) {
       XMLHandler xmlp(xmlr, "SamplingData");
@@ -55,11 +51,6 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
       logger << "No sampling files given" << endl;
       return;
     }
-
-    // speecify the folder name for the output
-    // TODO: change outputs
-    string outstub;
-    xmlreadif(xmlin, "OutputStub", outstub, "DeterminantResidualFit");
 
     //  first set up the K or K^(-1) matrix
     uint numfitparams;

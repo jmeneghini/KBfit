@@ -21,12 +21,16 @@ struct EnsembleFitData {
   // blocks
   std::vector<BoxQuantization*> BQ_blocks = {}; // Box quantization blocks
   std::vector<uint> n_energies_per_block = {}; // Number of energies per block
+  std::vector<std::pair<double, double>> Ecm_bounds_per_block = {};
   uint n_blocks = 0;//
 
+  // lattice parameters
+  uint Llat = 0; // Lattice spatial extent
+
   // fixed parameter flags and values
-  bool is_length_fixed = false; //
+  bool is_anisotropy_fixed = true; // Default to isotropic (fixed anisotropy = 1.0)
   std::vector<bool> is_mass_fixed = {}; // Indexed by decay channel*2 + particle
-  double fixed_length_value = 0.0;            // Fixed length value if is_length_fixed is true
+  double fixed_anisotropy_value = 1.0;         // Fixed anisotropy value (default 1.0 for isotropic)
   std::vector<double> fixed_mass_values = {};  // Fixed mass values indexed by decay channel*2 + particle
 
   // --- observations ---
@@ -37,12 +41,14 @@ struct EnsembleFitData {
   EnergyType residual_energy_type = EnergyType::dElab;//
   std::vector<MCObsInfo> energy_obs_infos = {};
 
-  // length and mass data
-  RVector length_samples;                     // Only if not fixed (observable)
-  std::vector<RVector> mass_samples = {};      // Only non-fixed masses (observables)
+  // reference mass and mass data (mref is always a parameter)
+  RVector mref_samples;                       // Always present (KBScale observable)
+  RVector anisotropy_samples;                 // Only if not fixed (anisotropic case)
+  std::vector<RVector> mass_samples = {};     // Only non-fixed masses (observables)
 
   // prior info
-  MCObsInfo length_prior = MCObsInfo("default", 0);
+  MCObsInfo mref_prior = MCObsInfo("KBScale", 0);
+  MCObsInfo anisotropy_prior = MCObsInfo("default", 0);
   std::vector<MCObsInfo> mass_priors = {}; // Indexed by decay channel*2 + particle
 };
 
@@ -52,7 +58,6 @@ class SpectrumFit : public ChiSquare {
   KBObsHandler* KBOH;
 
   AdaptiveBracketConfig root_finder_config;//
-  double Elab_max, Elab_min;
 
   KtildeMatrixCalculator* Kmat;//
   KtildeInverseCalculator* Kinv;//

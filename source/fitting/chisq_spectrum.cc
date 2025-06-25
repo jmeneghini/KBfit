@@ -1,4 +1,71 @@
 #include "chisq_spectrum.h"
+#include "task_utils.h"
+
+// **************************************************************************
+// *                                                                        *
+// *    The class "SpectrumFit", derived from the base class "ChiSquare",   *
+// *    provides a comprehensive framework for fitting scattering           *
+// *    parameters (via the K-matrix) by directly comparing to the          *
+// *    measured energy spectrum. It evaluates the chi^2 value by           *
+// *    simultaneously treating both the K-matrix parameters and the        *
+// *    underlying lattice QCD parameters (particle masses, lattice scale,  *
+// *    anisotropy) as fit parameters.                                      *
+// *                                                                        *
+// *    The total chi-squared is constructed from two types of residuals,   *
+// *    fully accounting for their correlations:                            *
+// *                                                                        *
+// *    1. Energy Residuals: (E_lab_shift_measured - E_lab_shift_predicted) *
+// *       The predicted energy shifts are found by numerically finding     *
+// *       the roots of the quantization condition (e.g., det(Kinv-B)=0)    *
+// *       within a specified energy range for each kinematic block.        *
+// *                                                                        *
+// *    2. Prior Residuals: (param_prior - param_fit_value)                 *
+// *       For each lattice QCD parameter that is not held fixed, this term *
+// *       constrains the fit parameter to its prior value determined from  *
+// *       Monte Carlo measurements.                                        *
+// *                                                                        *
+// *    The full covariance matrix between all measured quantities          *
+// *    (energy shifts and lattice parameters) is used to correctly         *
+// *    propagate errors.                                                   *
+// *                                                                        *
+// *    XML format for chi-square fitting (Spectrum Method):                *
+// *                                                                        *
+// *    <SpectrumFit>                                                       *
+// *                                                                        *
+// *      <OmegaMu>8.0</OmegaMu>  (optional, for Stilde-based QCs)           *
+// *                                                                        *
+// *      <Verbose/>  (optional)                                            *
+// *                                                                        *
+// *      <KtildeMatrix> or <KtildeMatrixInverse>...</KtildeMatrix>         *
+// *                                                                        *
+// *      <DefaultEnergyFormat>...</DefaultEnergyFormat>                    *
+// *                                                                        *
+// *      <RootFinder> (Mandatory)                                          *
+// *        Configures the adaptive bracketing root-finding algorithm.      *
+// *         <MaxIterations>100</MaxIterations> (optional, default 100)     *
+// *         <InitialBracketFactor>1.2</InitialBracketFactor> (opt, def 1.2)*
+// *              Factor to expand search bracket if root is not found.     *
+// *         <Tolerance>1e-9</Tolerance> (optional, default 1e-9)            *
+// *              The tolerance for the root value itself (the y-value).    *
+// *         <XTolerance>1e-9</XTolerance> (optional, default 1e-9)          *
+// *              The tolerance for the energy (the x-value).               *
+// *      </RootFinder>                                                     *
+// *                                                                        *
+// *      <MCEnsembleParameters>...</MCEnsembleParameters>                  *
+// *                                                                        *
+// *      <KBBlock>...</KBBlock>                                            *
+// *        ...                                                             *
+// *        <LabFrameEnergyShift><MCObs>...</MCObs></LabFrameEnergyShift>   *
+// *        <LabFrameEnergyMin>_val_</LabFrameEnergyMin> (Mandatory)         *
+// *        <LabFrameEnergyMax>_val_</LabFrameEnergyMax> (Mandatory)         *
+// *        ...                                                             *
+// *                                                                        *
+// *      <KBObservables> ... </KBObservables>                               *
+// *                                                                        *
+// *    </SpectrumFit>                                                      *
+// *                                                                        *
+// **************************************************************************
+
 using namespace std;
 
 SpectrumFit::SpectrumFit(XMLHandler& xmlin,
@@ -21,15 +88,11 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     XMLHandler xmlr(xmlin, "KBObservables");
     MCSamplingInfo sampinfo(xmlr);
     if (sampinfo != KBOH->getSamplingInfo()) {
-      // KBOH->setSamplingInfo(sampinfo);
-      // logger << "MCSamplingInfo reset in KBObsHandler in
-      // DeterminantResidualFit"<<endl;}
       throw(std::invalid_argument("KBObservables MCSamplingInfo does not match "
                                   "that of the KBObsHandler"));
     }
 
     //  read the input file lists to find the data
-
     set<string> sampfiles;
     if (xmlr.query_unique_to_among_children("SamplingData")) {
       XMLHandler xmlp(xmlr, "SamplingData");
@@ -97,23 +160,18 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         throw(std::invalid_argument("Invalid <DefaultEnergyFormat> tag"));
     }
 
-    // Get root finding info
+    // Get root finding info and initialize energy bounds
     int root_counts = xmlin.count_among_children("RootFinder");
-    if (root_counts > 1)
-      throw(
-          std::invalid_argument("Multiple RootFinder tags cannot be present"));
-    bool do_root_find = root_counts;
-    if (do_root_find) {
-      XMLHandler xmlroot(xmlin, "RootFinder");
-      root_finder_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
-    }
+    if (root_counts != 1)
+      throw(std::invalid_argument("There must be one only RootFinder tag"));
+
+    XMLHandler xmlroot(xmlin, "RootFinder");
+    root_finder_config = AdaptiveBracketRootFinder::makeConfigFromXML(xmlroot);
+
     // otherwise, default config
     logger << "RootFinder configuration: " << endl;
     logger << root_finder_config.toString() << endl;
 
-    // Initialize energy search interval 
-    Elab_min = 0.0;   
-    Elab_max = 10.0;
 
     //  Loop over the different MC ensembles to get information
     //  about all needed parameters.  Particle masses, anisotropy,
@@ -207,9 +265,9 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       set<MCObsInfo>& kset = needed_keys[mcens];
       uint nres = 0;
       MCObsInfo rkey;
-      list<XMLHandler> xmlee = it->find("EnergyShift");
+      list<XMLHandler> xmlee = it->find("LabFrameEnergyShift");
       for (auto & eet : xmlee) {
-        read_obs(eet, "EnergyShift", rkey, kset);
+        read_obs(eet, "LabFrameEnergyShift", rkey, kset);
 
         KBObsInfo this_energy_key(mcens, rkey);
         ensemble_fit_data[ensemble_idmap[mcens]].dElab_samples.push_back(
@@ -220,6 +278,17 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       if (nres == 0)
         throw(std::invalid_argument(
             "No energies available in at least one block"));
+
+      // set the energy bounds for this block
+      double Ecm_min, Ecm_max;
+      bool lab_frame_min_given = xmlreadifchild(*it, "CMFrameEnergyMin", Ecm_min);
+      bool lab_frame_max_given = xmlreadifchild(*it, "CMFrameEnergyMax", Ecm_max);
+      if (!(lab_frame_min_given && lab_frame_max_given)) {
+        throw(std::invalid_argument(
+            "Both CMFrameEnergyMin and CMFrameEnergyMax must be specified"
+            " for each KBBlock"));
+      }
+      ensemble_fit_data[ensemble_idmap[mcens]].Ecm_bounds_per_block.emplace_back(Ecm_min, Ecm_max);
       ensemble_fit_data[ensemble_idmap[mcens]].n_energies_per_block.push_back(nres);
       ensemble_fit_data[ensemble_idmap[mcens]].BQ_blocks.push_back(bqptr);
       ensemble_fit_data[ensemble_idmap[mcens]].n_blocks++;
@@ -235,11 +304,16 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     uint numenergies = 0;
     
     for (uint k = 0; k < ensemble_fit_data.size(); ++k) {
-      // Count non-fixed ensemble parameters (these become fit parameters AND generate residuals)
-      if (!ensemble_fit_data[k].is_length_fixed) {
+      // mref is always a parameter
+      total_fit_params++;
+      total_residuals++;
+      
+      // anisotropy if not fixed
+      if (!ensemble_fit_data[k].is_anisotropy_fixed) {
         total_fit_params++;
         total_residuals++;
       }
+      
       uint non_fixed_masses = ensemble_fit_data[k].mass_samples.size();  // Only non-fixed masses
       total_fit_params += non_fixed_masses;
       total_residuals += non_fixed_masses;
@@ -300,10 +374,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     if (nsamplings == 0)
       throw(std::runtime_error(
           "Samplings numbers do not match for all ensembles"));
-
-    vector<const RVector*> labenergyvalues(numenergies);
-    vector<vector<RVector>> qcmsq_over_mrefsq(numenergies);
-
+    
     //  insert all of the fixed values into KBOH
 
     for (map<KBObsInfo, double>::const_iterator fx = fixed_values.begin();
@@ -336,8 +407,9 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       const RVector& atrefmass = KBOH->getFullAndSamplingValues(scalekey);
       if (atrefmass.size() != (nsamp + 1))
         throw(std::runtime_error("Resampling size mismatch in KBfit"));
-      MCObsInfo obskey("LengthReference", current_ensemble_id);
-      KBObsInfo lengthkey(mcens, obskey);
+      
+      // Store lattice extent for this ensemble
+      ensemble_fit_data[current_ensemble_id].Llat = Llat;
       
       // Convert energy values to reference mass ratios if in time_spacing_product mode
       if (!energy_ratios) {
@@ -351,35 +423,34 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
           }
         }
       }
-      { // TODO: this may be problematic, since we have mref for isotropic case
-        RVector buff(nsamp + 1);
-        if (anisotropy.find(mcens) == anisotropy.end()) { // isotropic case
-          for (uint k = 0; k <= nsamp; ++k)
-            buff[k] = atrefmass[k] * double(Llat);
+      
+      // Always store mref as an observable
+      ensemble_fit_data[current_ensemble_id].mref_samples = atrefmass;
+      ensemble_fit_data[current_ensemble_id].mref_prior = MCObsInfo("KBScale", current_ensemble_id);
+      
+      // Handle anisotropy
+      if (anisotropy.find(mcens) == anisotropy.end()) { 
+        // Isotropic case - anisotropy is fixed to 1.0
+        ensemble_fit_data[current_ensemble_id].is_anisotropy_fixed = true;
+        ensemble_fit_data[current_ensemble_id].fixed_anisotropy_value = 1.0;
+      } else {
+        // Anisotropic case - check if it's fixed
+        KBObsInfo anisotropykey(mcens, anisotropy[mcens]);
+        bool anisotropy_fixed = (fixed_values.find(anisotropykey) != fixed_values.end());
+        ensemble_fit_data[current_ensemble_id].is_anisotropy_fixed = anisotropy_fixed;
+        
+        if (anisotropy_fixed) {
+          ensemble_fit_data[current_ensemble_id].fixed_anisotropy_value = fixed_values[anisotropykey];
         } else {
-          KBObsInfo anisotropykey(mcens, anisotropy[mcens]);
-          const RVector& anisotropy =
-              KBOH->getFullAndSamplingValues(anisotropykey);
-          if (anisotropy.size() != (nsamp + 1))
+          const RVector& anisotropy_samples = KBOH->getFullAndSamplingValues(anisotropykey);
+          if (anisotropy_samples.size() != (nsamp + 1))
             throw(std::runtime_error("Resampling size mismatch in KBfit"));
-          for (uint k = 0; k <= nsamp; ++k)
-            buff[k] = atrefmass[k] * double(Llat) * anisotropy[k];
-        }
-        
-        // Check if length is fixed
-        bool length_fixed = (fixed_values.find(lengthkey) != fixed_values.end());
-        ensemble_fit_data[current_ensemble_id].is_length_fixed = length_fixed;
-        
-        if (length_fixed) {
-          // Store fixed value
-          ensemble_fit_data[current_ensemble_id].fixed_length_value = fixed_values[lengthkey];
-        } else {
-          // Store as observable
-          ensemble_fit_data[current_ensemble_id].length_samples = buff;
-          KBOH->putFullAndSamplings(lengthkey, buff);
-          ensemble_fit_data[current_ensemble_id].length_prior = obskey;
+          ensemble_fit_data[current_ensemble_id].anisotropy_samples = anisotropy_samples;
+          ensemble_fit_data[current_ensemble_id].anisotropy_prior = MCObsInfo("LatticeAnisotropy", current_ensemble_id);
         }
       }
+      
+      // Note: Length is always calculated from mref * Llat * anisotropy 
 
       //  get particle masses for each decay channel (form ratios if energy_ratio false)
       //  Only add non-fixed masses to observables, store fixed values separately
@@ -512,9 +583,12 @@ void SpectrumFit::guessInitialFitParamValues(
   for (std::size_t e = 0; e < ensemble_fit_data.size(); ++e) {
     const EnsembleFitData& ens_data = ensemble_fit_data[e]; // Cache reference
 
-    // Length (only if not fixed)
-    if (!ens_data.is_length_fixed) {
-      fitparams[offset++] = ens_data.length_samples[0];
+    // mref (always present)
+    fitparams[offset++] = ens_data.mref_samples[0];
+
+    // Anisotropy (only if not fixed)
+    if (!ens_data.is_anisotropy_fixed) {
+      fitparams[offset++] = ens_data.anisotropy_samples[0];
     }
 
     // Masses (only non-fixed ones)
@@ -537,9 +611,12 @@ void SpectrumFit::getFitParamMCObsInfo(
   
   // Copy ensemble parameter infos
   for (const auto& ens_data : ensemble_fit_data) {
-    // Length info (only if not fixed)
-    if (!ens_data.is_length_fixed) {
-      fitinfos[offset++] = ens_data.length_prior;
+    // mref info (always present)
+    fitinfos[offset++] = ens_data.mref_prior;
+    
+    // Anisotropy info (only if not fixed)
+    if (!ens_data.is_anisotropy_fixed) {
+      fitinfos[offset++] = ens_data.anisotropy_prior;
     }
     
     // Mass infos (only non-fixed ones)
@@ -582,15 +659,23 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
   for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
     const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference
     
-    // Get length parameter
-    double length_param;
-    if (ens_data.is_length_fixed) {
-      length_param = ens_data.fixed_length_value;
+    // Get mref parameter (always present)
+    double mref_param = prior_params[offset];
+    residuals[offset] = ens_data.mref_samples[resampling_index] - mref_param;
+    offset++;
+    
+    // Get anisotropy parameter
+    double anisotropy_param;
+    if (ens_data.is_anisotropy_fixed) {
+      anisotropy_param = ens_data.fixed_anisotropy_value;
     } else {
-      length_param = prior_params[offset];
-      residuals[offset] = ens_data.length_samples[resampling_index] - length_param;
+      anisotropy_param = prior_params[offset];
+      residuals[offset] = ens_data.anisotropy_samples[resampling_index] - anisotropy_param;
       offset++;
     }
+    
+    // Calculate length parameter from mref * Llat * anisotropy
+    double length_param = mref_param * double(ens_data.Llat) * anisotropy_param;
     
     uint mass_sample_idx = 0;
     for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
@@ -634,8 +719,14 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
     uint energy_offset = 0;
     for (uint block = 0; block < ens_data.n_blocks; ++block) {
       BoxQuantization* this_block_bq = ens_data.BQ_blocks[block];
-      const uint n_energies = ens_data.n_energies_per_block[block]; // Cache value
-      
+      const uint n_energies = ens_data.n_energies_per_block[block]; 
+
+      // Get energy bounds for this block
+      const double Ecm_min = ens_data.Ecm_bounds_per_block[block].first;
+      const double Ecm_max = ens_data.Ecm_bounds_per_block[block].second;
+      const double Elab_min = this_block_bq->getElabOverMrefFromEcm(Ecm_min);
+      const double Elab_max = this_block_bq->getElabOverMrefFromEcm(Ecm_max);
+
       // Reuse pre-allocated vectors
       energy_shift_predictions.clear();
       energy_shift_predictions.reserve(n_energies);
@@ -671,9 +762,13 @@ void SpectrumFit::initializeInvCovCholesky() {
   for (uint ens = 0; ens < ensemble_fit_data.size(); ++ens) {
     const EnsembleFitData& ens_data = ensemble_fit_data[ens]; // Cache reference
     
-    // length (only if not fixed)
-    if (!ens_data.is_length_fixed) {
-      obs_samples.push_back(&ens_data.length_samples);
+    // mref (always present)
+    obs_samples.push_back(&ens_data.mref_samples);
+    obs_ensemble_infos.push_back(ens_data.ensemble_info);
+    
+    // anisotropy (only if not fixed)
+    if (!ens_data.is_anisotropy_fixed) {
+      obs_samples.push_back(&ens_data.anisotropy_samples);
       obs_ensemble_infos.push_back(ens_data.ensemble_info);
     }
 
