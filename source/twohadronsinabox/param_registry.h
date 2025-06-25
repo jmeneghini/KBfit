@@ -2,8 +2,9 @@
 #define PARAM_REGISTRY_H
 
 #include <string>
-#include <algorithm>
+#include <unordered_map>
 
+typedef unsigned int uint;
 
 // ***********************************************************************
 // *                                                                     *
