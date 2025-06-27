@@ -21,8 +21,10 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
 
   // assign initial guess for fit parameters
   vector<double> start_params;
+  start_params.resize(nparams);
   chisq_ref.guessInitialFitParamValues(start_params);
   vector<MCObsInfo> fitparaminfos;
+  fitparaminfos.resize(nparams);
   chisq_ref.getFitParamMCObsInfo(fitparaminfos);
 
   vector<KBObsInfo> kbfitparaminfos;

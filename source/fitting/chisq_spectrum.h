@@ -3,7 +3,6 @@
 
 #include "box_quant.h"
 #include "chisq_base.h"
-#include "task_utils.h"
 #include "kbobs_handler.h"
 #include "matrix.h"
 #include "xml_handler.h"
@@ -40,6 +39,7 @@ struct EnsembleFitData {
   std::vector<RVector> Ecm_samples = {};
   EnergyType residual_energy_type = EnergyType::dElab;//
   std::vector<MCObsInfo> energy_obs_infos = {};
+  std::vector<NonInteractingPair> non_interacting_pairs = {}; // Non-interacting pairs for each energy
 
   // reference mass and mass data (mref is always a parameter)
   RVector mref_samples;                       // Always present (KBScale observable)
@@ -70,6 +70,12 @@ class SpectrumFit : public ChiSquare {
   
   std::vector<bool> are_decay_channels_identical;
 
+  // Reusable temporary vectors for performance (pre-allocated)
+  mutable std::vector<double> energy_shift_predictions;
+  mutable std::vector<std::pair<double, NonInteractingPair>> shift_obs_w_NIs;
+  mutable std::vector<uint> fn_calls;
+  mutable std::vector<std::pair<double, double>> decay_channel_masses;
+
 public:
   SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
                          XMLHandler& xmlout,
@@ -96,6 +102,10 @@ private:
   // of the fit. The evalResidualsAndInvCovCholesky function just
   // updates the vars in detres; we omit that here.
   void initializeInvCovCholesky();
+
+  // Helper function to parse non-interacting pair strings
+  NonInteractingPair parseNonInteractingPair(const std::string& pair_str, 
+                                             const std::vector<DecayChannelInfo>& decay_channels) const;
 
   friend class TaskHandler;
 };

@@ -247,8 +247,23 @@ bool EcmTransform::double_near(double first, double second) {
   return (fabs(first - second) < 1e-12);
 }
 
+double EcmTransform::getFreeTwoParticleEnergyInElab(uint d1_sqr, uint d2_sqr) const {
+  double mm1 = m1_over_mref;
+  mm1 *= mm1;
+  double mm2 = m2_over_mref;
+  mm2 *= mm2;
+  double pfac = 6.2831853071795864770 / mref_L;
+  pfac *= pfac;
+  return sqrt(pfac * d1_sqr + mm1) + sqrt(pfac * d2_sqr + mm2);
+}
+
+double EcmTransform::getFreeTwoParticleEnergyInEcm(uint d1_sqr, uint d2_sqr) const {
+  double NI_ecm = getFreeTwoParticleEnergyInElab(d1_sqr, d2_sqr);
+  return getElabOverMref(NI_ecm);
+}
+
 list<double>
-EcmTransform::getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
+EcmTransform::getAllFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
                                          double max_Elab_over_mref) const {
   double mm1 = m1_over_mref;
   mm1 *= mm1;
@@ -304,11 +319,11 @@ EcmTransform::getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
 }
 
 list<double>
-EcmTransform::getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+EcmTransform::getAllFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
                                          double max_Ecm_over_mref) const {
   double Elab_min = getElabOverMref(min_Ecm_over_mref);
   double Elab_max = getElabOverMref(max_Ecm_over_mref);
-  list<double> E_free = getFreeTwoParticleEnergiesInElab(Elab_min, Elab_max); // in Elab
+  list<double> E_free = getAllFreeTwoParticleEnergiesInElab(Elab_min, Elab_max); // in Elab
   // change in place
   for (list<double>::iterator it = E_free.begin(); it != E_free.end(); ++it) {
     *it = getEcmOverMref(*it); // convert to Ecm

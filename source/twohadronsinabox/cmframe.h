@@ -146,11 +146,15 @@ public:
 
   bool areEqualMasses() const { return equalmasses; }
 
+  double getFreeTwoParticleEnergyInElab(uint d1_sqr, uint d2_sqr) const;
+
+  double getFreeTwoParticleEnergyInEcm(uint d1_sqr, uint d2_sqr) const;
+
   std::list<double>
-  getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
+  getAllFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
                                    double max_Elab_over_mref) const;
   std::list<double>
-  getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+  getAllFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
                                   double max_Ecm_over_mref) const;
 
 private:

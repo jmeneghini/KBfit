@@ -150,8 +150,9 @@ void MCObsGetHandler::connectSamplingFiles(
             keys_to_keep.find(mcens);
         if ((kt != keys_to_keep.end()) && (!((kt->second).empty()))) {
           if (!(pt->second->keepKeys(kt->second)))
-            throw(
-                std::runtime_error(" Not all requested observables available"));
+            throw(std::runtime_error(" The observable " +
+                                   kt->second.begin()->output() +
+                                   " from the ensemble " + mcens.output()));
         }
       }
     } catch (const std::exception& xp) {

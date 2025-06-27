@@ -98,7 +98,6 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
   const double h_max = L * params_.max_step_percent;
 
   std::deque<std::pair<double, double>> brackets;
-  roots.reserve(8); // heuristic
 
   /* ---- adaptive scan to collect brackets ----------------------------- */
   double x = a;
@@ -197,5 +196,7 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
                             return std::abs(p - q) < params_.x_tol;
                           }),
               roots.end());
+  /* ----- resize to remove unused capacity ------------------------- */
+  roots.shrink_to_fit();
   return !roots.empty();
 }

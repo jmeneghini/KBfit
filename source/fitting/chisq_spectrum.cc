@@ -25,8 +25,7 @@
 // *       Monte Carlo measurements.                                        *
 // *                                                                        *
 // *    The full covariance matrix between all measured quantities          *
-// *    (energy shifts and lattice parameters) is used to correctly         *
-// *    propagate errors.                                                   *
+// *    (energy shifts and lattice parameters) is used.                     *
 // *                                                                        *
 // *    XML format for chi-square fitting (Spectrum Method):                *
 // *                                                                        *
@@ -55,7 +54,10 @@
 // *                                                                        *
 // *      <KBBlock>...</KBBlock>                                            *
 // *        ...                                                             *
-// *        <LabFrameEnergyShift><MCObs>...</MCObs></LabFrameEnergyShift>   *
+// *        <LabFrameEnergyShift>                                           *
+// *          <MCObs>...</MCObs>                                            *
+// *          <NonInteractingPair>pi(1)pi(0)</NonInteractingPair>         *
+// *        </LabFrameEnergyShift>                                          *
 // *        <LabFrameEnergyMin>_val_</LabFrameEnergyMin> (Mandatory)         *
 // *        <LabFrameEnergyMax>_val_</LabFrameEnergyMax> (Mandatory)         *
 // *        ...                                                             *
@@ -237,8 +239,14 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     if (ensembles.empty())
       throw(std::invalid_argument("No ensembles listed in input XML"));
 
+    //  connect files for input
+
+    KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
+    logger << KBOH->getCurrentLog().str();
+    KBOH->clearLog();
+
     //  Loop over the KB quantization blocks to get the shift
-    //  energies infos.
+    //  energies infos and samplings
 
     vector<MCEnsembleInfo> blockens;
     map<MCEnsembleInfo, uint> ensemble_idmap;
@@ -269,6 +277,16 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       for (auto & eet : xmlee) {
         read_obs(eet, "LabFrameEnergyShift", rkey, kset);
 
+        // Read the NonInteractingPair information
+        string ni_pair_str;
+        try {
+          xmlread(eet, "NonInteractingPair", ni_pair_str, "LabFrameEnergyShift");
+        } catch (const std::exception& xp) {
+          throw(std::invalid_argument("NonInteractingPair tag must be present in LabFrameEnergyShift: " + string(xp.what())));
+        }
+        NonInteractingPair NI_pair = parseNonInteractingPair(ni_pair_str, *dcptr);
+        ensemble_fit_data[ensemble_idmap[mcens]].non_interacting_pairs.push_back(NI_pair);
+
         KBObsInfo this_energy_key(mcens, rkey);
         ensemble_fit_data[ensemble_idmap[mcens]].dElab_samples.push_back(
                 KBOH->getFullAndSamplingValues(this_energy_key));
@@ -281,9 +299,9 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
       // set the energy bounds for this block
       double Ecm_min, Ecm_max;
-      bool lab_frame_min_given = xmlreadifchild(*it, "CMFrameEnergyMin", Ecm_min);
-      bool lab_frame_max_given = xmlreadifchild(*it, "CMFrameEnergyMax", Ecm_max);
-      if (!(lab_frame_min_given && lab_frame_max_given)) {
+      bool cm_frame_min_given = xmlreadifchild(*it, "CMFrameEnergyMin", Ecm_min);
+      bool cm_frame_max_given = xmlreadifchild(*it, "CMFrameEnergyMax", Ecm_max);
+      if (!(cm_frame_min_given && cm_frame_max_given)) {
         throw(std::invalid_argument(
             "Both CMFrameEnergyMin and CMFrameEnergyMax must be specified"
             " for each KBBlock"));
@@ -349,12 +367,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     } catch (std::bad_optional_access&) {
       throw(std::invalid_argument("Invalid QuantizationCondition tag"));
     }
-
-    //  connect files for input
-
-    KBOH->connectSamplingFiles(sampfiles, needed_keys, verbose);
-    logger << KBOH->getCurrentLog().str();
-    KBOH->clearLog();
 
     //  get number of resamplings.  For bootstrap, all ensembles
     //  must have same bootstrap parameters.  For jackknife,
@@ -468,20 +480,19 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         // First particle in decay channel
         string particle1_name = dci.getParticle1Name();
         MCObsInfo& particle1_key = pmap[particle1_name];
-        particle1_key.resetObsIndex(current_ensemble_id);
+        particle1_key.resetObsIndex(0);
         KBObsInfo mass1key(mcens, particle1_key);
-        
-        const RVector& mass1 = KBOH->getFullAndSamplingValues(mass1key);
+
         bool mass1_fixed = (fixed_values.find(mass1key) != fixed_values.end());
         uint mass1_idx = dc * 2;
         
         ensemble_fit_data[current_ensemble_id].is_mass_fixed[mass1_idx] = mass1_fixed;
-        
+
         if (mass1_fixed) {
-          // Store fixed value
           ensemble_fit_data[current_ensemble_id].fixed_mass_values[mass1_idx] = fixed_values[mass1key];
         } else {
           // Add to observables
+          const RVector& mass1 = KBOH->getFullAndSamplingValues(mass1key);
           ensemble_fit_data[current_ensemble_id].mass_priors.push_back(particle1_key);
           if ((!energy_ratios)) {
             RVector massratio(mass1);
@@ -500,13 +511,12 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         if (!are_decay_channels_identical[dc]) {
           string particle2_name = dci.getParticle2Name();
           MCObsInfo& particle2_key = pmap[particle2_name];
-          particle2_key.resetObsIndex(current_ensemble_id);
+          particle2_key.resetObsIndex(0);
           KBObsInfo mass2key(mcens, particle2_key);
-          
-          const RVector& mass2 = KBOH->getFullAndSamplingValues(mass2key);
+
           bool mass2_fixed = (fixed_values.find(mass2key) != fixed_values.end());
           uint mass2_idx = dc * 2 + 1;
-          
+
           ensemble_fit_data[current_ensemble_id].is_mass_fixed[mass2_idx] = mass2_fixed;
           
           if (mass2_fixed) {
@@ -514,6 +524,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
             ensemble_fit_data[current_ensemble_id].fixed_mass_values[mass2_idx] = fixed_values[mass2key];
           } else {
             // Add to observables
+            const RVector& mass2 = KBOH->getFullAndSamplingValues(mass2key);
             ensemble_fit_data[current_ensemble_id].mass_priors.push_back(particle2_key);
             if ((!energy_ratios)) {
               RVector massratio(mass2);
@@ -531,8 +542,10 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       }
       current_ensemble_id++;
     }
-
     initialize_base(total_fit_params, total_residuals, nsamplings);
+    
+    // Initialize decay channel masses vector
+    decay_channel_masses.resize(n_decay_channels);
     
     // The SpectrumFit is designed to use a fixed covariance matrix calculated once.
     this->initializeInvCovCholesky();
@@ -564,6 +577,11 @@ void SpectrumFit::clear() {
   delete Kmat;
   delete Kinv;
   ensemble_fit_data.clear();
+  
+  // Clear reusable vectors
+  energy_shift_predictions.clear();
+  fn_calls.clear();
+  decay_channel_masses.clear();
 }
 
 // Need to add non-Kmatrix fit parameters below here
@@ -642,6 +660,13 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
 // This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
   // Set K-matrix parameters directly without copying
+  // print out residuals and fitparams for debugging
+  std::cout << "Params:" << std::endl;
+  for (const auto& param : fitparams) {
+    cout << param << " ";
+  }
+  cout << endl << "Residuals:" << endl;
+
   if (Kmat) {
     Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
   } else {
@@ -651,27 +676,27 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
   // Use pointer arithmetic to avoid copying prior_params vector
   const double* prior_params = fitparams.data() + n_kmat_params;
 
-  uint offset = 0;
-
-  std::vector<double> energy_shift_predictions;
-  std::vector<uint> fn_calls;
+  uint residual_offset = 0;    // Index into residuals array
+  uint prior_param_offset = 0; // Index into prior_params array
 
   for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
     const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference
     
     // Get mref parameter (always present)
-    double mref_param = prior_params[offset];
-    residuals[offset] = ens_data.mref_samples[resampling_index] - mref_param;
-    offset++;
+    double mref_param = prior_params[prior_param_offset];
+    residuals[residual_offset] = ens_data.mref_samples[resampling_index] - mref_param;
+    residual_offset++;
+    prior_param_offset++;
     
     // Get anisotropy parameter
     double anisotropy_param;
     if (ens_data.is_anisotropy_fixed) {
       anisotropy_param = ens_data.fixed_anisotropy_value;
     } else {
-      anisotropy_param = prior_params[offset];
-      residuals[offset] = ens_data.anisotropy_samples[resampling_index] - anisotropy_param;
-      offset++;
+      anisotropy_param = prior_params[prior_param_offset];
+      residuals[residual_offset] = ens_data.anisotropy_samples[resampling_index] - anisotropy_param;
+      residual_offset++;
+      prior_param_offset++;
     }
     
     // Calculate length parameter from mref * Llat * anisotropy
@@ -679,16 +704,17 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
     
     uint mass_sample_idx = 0;
     for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
-      const uint mass_base_idx = decay_channel * 2; // Cache calculation
+      const uint mass_base_idx = decay_channel * 2;
       double mass1, mass2;
       
       // Get mass1 (first particle in decay channel)
       if (ens_data.is_mass_fixed[mass_base_idx]) {
         mass1 = ens_data.fixed_mass_values[mass_base_idx];
       } else {
-        mass1 = prior_params[offset];
-        residuals[offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass1;
-        offset++;
+        mass1 = prior_params[prior_param_offset];
+        residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass1;
+        residual_offset++;
+        prior_param_offset++;
         mass_sample_idx++;
       }
       
@@ -700,12 +726,16 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
         if (ens_data.is_mass_fixed[mass2_idx]) {
           mass2 = ens_data.fixed_mass_values[mass2_idx];
         } else {
-          mass2 = prior_params[offset];
-          residuals[offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass2;
-          offset++;
+          mass2 = prior_params[prior_param_offset];
+          residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass2;
+          residual_offset++;
+          prior_param_offset++;
           mass_sample_idx++;
         }
       }
+      
+      // Store masses for efficient access in energy loop
+      decay_channel_masses[decay_channel] = std::make_pair(mass1, mass2);
       
       // Set masses for all blocks in this ensemble
       for (uint block = 0; block < ens_data.n_blocks; ++block) {
@@ -730,20 +760,34 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       // Reuse pre-allocated vectors
       energy_shift_predictions.clear();
       energy_shift_predictions.reserve(n_energies);
+      shift_obs_w_NIs.clear();
+      shift_obs_w_NIs.reserve(n_energies);
       fn_calls.clear();
-      
-      this_block_bq->getDeltaERootsInElabInterval(omega_mu, Elab_min, Elab_max,
-                                      qctype_enum, root_finder_config,
-                                      energy_shift_predictions, fn_calls);
+
+      // Loop over all energies in this block and form pairs of energy shifts with NI
+      for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
+        // Access non-interacting pair information for this energy level
+        shift_obs_w_NIs.emplace_back(ens_data.dElab_samples[energy_offset + energy_index][resampling_index],
+                                            ens_data.non_interacting_pairs[energy_offset + energy_index]);
+      }
+
+      this_block_bq->getDeltaElabPredictionsInElabInterval(omega_mu, Elab_min, Elab_max,
+                                                    qctype_enum, root_finder_config, shift_obs_w_NIs,
+                                                energy_shift_predictions, fn_calls);\
       
       // Calculate residuals for this block
       // both the energy obs and predictions are sorted by increasing Ecm
+
+      // Loop over all energies in this block and form residuals
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
-        residuals[offset++] = ens_data.dElab_samples[energy_offset++][resampling_index]
+        residuals[residual_offset++] = ens_data.dElab_samples[energy_offset++][resampling_index]
                             - energy_shift_predictions[energy_index];
+        // debug
+        cout << residuals[residual_offset - 1] << " ";
       }
     }
   }
+  cout << endl; // End of energy residuals
   // InvCovCholesky is already initialized and hasn't changed,
   // so we don't need to recompute it here.
 }
@@ -815,5 +859,65 @@ void SpectrumFit::initializeInvCovCholesky() {
 
   CholeskyDecomposer CD;
   CD.getCholeskyOfInverse(cov, inv_cov_cholesky);
+}
+
+NonInteractingPair SpectrumFit::parseNonInteractingPair(const std::string& pair_str, 
+                                                       const std::vector<DecayChannelInfo>& decay_channels) const {
+  NonInteractingPair result;
+  
+  // Parse format: "particle1(d1)particle2(d2)" 
+  // Example: "pi(1)pi(0)" or "K(2)pi(1)"
+  // This represents a non-interacting pair with their individual d^2
+  
+  size_t first_paren = pair_str.find('(');
+  if (first_paren == string::npos) {
+    throw(std::invalid_argument("Invalid NonInteractingPair format - missing first parentheses"));
+  }
+  
+  string particle1_name = pair_str.substr(0, first_paren);
+  
+  size_t first_close = pair_str.find(')', first_paren);
+  if (first_close == string::npos) {
+    throw(std::invalid_argument("Invalid NonInteractingPair format - missing first closing parentheses"));
+  }
+  
+  string d1_str = pair_str.substr(first_paren + 1, first_close - first_paren - 1);
+  result.d1_sqr = std::stoul(d1_str);
+  
+  size_t second_start = first_close + 1;
+  size_t second_paren = pair_str.find('(', second_start);
+  if (second_paren == string::npos) {
+    throw(std::invalid_argument("Invalid NonInteractingPair format - missing second parentheses"));
+  }
+  
+  string particle2_name = pair_str.substr(second_start, second_paren - second_start);
+  
+  size_t second_close = pair_str.find(')', second_paren);
+  if (second_close == string::npos) {
+    throw(std::invalid_argument("Invalid NonInteractingPair format - missing second closing parentheses"));
+  }
+  
+  string d2_str = pair_str.substr(second_paren + 1, second_close - second_paren - 1);
+  result.d2_sqr = std::stoul(d2_str);
+  
+  // Find the decay channel that matches this particle pair
+  bool found = false;
+  for (uint dc = 0; dc < decay_channels.size(); ++dc) {
+    const DecayChannelInfo& dci = decay_channels[dc];
+    
+    // Check if this decay channel matches the particle pair
+    if ((dci.getParticle1Name() == particle1_name && dci.getParticle2Name() == particle2_name) ||
+        (dci.getParticle1Name() == particle2_name && dci.getParticle2Name() == particle1_name)) {
+      result.decay_channel_idx = dc;
+      found = true;
+      break;
+    }
+  }
+  
+  if (!found) {
+    throw(std::invalid_argument("Particle pair '" + particle1_name + "," + particle2_name + "' not found in decay channels"));
+  }
+  
+  return result;
 }
 

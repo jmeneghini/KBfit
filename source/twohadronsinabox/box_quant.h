@@ -7,12 +7,10 @@
 #include "matrix.h"
 #include "xml_handler.h"
 #include <complex>
-#include <iostream>
 #include <map>
 #include <optional>
 #include <root_finder.h>
-#include <sstream>
-#include <stdexcept>
+
 #include <string>
 #include <string_view>
 #include <vector>
@@ -149,6 +147,14 @@ typedef std::complex<double> cmplx;
 // *                                                                     *
 // ***********************************************************************
 
+// Specifies a non-interacting pair of particles in a decay channel.
+
+struct NonInteractingPair {
+  uint decay_channel_idx;      // Index into decay channels
+  uint d1_sqr;             // d^2 value for first particle
+  uint d2_sqr;             // d^2 value for second particle
+};
+
 //  Specifies a basis state for the Kinverse-B matrix in the quantization
 //  condition:
 //        | a S J L n >    a = channel index, n = occurrence
@@ -273,6 +279,7 @@ class BoxQuantization {
   std::set<BoxQuantBasisState> m_basis;
   std::list<std::pair<BoxMatrix*, uint>> m_boxes;
   std::list<WZetaRGLCalculator*> m_wzetas;
+  std::vector<uint> m_decay_channel_S_num;
 
   KtildeMatrixCalculator* m_Kmat;
   KtildeInverseCalculator* m_Kinv;
@@ -352,6 +359,8 @@ public:
   double getMass2OverRef(uint channel_index) const {
     return m_masses2.at(channel_index);
   }
+
+  const EcmTransform& getDecayChannelEcmTransform(uint channel_index) const;
 
   bool isKtildeInverseMode() const { return (m_Kinv != 0); }
 
@@ -493,6 +502,28 @@ public:
                               std::vector<double>& roots,
                               std::vector<uint>& fn_calls);
 
+  void getDeltaEcmPredictionsInEcmInterval(
+        double  mu,
+        double  Ecm_over_mref_min,
+        double  Ecm_over_mref_max,
+        QuantCondType          qctype,
+        const AdaptiveBracketConfig  P,
+        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+        std::vector<double>&   shift_predictions,
+        std::vector<uint>&     fn_calls,
+        double                 guard_tol_frac = 0.1);
+
+  void getDeltaElabPredictionsInElabInterval(
+        double  mu,
+        double  Elab_over_mref_min,
+        double  Elab_over_mref_max,
+        QuantCondType          qctype,
+        const AdaptiveBracketConfig  P,
+        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+        std::vector<double>&   shift_predictions,
+        std::vector<uint>&     fn_calls,
+        double                 guard_tol_frac = 0.1);
+
   // Delta E in cm frame
   void getDeltaERootsInEcmInterval(double mu, double Ecm_over_mref_min,
                              double Ecm_over_mref_max, QuantCondType qctype,
@@ -588,6 +619,18 @@ private:
   cmplx get_omega(double mu, double E_over_mref,
                   const ComplexHermitianMatrix& B, bool Elab,
                   QuantCondType qctype);
+
+  void get_DeltaE_predictions(
+        double                      mu,
+        double                      E_over_mref_min,
+        double                      E_over_mref_max,
+        bool                        Elab,
+        QuantCondType               qctype,
+        const AdaptiveBracketConfig       P,
+        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+        std::vector<double>&        shift_predictions,   // output
+        std::vector<uint>&          fn_calls,            // omega evals per interval
+        double                      guard_tol_frac);
 
   void get_deltaE_roots_in_interval_bracketed_by_NIs(
       double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
