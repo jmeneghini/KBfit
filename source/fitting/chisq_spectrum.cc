@@ -397,9 +397,14 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
 
     //  read the reference mass time-spacing products for each ensemble into
     //  memory; evaluate reference lengths and particle masses for each ensemble
-    uint current_ensemble_id = 0;
     for (const auto& et : ref_at_mass) {
       const MCEnsembleInfo& mcens = et.first;
+      // Ensure that the ensemble from ref_at_mass is actually used in a KBBlock,
+      // otherwise, we have no need for it.
+      if (ensemble_idmap.find(mcens) == ensemble_idmap.end()) {
+        continue;
+      }
+      uint current_ensemble_id = ensemble_idmap.at(mcens);
       uint nsamp = KBOH->getNumberOfResamplings();
       KBObsInfo atrefmasskey(mcens, et.second);
       const RVector& atrefmass0 = KBOH->getFullAndSamplingValues(atrefmasskey);
@@ -437,6 +442,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
       }
       
       // Always store mref as an observable
+      ensemble_fit_data[current_ensemble_id].mref_samples.resize(nsamp + 1);
       ensemble_fit_data[current_ensemble_id].mref_samples = atrefmass;
       ensemble_fit_data[current_ensemble_id].mref_prior = MCObsInfo("KBScale", current_ensemble_id);
       
@@ -540,7 +546,6 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
           }
         }
       }
-      current_ensemble_id++;
     }
     initialize_base(total_fit_params, total_residuals, nsamplings);
     

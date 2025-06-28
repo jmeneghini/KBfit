@@ -299,6 +299,16 @@ bool ChiSquareMinimizer::find_minimum_minuit2(
   if (starting_params.size() != nparam)
     throw(std::invalid_argument("Invalid starting parameters"));
 
+  /* --- OPTIONAL: turn live logging on/off from XML -------------- */
+  const bool want_trace = (verbosity != 'L');   // Medium or High
+
+  if (want_trace) {
+    // 0 = silent, 1 = low, 2 = medium, 3 = high (lots of lines)
+    ROOT::Minuit2::MnPrint::SetGlobalLevel(2);
+  } else {
+    ROOT::Minuit2::MnPrint::SetGlobalLevel(0);
+  }
+
   std::vector<double> unc(nparam);
   for (uint p = 0; p < nparam; ++p)
     unc[p] = 0.01 * starting_params[p]; // set up initial uncertainties

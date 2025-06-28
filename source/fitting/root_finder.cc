@@ -116,8 +116,11 @@ bool AdaptiveBracketRootFinder::findRoots(double a, double b,
       brackets.emplace_back(x, x_next);
       check_for_im_jump = false;
     } else if (Zn.mod2 < params_.zero_tol) { // mod2 grazes 0
-      brackets.emplace_back(x - h_max,
-                            x_next + h_max); // give an extended bracket
+      double left_b = x - h_max;
+      double right_b = x_next + h_max;
+      if (Z(left_b).value.imag() * Z(right_b).value.imag() <= 0) {
+        brackets.emplace_back(left_b, right_b);
+      }
       check_for_im_jump = false;
     }
 
