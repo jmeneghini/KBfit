@@ -304,7 +304,7 @@ bool ChiSquareMinimizer::find_minimum_minuit2(
 
   if (want_trace) {
     // 0 = silent, 1 = low, 2 = medium, 3 = high (lots of lines)
-    ROOT::Minuit2::MnPrint::SetGlobalLevel(2);
+    ROOT::Minuit2::MnPrint::SetGlobalLevel(3);
   } else {
     ROOT::Minuit2::MnPrint::SetGlobalLevel(0);
   }

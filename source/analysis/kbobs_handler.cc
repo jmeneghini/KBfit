@@ -452,6 +452,16 @@ void KBObsHandler::jack_analyze(const RVector& sampvals, MCEstimate& result) {
   result.jackassign(sampvals[0], avg, sqrt(var));
 }
 
+// compute average
+double KBObsHandler::get_average(const RVector& sampvals) {
+  uint n = sampvals.size() - 1;
+  double avg = 0.0;
+  for (uint k = 1; k <= n; k++)
+    avg += sampvals[k];
+  avg /= double(n);
+  return avg;
+}
+
 //  compute jackknife covariance using samplings
 //  (sampvals1[0], sampvals2[0] contain full samples)
 

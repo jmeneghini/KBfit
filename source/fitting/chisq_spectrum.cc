@@ -486,7 +486,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         // First particle in decay channel
         string particle1_name = dci.getParticle1Name();
         MCObsInfo& particle1_key = pmap[particle1_name];
-        particle1_key.resetObsIndex(0);
+        particle1_key.resetObsIndex(dc * 2);
         KBObsInfo mass1key(mcens, particle1_key);
 
         bool mass1_fixed = (fixed_values.find(mass1key) != fixed_values.end());
@@ -517,7 +517,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
         if (!are_decay_channels_identical[dc]) {
           string particle2_name = dci.getParticle2Name();
           MCObsInfo& particle2_key = pmap[particle2_name];
-          particle2_key.resetObsIndex(0);
+          particle2_key.resetObsIndex(dc * 2 + 1);
           KBObsInfo mass2key(mcens, particle2_key);
 
           bool mass2_fixed = (fixed_values.find(mass2key) != fixed_values.end());
@@ -603,6 +603,7 @@ void SpectrumFit::guessInitialFitParamValues(
   offset += k_fit_params.size();
 
   // 2. Ensemble-specific parameters: only non-fixed ones
+  const bool bootstrap_mode = KBOH->isBootstrapMode();
   for (std::size_t e = 0; e < ensemble_fit_data.size(); ++e) {
     const EnsembleFitData& ens_data = ensemble_fit_data[e]; // Cache reference
 
@@ -670,7 +671,7 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
   for (const auto& param : fitparams) {
     cout << param << " ";
   }
-  cout << endl << "Residuals:" << endl;
+  cout << endl;
 
   if (Kmat) {
     Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
@@ -787,14 +788,10 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
         residuals[residual_offset++] = ens_data.dElab_samples[energy_offset++][resampling_index]
                             - energy_shift_predictions[energy_index];
-        // debug
-        cout << residuals[residual_offset - 1] << " ";
       }
     }
   }
-  cout << endl; // End of energy residuals
-  // InvCovCholesky is already initialized and hasn't changed,
-  // so we don't need to recompute it here.
+  assert(residual_offset == nresiduals);
 }
 
 
@@ -864,6 +861,17 @@ void SpectrumFit::initializeInvCovCholesky() {
 
   CholeskyDecomposer CD;
   CD.getCholeskyOfInverse(cov, inv_cov_cholesky);
+
+  // DEBUG: output the covariance matrix
+  {
+    cout << "Covariance matrix:" << endl;
+    for (uint i = 0; i < nresiduals; ++i) {
+      for (uint j = 0; j < nresiduals; ++j) {
+        cout << cov(i, j) << " ";
+      }
+      cout << endl;
+    }
+  }
 }
 
 NonInteractingPair SpectrumFit::parseNonInteractingPair(const std::string& pair_str, 

@@ -218,18 +218,17 @@ private:
 
 //  The class "Expression" describes a fit function defined by
 //  a mathematical expression string that is parsed and evaluated using muParser.
-//  The expression can contain an independent variable (x) and named parameters.
+//  The expression can contain an independent variable (x: Ecm/mref) and named parameters.
 //
 //  XML input:
 //       <Expression>
 //         <String>a*x^2 + b*exp(-c*x)</String>
 //       </Expression>
 //
-//  The parameters (a, b, c in the example; alphanumeric + underscore, not starting with a digit
+//  The parameters (a, b, c in the example; alphanumeric + underscore,
 //  not starting with a digit, in general) are automatically detected from the expression
 //  and their starting values are provided through the KFitParamInfo mechanism
 //  in the StartingValues section of the K-matrix calculator.
-//  The independent variable x represents Ecm_over_mref.
 
 class Expression : public FitForm {
   

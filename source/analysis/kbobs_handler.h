@@ -314,6 +314,8 @@ private:
   void boot_analyze(RVector& sampvals, MCEstimate& result);
 
 public:
+  double get_average(const RVector& sampvals);
+
   double jack_covariance(const RVector& sampvals1, const RVector& sampvals2);
 
   double boot_covariance(const RVector& sampvals1, const RVector& sampvals2);
