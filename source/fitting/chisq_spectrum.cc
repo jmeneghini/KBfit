@@ -592,32 +592,31 @@ void SpectrumFit::clear() {
 // Need to add non-Kmatrix fit parameters below here
 // (L, mass, etc.), just use mean values.
 void SpectrumFit::guessInitialFitParamValues(
-    vector<double>& fitparams) const {
-  // 1. K-matrix parameters
-  const std::vector<double>& k_fit_params =
-      (Kmat ? Kmat->getParameterValues() : Kinv->getParameterValues());
+    vector<double>& fitparams, bool only_update_priors) const {
+  if (!only_update_priors) {
+    // 1. K-matrix parameters
+    const std::vector<double>& k_fit_params =
+        (Kmat ? Kmat->getParameterValues() : Kinv->getParameterValues());
+    // Copy K-matrix params in one go
+    std::copy(k_fit_params.begin(), k_fit_params.end(), fitparams.begin());
+  }
+  std::size_t offset = n_kmat_params;
 
-  std::size_t offset = 0;
-  // Copy K-matrix params in one go
-  std::copy(k_fit_params.begin(), k_fit_params.end(), fitparams.begin());
-  offset += k_fit_params.size();
-
-  // 2. Ensemble-specific parameters: only non-fixed ones
-  const bool bootstrap_mode = KBOH->isBootstrapMode();
+  // 2. Ensemble-specific prior parameters: only non-fixed ones
   for (std::size_t e = 0; e < ensemble_fit_data.size(); ++e) {
     const EnsembleFitData& ens_data = ensemble_fit_data[e]; // Cache reference
 
     // mref (always present)
-    fitparams[offset++] = ens_data.mref_samples[0];
+    fitparams[offset++] = ens_data.mref_samples[resampling_index];
 
     // Anisotropy (only if not fixed)
     if (!ens_data.is_anisotropy_fixed) {
-      fitparams[offset++] = ens_data.anisotropy_samples[0];
+      fitparams[offset++] = ens_data.anisotropy_samples[resampling_index];
     }
 
     // Masses (only non-fixed ones)
     for (const auto& mass_samples : ens_data.mass_samples) {
-      fitparams[offset++] = mass_samples[0];
+      fitparams[offset++] = mass_samples[resampling_index];
     }
   }
 }
@@ -667,11 +666,11 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
   // Set K-matrix parameters directly without copying
   // print out residuals and fitparams for debugging
-  std::cout << "Params:" << std::endl;
-  for (const auto& param : fitparams) {
-    cout << param << " ";
-  }
-  cout << endl;
+  // std::cout << "Params:" << std::endl;
+  // for (const auto& param : fitparams) {
+  //   cout << param << " ";
+  // }
+  // cout << endl;
 
   if (Kmat) {
     Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
@@ -779,7 +778,7 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
 
       this_block_bq->getDeltaElabPredictionsInElabInterval(omega_mu, Elab_min, Elab_max,
                                                     qctype_enum, root_finder_config, shift_obs_w_NIs,
-                                                energy_shift_predictions, fn_calls);\
+                                                energy_shift_predictions, fn_calls);
       
       // Calculate residuals for this block
       // both the energy obs and predictions are sorted by increasing Ecm
@@ -863,15 +862,15 @@ void SpectrumFit::initializeInvCovCholesky() {
   CD.getCholeskyOfInverse(cov, inv_cov_cholesky);
 
   // DEBUG: output the covariance matrix
-  {
-    cout << "Covariance matrix:" << endl;
-    for (uint i = 0; i < nresiduals; ++i) {
-      for (uint j = 0; j < nresiduals; ++j) {
-        cout << cov(i, j) << " ";
-      }
-      cout << endl;
-    }
-  }
+  // {
+  //   cout << "Covariance matrix:" << endl;
+  //   for (uint i = 0; i < nresiduals; ++i) {
+  //     for (uint j = 0; j < nresiduals; ++j) {
+  //       cout << cov(i, j) << " ";
+  //     }
+  //     cout << endl;
+  //   }
+  // }
 }
 
 NonInteractingPair SpectrumFit::parseNonInteractingPair(const std::string& pair_str, 

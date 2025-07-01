@@ -86,7 +86,7 @@ public:
   void clear();
 
   // order of fitinfos and fitparams are the same
-  void guessInitialFitParamValues(std::vector<double>& fitparams) const
+  void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const
   override;
 
   void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const override;

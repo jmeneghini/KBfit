@@ -20,9 +20,13 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   MCEnsembleInfo mcindep(kobs->getNumberOfResamplings());
 
   // assign initial guess for fit parameters
+  uint sampindex = 0; // full sample
+  chisq_ref.setResamplingIndex(sampindex);
+
   vector<double> start_params;
   start_params.resize(nparams);
-  chisq_ref.guessInitialFitParamValues(start_params);
+  bool only_update_prior_initial_guesses = false;
+  chisq_ref.guessInitialFitParamValues(start_params, only_update_prior_initial_guesses);
   vector<MCObsInfo> fitparaminfos;
   fitparaminfos.resize(nparams);
   chisq_ref.getFitParamMCObsInfo(fitparaminfos);
@@ -40,9 +44,6 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
 
   // set up the minimizer
   ChiSquareMinimizer CSM(chisq_ref, csm_info);
-
-  uint sampindex = 0; // full sample
-  chisq_ref.setResamplingIndex(sampindex);
 
   vector<double> params_fullsample;
   XMLHandler xmlz;
@@ -84,12 +85,14 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   auto   t0              = std::chrono::steady_clock::now();
   int    last_percent    = -1;                       // nothing printed yet
   const  std::size_t N   = nsamplings;               // total samples
+  only_update_prior_initial_guesses = true;
 
   std::cerr << "Starting minimization with resamplings" << std::endl;
   for (sampindex = 1; sampindex <= N; ++sampindex)
   {
     double chisq_samp;
     chisq_ref.setResamplingIndex(sampindex);
+    chisq_ref.guessInitialFitParamValues(start, only_update_prior_initial_guesses);
 
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
 

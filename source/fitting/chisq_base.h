@@ -98,7 +98,7 @@ public:
   std::string str() const;
 
   virtual void
-  guessInitialFitParamValues(std::vector<double>& fitparams) const = 0;
+  guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const = 0;
 
   virtual void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const = 0;
 

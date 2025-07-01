@@ -274,21 +274,21 @@ public:
                          XMLHandler& xmlout,
                          const std::string& outfile_stub = "");
 
-  virtual ~DeterminantResidualFit();
+  ~DeterminantResidualFit() override;
 
   void clear();
 
-  virtual void guessInitialFitParamValues(std::vector<double>& fitparams) const;
+  void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const override;
 
-  virtual void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const;
+  void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const override;
 
-  virtual void do_output(XMLHandler& xmlout) const;
+  void do_output(XMLHandler& xmlout) const override;
 
   const std::vector<KFitParamInfo>& getFitParamInfos() const;
 
 private:
-  virtual void
-  evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams);
+  void
+  evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) override;
 
 
   friend class TaskHandler;

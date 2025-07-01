@@ -55,52 +55,52 @@ double ChiSquare::evalChiSquare(const vector<double>& fitparams) {\
     chisq += tmp * tmp;
     rhat[i] = tmp;
   }
-  /* ---------- header line ------------------------------------------ */
-  std::cout << "\n[χ²-DBG] call " << call
-            << "  χ² = " << chisq << "\n";
-
-  /* ---------- print raw residual vector (first 20 for brevity) ------ */
-  std::cout << "  residuals   (first 20): ";
-  for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
-    std::cout << residuals[i] << ' ';
-  std::cout << '\n';
-
-  /* ---------- print whitened residual vector (first 20) ------------ */
-  std::cout << "  whitened r̂ (first 20): ";
-  for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
-    std::cout << rhat[i] << ' ';
-  std::cout << '\n';
-
-  /* ---------- top-5 contributors to χ² ------------------------------ */
-  struct Top { double val; std::size_t idx; };
-  std::array<Top,5> top{};
-  for (std::size_t i = 0; i < n; ++i) {
-    double contrib = std::abs(rhat[i]);
-
-    /* check if this residual is larger than the smallest in “top” */
-    if (contrib > std::abs(top.back().val)) {
-      top.back() = { rhat[i], i };                // plain assignment
-      std::sort(top.begin(), top.end(),           // keep array sorted
-                [](const Top& a, const Top& b){
-                    return std::abs(a.val) > std::abs(b.val);
-                });
-    }
-  }
-  std::cout << "  top |r̂|: ";
-  for (const auto& t : top)
-    std::cout << "(i=" << t.idx << ", r̂=" << t.val
-              << ", r=" << residuals[t.idx] << ") ";
-  std::cout << '\n';
-
-  /* ---------- quick conditioning proxy ------------------------------ */
-  double maxDiag = inv_cov_cholesky.get(0,0);
-  double minDiag = inv_cov_cholesky.get(n-1,n-1);
-  for (uint i = 0; i < n; ++i) {
-    maxDiag = std::max(maxDiag, inv_cov_cholesky.get(i,i));
-    minDiag = std::min(minDiag, inv_cov_cholesky.get(i,i));
-  }
-  std::cout << "  diag(L) range  " << minDiag << " ... "
-            << maxDiag << "  (ratio ≈ " << maxDiag/minDiag << ")\n";
+  // /* ---------- header line ------------------------------------------ */
+  // std::cout << "\n[χ²-DBG] call " << call
+  //           << "  χ² = " << chisq << "\n";
+  //
+  // /* ---------- print raw residual vector (first 20 for brevity) ------ */
+  // std::cout << "  residuals   (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
+  //   std::cout << residuals[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- print whitened residual vector (first 20) ------------ */
+  // std::cout << "  whitened r̂ (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
+  //   std::cout << rhat[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- top-5 contributors to χ² ------------------------------ */
+  // struct Top { double val; std::size_t idx; };
+  // std::array<Top,5> top{};
+  // for (std::size_t i = 0; i < n; ++i) {
+  //   double contrib = std::abs(rhat[i]);
+  //
+  //   /* check if this residual is larger than the smallest in "top" */
+  //   if (contrib > std::abs(top.back().val)) {
+  //     top.back() = { rhat[i], i };                // plain assignment
+  //     std::sort(top.begin(), top.end(),           // keep array sorted
+  //               [](const Top& a, const Top& b){
+  //                   return std::abs(a.val) > std::abs(b.val);
+  //               });
+  //   }
+  // }
+  // std::cout << "  top |r̂|: ";
+  // for (const auto& t : top)
+  //   std::cout << "(i=" << t.idx << ", r̂=" << t.val
+  //             << ", r=" << residuals[t.idx] << ") ";
+  // std::cout << '\n';
+  //
+  // /* ---------- quick conditioning proxy ------------------------------ */
+  // double maxDiag = inv_cov_cholesky.get(0,0);
+  // double minDiag = inv_cov_cholesky.get(n-1,n-1);
+  // for (uint i = 0; i < n; ++i) {
+  //   maxDiag = std::max(maxDiag, inv_cov_cholesky.get(i,i));
+  //   minDiag = std::min(minDiag, inv_cov_cholesky.get(i,i));
+  // }
+  // std::cout << "  diag(L) range  " << minDiag << " ... "
+  //           << maxDiag << "  (ratio ≈ " << maxDiag/minDiag << ")\n";
 
 
   return chisq;
@@ -117,6 +117,65 @@ void ChiSquare::evalDiagonalResiduals(const vector<double>& fitparams,
       tmp += inv_cov_cholesky(i, j) * residuals[j];
     diag_residuals[i] = tmp;
   }
+
+  // /* --------------------------------------------------------------- */
+  // static uint call = 0;            // running counter (separate from χ²)
+  // ++call;
+  //
+  // const uint n = diag_residuals.size();
+  //
+  // /* -------------- compute χ² from diagonalised residuals ---------- */
+  // double chisq = 0.0;
+  // for (const auto& v : diag_residuals)
+  //   chisq += v * v;
+  //
+  // /* ---------- header line ----------------------------------------- */
+  // std::cout << "\n[χ²-DBG] diag-call " << call
+  //           << "  χ² = " << chisq << "\n";
+  //
+  // /* ---------- print raw residual vector (first 20 for brevity) ----- */
+  // std::cout << "  residuals   (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
+  //   std::cout << residuals[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- print whitened r̂ (first 20) ------------------------- */
+  // std::cout << "  whitened r̂ (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,n); ++i)
+  //   std::cout << diag_residuals[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- top-5 contributors to χ² ----------------------------- */
+  // struct Top { double val; std::size_t idx; };
+  // std::array<Top,5> top{};
+  // for (std::size_t i = 0; i < n; ++i) {
+  //   double contrib = std::abs(diag_residuals[i]);
+  //
+  //   /* check if this residual is larger than the smallest in "top" */
+  //   if (contrib > std::abs(top.back().val)) {
+  //     top.back() = { diag_residuals[i], i };             // plain assignment
+  //     std::sort(top.begin(), top.end(),                  // keep array sorted
+  //               [](const Top& a, const Top& b){
+  //                   return std::abs(a.val) > std::abs(b.val);
+  //               });
+  //   }
+  // }
+  // std::cout << "  top |r̂|: ";
+  // for (const auto& t : top)
+  //   std::cout << "(i=" << t.idx << ", r̂=" << t.val
+  //             << ", r=" << residuals[t.idx] << ") ";
+  // std::cout << '\n';
+  //
+  // /* ---------- quick conditioning proxy ----------------------------- */
+  // double maxDiag = inv_cov_cholesky.get(0,0);
+  // double minDiag = inv_cov_cholesky.get(n-1,n-1);
+  // for (uint i = 0; i < n; ++i) {
+  //   maxDiag = std::max(maxDiag, inv_cov_cholesky.get(i,i));
+  //   minDiag = std::min(minDiag, inv_cov_cholesky.get(i,i));
+  // }
+  // std::cout << "  diag(L) range  " << minDiag << " ... "
+  //           << maxDiag << "  (ratio ≈ " << maxDiag/minDiag << ")\n";
+  // /* --------------------------------------------------------------- */
 }
 
 void ChiSquare::evalDiagonalResiduals(const vector<double>& fitparams,
@@ -128,6 +187,65 @@ void ChiSquare::evalDiagonalResiduals(const vector<double>& fitparams,
       tmp += inv_cov_cholesky(i, j) * residuals[j];
     diag_residuals[i] = tmp;
   }
+
+  // /* --------------------------------------------------------------- */
+  // static uint call = 0;            // running counter (separate from χ²)
+  // ++call;
+  //
+  // const uint n = nresiduals;
+  //
+  // /* -------------- compute χ² from diagonalised residuals ---------- */
+  // double chisq = 0.0;
+  // for (uint i = 0; i < n; ++i)
+  //   chisq += diag_residuals[i] * diag_residuals[i];
+  //
+  // /* ---------- header line ----------------------------------------- */
+  // std::cout << "\n[χ²-DBG] diag-call " << call
+  //           << "  χ² = " << chisq << "\n";
+  //
+  // /* ---------- print raw residual vector (first 20 for brevity) ----- */
+  // std::cout << "  residuals   (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,(size_t)n); ++i)
+  //   std::cout << residuals[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- print whitened r̂ (first 20) ------------------------- */
+  // std::cout << "  whitened r̂ (first 20): ";
+  // for (std::size_t i = 0; i < std::min<std::size_t>(20,(size_t)n); ++i)
+  //   std::cout << diag_residuals[i] << ' ';
+  // std::cout << '\n';
+  //
+  // /* ---------- top-5 contributors to χ² ----------------------------- */
+  // struct Top { double val; std::size_t idx; };
+  // std::array<Top,5> top{};
+  // for (std::size_t i = 0; i < n; ++i) {
+  //   double contrib = std::abs(diag_residuals[i]);
+  //
+  //   /* check if this residual is larger than the smallest in "top" */
+  //   if (contrib > std::abs(top.back().val)) {
+  //     top.back() = { diag_residuals[i], i };             // plain assignment
+  //     std::sort(top.begin(), top.end(),                  // keep array sorted
+  //               [](const Top& a, const Top& b){
+  //                   return std::abs(a.val) > std::abs(b.val);
+  //               });
+  //   }
+  // }
+  // std::cout << "  top |r̂|: ";
+  // for (const auto& t : top)
+  //   std::cout << "(i=" << t.idx << ", r̂=" << t.val
+  //             << ", r=" << residuals[t.idx] << ") ";
+  // std::cout << '\n';
+  //
+  // /* ---------- quick conditioning proxy ----------------------------- */
+  // double maxDiag = inv_cov_cholesky.get(0,0);
+  // double minDiag = inv_cov_cholesky.get(n-1,n-1);
+  // for (uint i = 0; i < n; ++i) {
+  //   maxDiag = std::max(maxDiag, inv_cov_cholesky.get(i,i));
+  //   minDiag = std::min(minDiag, inv_cov_cholesky.get(i,i));
+  // }
+  // std::cout << "  diag(L) range  " << minDiag << " ... "
+  //           << maxDiag << "  (ratio ≈ " << maxDiag/minDiag << ")\n";
+  // /* --------------------------------------------------------------- */
 }
 
 void ChiSquare::read_obs(XMLHandler& xmlin, const string& tag,

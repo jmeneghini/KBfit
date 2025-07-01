@@ -255,7 +255,7 @@ bool ChiSquareMinimizer::findMinimum(double& chisq_min,
                                      RealSymmetricMatrix& params_covariance,
                                      XMLHandler& xmlout) {
   vector<double> starting_params(m_chisq->getNumberOfFitParameters());
-  m_chisq->guessInitialFitParamValues(starting_params);
+  m_chisq->guessInitialFitParamValues(starting_params, false);
   return find_minimum(starting_params, chisq_min, params_at_minimum,
                       params_covariance, xmlout, m_info.m_verbosity);
 }
@@ -273,7 +273,7 @@ bool ChiSquareMinimizer::findMinimum(double& chisq_min,
                                      vector<double>& params_at_minimum,
                                      RealSymmetricMatrix& params_covariance) {
   vector<double> starting_params(m_chisq->getNumberOfFitParameters());
-  m_chisq->guessInitialFitParamValues(starting_params);
+  m_chisq->guessInitialFitParamValues(starting_params, false);
   XMLHandler xmlout;
   return find_minimum(starting_params, chisq_min, params_at_minimum,
                       params_covariance, xmlout, m_info.m_verbosity);
@@ -396,7 +396,7 @@ bool ChiSquareMinimizer::find_minimum_nl2sno(
 #ifndef NO_MINUIT
 
 void Minuit2ChiSquare::guessInitialFitParamValues(vector<double>& params) {
-  m_chisq->guessInitialFitParamValues(params);
+  m_chisq->guessInitialFitParamValues(params, false);
 }
 
 double Minuit2ChiSquare::operator()(const vector<double>& params) const {
@@ -460,7 +460,7 @@ int NL2SnoMinimizer::chisq_fit(double paramreltol, double chisqreltol,
 }
 
 void NL2SnoMinimizer::guessInitialFitParamValues() {
-  m_chisq->guessInitialFitParamValues(m_fitparams);
+  m_chisq->guessInitialFitParamValues(m_fitparams, false);
 }
 
 void NL2SnoMinimizer::setInitialFitParamValues(

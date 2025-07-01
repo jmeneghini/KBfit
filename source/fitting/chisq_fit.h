@@ -20,8 +20,8 @@ void inline show_progress(std::size_t i, std::size_t total,
                           std::chrono::steady_clock::time_point t0,
                           std::ostream& out = std::cerr)
 {
-  const int bar_width = 44;                       // adjust to taste
-  double frac = static_cast<double>(i) / total;   // 0.0 … 1.0
+  const int bar_width = 44;
+  double frac = static_cast<double>(i) / total;
 
   int done = static_cast<int>(bar_width * frac);
   int todo = bar_width - done;
@@ -35,7 +35,8 @@ void inline show_progress(std::size_t i, std::size_t total,
   out << '\r' << "["
       << std::string(done, '=') << std::string(todo, ' ')
       << "] " << std::setw(5) << static_cast<int>(frac * 100) << "% "
-      << "(ETA " << std::fixed << std::setprecision(0) << eta << " s)";
+      << "(sample: " << i << "/" << total << ", ETA: " << std::fixed
+      << std::setprecision(0) << eta << " s)";
   out.flush();
 }
 
