@@ -73,10 +73,31 @@ file(GLOB_RECURSE HEADERS ${SOURCE_DIR}/*.h)
 
 
 # External libraries (versions on cluster: LAPACK 3.9.0, Minuit2 6.34.04)
-# LAPACK
-# set(BLAS_DIR "/usr/lib/x86_64-linux-gnu")
+# BLAS/LAPACK with threading support
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+
+# Configure OpenBLAS to use a single thread, and OpenMP to use all available cores
+# 1 = use single thread for OpenBLAS
+# 0 = use all available cores for OpenMP
+if(APPLE)
+    # On macOS, prefer OpenBLAS from Homebrew with threading support
+    set(BLA_VENDOR OpenBLAS)
+    message(STATUS "macOS: Configuring for threaded OpenBLAS")
+    # Set environment to allow OpenBLAS to use all cores
+    set(ENV{OPENBLAS_NUM_THREADS} "0")
+    set(ENV{OMP_NUM_THREADS} "1")
+else()
+    # On Linux, detect and configure BLAS threading
+    message(STATUS "Linux: Configuring for threaded OpenBLAS")
+    set(ENV{OPENBLAS_NUM_THREADS} "0")
+    set(ENV{OMP_NUM_THREADS} "1")
+endif()
+
+# Display what BLAS/LAPACK libraries were found
+message(STATUS "BLAS Libraries: ${BLAS_LIBRARIES}")
+message(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
+message(STATUS "BLAS threading: OpenBLAS configured to use all available cores")
 
 # HDF5
 find_package(HDF5 REQUIRED COMPONENTS CXX)
@@ -92,6 +113,7 @@ endif()
 find_library(MUPARSER_LIBRARY NAMES muparser libmuparser PATHS /usr/lib /usr/lib/x86_64-linux-gnu)
 if(MUPARSER_LIBRARY)
     message(STATUS "Found muParser: ${MUPARSER_LIBRARY}")
+    find_path(MUPARSER_INCLUDE_DIR muParser.h PATHS /usr/include /usr/local/include)
 else()
     message(FATAL_ERROR "muParser not found - required for StringExpressionFitForm")
 endif()
@@ -154,7 +176,7 @@ endforeach()
 
 # Create an object library for the main sources
 add_library(OptimizedSources OBJECT ${SOURCES})
-target_include_directories(OptimizedSources PUBLIC ${COMMON_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS})
+target_include_directories(OptimizedSources PUBLIC ${COMMON_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS} ${MUPARSER_INCLUDE_DIR})
 # if in debug, compile optimized sources as such
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(OptimizedSources PRIVATE -O0 -g)
@@ -222,6 +244,7 @@ if(BUILD_TESTING)
             ${ZLIB_INCLUDE_DIRS}
             ${TEST_SOURCE_DIR}
             ${HDF5_INCLUDE_DIRS}
+            ${MUPARSER_INCLUDE_DIR}
     )
 
     target_link_libraries(KBfit_tests PRIVATE

@@ -10,9 +10,7 @@
 #include <utility>
 #include <vector>
 
-/*---------------------------------------------------------------
-  Parameters for adaptive bracket + Newton‑secant polish
-----------------------------------------------------------------*/
+// Parameters for adaptive bracket + Newton‑secant polish
 struct AdaptiveBracketConfig {
   double initial_step_percent = 1e-2;
   double x_tol = 1e-8;
@@ -20,7 +18,7 @@ struct AdaptiveBracketConfig {
 
   double min_step_percent = 1e-3;
   double max_step_percent = 1e-2;
-  double step_scale_limit = 3.0; // |h_new / h_old| <= this
+  double step_scale_limit = 3.0; // |h_new / h_old| <- this
 
   double plateau_mod2_threshold = 0.75; // “flat” if |Z|² above this
   int plateau_count_before_jump = 3;    // consecutive flats before ×2
@@ -42,23 +40,19 @@ struct AdaptiveBracketConfig {
   }
 };
 
-/*---------------------------------------------------------------
-  Abstract root finder interface
-----------------------------------------------------------------*/
+// Abstract root finder interface
 class RootFinder {
 public:
   virtual ~RootFinder() = default;
   virtual bool findRoots(double a, double b, std::vector<double>& roots) = 0;
 };
 
-/*---------------------------------------------------------------
-  Concrete adaptive‑bracket implementation
-----------------------------------------------------------------*/
+// Concrete adaptive‑bracket implementation
 class AdaptiveBracketRootFinder : public RootFinder {
 public:
   using EvalFn = std::function<std::complex<double>(double)>;
 
-  /*---- construction -----------------------------------------------------*/
+  // construction
   static AdaptiveBracketConfig makeConfigFromXML(XMLHandler& xmlin);
 
   AdaptiveBracketRootFinder(const AdaptiveBracketConfig& params,
@@ -67,22 +61,21 @@ public:
   AdaptiveBracketRootFinder(XMLHandler& xmlin, EvalFn& evalZ)
       : AdaptiveBracketRootFinder(makeConfigFromXML(xmlin), evalZ) {}
 
-  /*---- API --------------------------------------------------------------*/
+  // API
   bool findRoots(double a, double b, std::vector<double>& roots) override;
+  bool findRootsSerial(double a, double b, std::vector<double>& roots);
 
-  std::size_t evalCount() const { return eval_count_; }
+  std::size_t evalCount() const { return eval_count_.load(); }
 
-  /*---- getters/printers -------------------------------------------------*/
+  // getters/printers
   const AdaptiveBracketConfig& getConfig() const { return params_; }
 
 private:
-  /*---- cached Ω evaluation ---------------------------------------------*/
+  // cached Ω evaluation
   struct Zval {
     std::complex<double> value; // Ω(x)
     double mod2;                // |Ω|²
   };
-
-  /* bit‑wise hashing so identical IEEE‑754 bits share one cache entry */
   struct KeyHash {
     std::size_t operator()(double x) const noexcept {
       return std::hash<std::uint64_t>{}(std::bit_cast<std::uint64_t>(x));

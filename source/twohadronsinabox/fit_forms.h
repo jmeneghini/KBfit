@@ -4,6 +4,7 @@
 #include "K_matrix_info.h"
 #include "xml_handler.h"
 #include <map>
+#include <cassert>
 #include <muParser.h>
 #include <string>
 
@@ -257,8 +258,8 @@ public:
 private:
   void parseExpression();
   void setupMuParser() const;
-  virtual void Kinitialize(const KElementInfo& kelem,
-                           std::map<KFitParamInfo, uint>& paramindices);
+  void Kinitialize(const KElementInfo& kelem,
+                           std::map<KFitParamInfo, uint>& paramindices) override;
   friend class KtildeMatrixCalculator;
   friend class KtildeInverseCalculator;
 };
