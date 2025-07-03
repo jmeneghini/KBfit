@@ -32,7 +32,6 @@ struct EnsembleFitData {
   double fixed_anisotropy_value = 1.0;         // Fixed anisotropy value (default 1.0 for isotropic)
   std::vector<double> fixed_mass_values = {};  // Fixed mass values indexed by decay channel*2 + particle
 
-  // --- observations ---
   // energy data
   std::vector<RVector> Elab_samples = {}; // Elab samples for each ensemble
   std::vector<RVector> dElab_samples = {};

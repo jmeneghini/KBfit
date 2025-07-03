@@ -61,11 +61,9 @@ public:
   AdaptiveBracketRootFinder(XMLHandler& xmlin, EvalFn& evalZ)
       : AdaptiveBracketRootFinder(makeConfigFromXML(xmlin), evalZ) {}
 
-  // API
   bool findRoots(double a, double b, std::vector<double>& roots) override;
-  bool findRootsSerial(double a, double b, std::vector<double>& roots);
 
-  std::size_t evalCount() const { return eval_count_.load(); }
+  std::size_t evalCount() const { return eval_count_; }
 
   // getters/printers
   const AdaptiveBracketConfig& getConfig() const { return params_; }
