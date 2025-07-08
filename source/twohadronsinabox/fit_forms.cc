@@ -278,9 +278,9 @@ void Expression::parseExpression() {
   try {
     m_param_names.clear();
     
-    // Use regex to find all potential variable names (alphanumeric + underscore, not starting with digit)
+    // Use regex to find all potential variable names (alphanumeric + underscore, not starting with digit or underscore)
     // TODO: this will be changed later when MCObs support is added for constants
-    std::regex var_regex(R"([a-zA-Z_][a-zA-Z0-9_]*)");
+    std::regex var_regex(R"([a-zA-Z][a-zA-Z0-9_]*)");
     std::sregex_iterator iter(m_expression.begin(), m_expression.end(), var_regex);
     std::sregex_iterator end;
     
