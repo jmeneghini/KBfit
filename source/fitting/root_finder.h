@@ -4,6 +4,7 @@
 #include "xml_handler.h"
 #include <bit>
 #include <complex>
+#include <cstdint>
 #include <functional>
 #include <iomanip>
 #include <unordered_map>

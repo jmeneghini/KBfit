@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <mpi.h>
 
 using namespace std;
 
@@ -129,43 +130,70 @@ void show_help() {
 }
 
 int main(int argc, const char* argv[]) {
+  // Initialize MPI
+  MPI_Init(&argc, const_cast<char***>(&argv));
+  
+  // Get MPI info for logging
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  
+  // Only rank 0 handles command line processing and output
+  int return_code = 0;
+  
+  if (rank == 0) {
+    if (size > 1) {
+      cout << "KBfit running with " << size << " MPI processes" << endl;
+    }
+  }
+  
   // convert arguments to C++ strings
   vector<string> tokens(argc - 1);
   for (int k = 1; k < argc; ++k) {
     tokens[k - 1] = string(argv[k]);
   }
 
-  // Check for help arguments
-  if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
-    show_help();
-    return 0;
-  }
-
-  // Check for correct number of arguments
-  if (tokens.size() != 1) {
-    cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
-    cout << "Usage: KBfit <input_file.xml>" << endl;
-    cout << "       KBfit -h | --help" << endl;
-    return 1;
-  }
-
-  try {
-    XMLHandler xmltask;
-    xmltask.set_exceptions_on();
-    if (tokens.size() > 0) {
-      string filename(tokens[0]);
-      xmltask.set_from_file(filename);
+  // Only rank 0 processes command line arguments and runs the main logic
+  if (rank == 0) {
+    // Check for help arguments
+    if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
+      show_help();
+      return_code = 0;
     }
+    // Check for correct number of arguments
+    else if (tokens.size() != 1) {
+      cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
+      cout << "Usage: KBfit <input_file.xml>" << endl;
+      cout << "       KBfit -h | --help" << endl;
+      return_code = 1;
+    }
+    else {
+      try {
+        XMLHandler xmltask;
+        xmltask.set_exceptions_on();
+        if (tokens.size() > 0) {
+          string filename(tokens[0]);
+          xmltask.set_from_file(filename);
+        }
 
-    // set up the task handler
-    TaskHandler tasker(xmltask);
+        // set up the task handler
+        TaskHandler tasker(xmltask);
 
-    // do the tasks in sequence
-    tasker.do_batch_tasks(xmltask);
-  } catch (const std::exception& msg) {
-    cout << "Error: " << msg.what() << endl;
-    return 1;
+        // do the tasks in sequence
+        tasker.do_batch_tasks(xmltask);
+        return_code = 0;
+      } catch (const std::exception& msg) {
+        cout << "Error: " << msg.what() << endl;
+        return_code = 1;
+      }
+    }
   }
 
-  return 0;
+  // Broadcast the return code to all processes
+  MPI_Bcast(&return_code, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // Finalize MPI
+  MPI_Finalize();
+  
+  return return_code;
 }

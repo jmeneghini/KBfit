@@ -2,6 +2,7 @@
 #include "chisq_spectrum.h"
 #include "chisq_fit.h"
 #include "task_handler.h"
+#include <mpi.h>
 
 using namespace std;
 
@@ -181,7 +182,7 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       DRF.do_output(xmlof);
       xmlout.put_child(xmlof);
       doChiSquareFitting(DRF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs);
+                         param_covariance, outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
     } catch (const std::exception& xp) {
       string msg("DetRes fit failed: ");
       msg += xp.what();
@@ -209,7 +210,7 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       SF.do_output(xmlof);
       xmlout.put_child(xmlof);
       doChiSquareFitting(SF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs);
+                         param_covariance, outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
     } catch (const std::exception& xp) {
       string msg("Spectrum fit failed: ");
       msg += xp.what();

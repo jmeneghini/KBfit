@@ -10,6 +10,7 @@
 #include <string>
 #include <iomanip>
 #include <chrono>
+#include <mpi.h>
 
 // ****************************************************************
 // just a simple progress bar for the console output
@@ -62,7 +63,17 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                         std::vector<MCEstimate>& bestfit_params,
                         RealSymmetricMatrix& param_covariance,
                         const std::string& out_sampling_file,
-                        XMLHandler& xmlout, KBObsHandler* kobs);
+                        XMLHandler& xmlout, KBObsHandler* kobs,
+                        MPI_Comm comm = MPI_COMM_WORLD);
+
+// Serial version (original implementation)
+void doChiSquareFittingSerial(ChiSquare& chisq_ref,
+                              const ChiSquareMinimizerInfo& csm_info,
+                              double& chisq_dof, double& fitqual,
+                              std::vector<MCEstimate>& bestfit_params,
+                              RealSymmetricMatrix& param_covariance,
+                              const std::string& out_sampling_file,
+                              XMLHandler& xmlout, KBObsHandler* kobs);
 
 // ************************************************************
 //
