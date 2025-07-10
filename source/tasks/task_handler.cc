@@ -36,7 +36,7 @@ std::filesystem::path createKBOutputDirectory(const std::string& base_directory,
 
 // set up the known tasks, create logfile, open stream for logging
 
-TaskHandler::TaskHandler(XMLHandler& xmlin) {
+TaskHandler::TaskHandler(XMLHandler& xmlin, int mpi_rank) : m_mpi_rank(mpi_rank) {
   if (xmlin.get_node_name() != "KBFit")
     throw(std::invalid_argument("Input file must have root tag <KBFit>"));
   string nowstr = get_date_time();
@@ -61,28 +61,31 @@ TaskHandler::TaskHandler(XMLHandler& xmlin) {
   } else
     m_output_directory = string(".");
 
-  string logfile;
-  if (xmli.count_among_children("LogFile") == 1)
-    xmlread(xmli, "LogFile", logfile, "TaskHandler");
-  else
-    logfile = string("kbfit_log_") + nowstr + ".xml";
+  // Only rank 0 creates and writes to log files
+  if (m_mpi_rank == 0) {
+    string logfile;
+    if (xmli.count_among_children("LogFile") == 1)
+      xmlread(xmli, "LogFile", logfile, "TaskHandler");
+    else
+      logfile = string("kbfit_log_") + nowstr + ".xml";
 
-  // put log file in the output directory
-  
-  filesystem::path logfile_path;
-  if (logfile.find('/') == string::npos && logfile.find('\\') == string::npos) {
-    filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
-    logfile_path = project_dir / logfile;
-  } else {
-    logfile_path = filesystem::path(logfile);
-  }
+    // put log file in the output directory
+    
+    filesystem::path logfile_path;
+    if (logfile.find('/') == string::npos && logfile.find('\\') == string::npos) {
+      filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
+      logfile_path = project_dir / logfile;
+    } else {
+      logfile_path = filesystem::path(logfile);
+    }
 
-  clog.open(logfile_path.c_str());
-  if (!clog.is_open()) {
-    cout << "Could not open log file " << logfile << " for output" << endl;
-    throw(std::invalid_argument("Could not write to log file"));
+    clog.open(logfile_path.c_str());
+    if (!clog.is_open()) {
+      cout << "Could not open log file " << logfile << " for output" << endl;
+      throw(std::invalid_argument("Could not write to log file"));
+    }
+    clog << "<LogKBFit>" << endl;
   }
-  clog << "<LogKBFit>" << endl;
 
   string projname;
   if (xmli.count_among_children("ProjectName") == 1) {
@@ -90,17 +93,21 @@ TaskHandler::TaskHandler(XMLHandler& xmlin) {
   } else
     projname = string("KBFit Project ") + nowstr;
   m_project_name = projname;
-  clog << " <ProjectName>" << projname << "</ProjectName>" << endl;
-  clog << " <StartDateTime>" << nowstr << "</StartDateTime>" << endl;
+  
+  // Only rank 0 writes to log
+  if (m_mpi_rank == 0) {
+    clog << " <ProjectName>" << projname << "</ProjectName>" << endl;
+    clog << " <StartDateTime>" << nowstr << "</StartDateTime>" << endl;
 
-  if (xmli.count_among_children("EchoXML") >= 1) {
-    string input(xmlin.output());
-    int pos = input.find("<KBFit>");
-    input.erase(0, pos + 9);
-    pos = input.find("</KBFit>");
-    input.erase(pos, string::npos);
-    clog << " <InputXML>" << endl;
-    clog << input << "</InputXML>" << endl;
+    if (xmli.count_among_children("EchoXML") >= 1) {
+      string input(xmlin.output());
+      int pos = input.find("<KBFit>");
+      input.erase(0, pos + 9);
+      pos = input.find("</KBFit>");
+      input.erase(pos, string::npos);
+      clog << " <InputXML>" << endl;
+      clog << input << "</InputXML>" << endl;
+    }
   }
 
   m_task_map["DoPrint"] = &TaskHandler::doPrint;
@@ -117,32 +124,44 @@ TaskHandler::~TaskHandler() {
 }
 
 void TaskHandler::finish_log() {
-  string nowstr = get_date_time();
-  clog << " <FinishDateTime>" << nowstr << "</FinishDateTime>" << endl;
-  clog << "</KBFit>" << endl << endl;
-  clog.close();
+  if (m_mpi_rank == 0) {
+    string nowstr = get_date_time();
+    clog << " <FinishDateTime>" << nowstr << "</FinishDateTime>" << endl;
+    clog << "</KBFit>" << endl << endl;
+    clog.close();
+  }
 }
 
 void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
   XMLHandler xmlt(xmlin, "TaskSequence");
   list<XMLHandler> taskxml = xmlt.find_among_children("Task");
   int count = 0;
-  clog << endl
-       << "<BeginTasks>****************************************</BeginTasks>"
-       << endl;
+  
+  if (m_mpi_rank == 0) {
+    clog << endl
+         << "<BeginTasks>****************************************</BeginTasks>"
+         << endl;
+  }
+  
   for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
        it++, count++) {
-    clog << endl << "<Task>" << endl;
-    clog << " <Count>" << count << "</Count>" << endl;
+    if (m_mpi_rank == 0) {
+      clog << endl << "<Task>" << endl;
+      clog << " <Count>" << count << "</Count>" << endl;
+    }
+    
     XMLHandler xmlout;
     StopWatch rolex;
     rolex.start();
     do_task(*it, xmlout, count);
     rolex.stop();
-    clog << xmlout.output() << endl;
-    clog << "<RunTimeInSeconds>" << rolex.getTimeInSeconds()
-         << "</RunTimeInSeconds>" << endl;
-    clog << "</Task>" << endl;
+    
+    if (m_mpi_rank == 0) {
+      clog << xmlout.output() << endl;
+      clog << "<RunTimeInSeconds>" << rolex.getTimeInSeconds()
+           << "</RunTimeInSeconds>" << endl;
+      clog << "</Task>" << endl;
+    }
   }
 }
 

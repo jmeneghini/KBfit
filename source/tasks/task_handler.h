@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <filesystem>
+#include <mpi.h>
 
 // ***************************************************************
 
@@ -90,6 +91,7 @@ class TaskHandler {
   std::ofstream clog;
   std::string m_project_name;
   std::string m_output_directory;
+  int m_mpi_rank;  // MPI rank for this process
 
   typedef void (TaskHandler::*task_ptr)(XMLHandler&, XMLHandler&, int);
   std::map<std::string, task_ptr> m_task_map;
@@ -109,7 +111,7 @@ class TaskHandler {
 #endif
 
 public:
-  TaskHandler(XMLHandler& xmlin);
+  TaskHandler(XMLHandler& xmlin, int mpi_rank = 0);
   ~TaskHandler();
 
   void do_batch_tasks(XMLHandler& xmlin);

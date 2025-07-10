@@ -153,47 +153,83 @@ int main(int argc, const char* argv[]) {
     tokens[k - 1] = string(argv[k]);
   }
 
-  // Only rank 0 processes command line arguments and runs the main logic
+  // Only rank 0 processes command line arguments initially
   if (rank == 0) {
     // Check for help arguments
     if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
       show_help();
-      return_code = 0;
+      return_code = 1; // Signal other ranks to exit
     }
     // Check for correct number of arguments
     else if (tokens.size() != 1) {
       cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
       cout << "Usage: KBfit <input_file.xml>" << endl;
       cout << "       KBfit -h | --help" << endl;
-      return_code = 1;
-    }
-    else {
-      try {
-        XMLHandler xmltask;
-        xmltask.set_exceptions_on();
-        if (tokens.size() > 0) {
-          string filename(tokens[0]);
-          xmltask.set_from_file(filename);
-        }
-
-        // set up the task handler
-        TaskHandler tasker(xmltask);
-
-        // do the tasks in sequence
-        tasker.do_batch_tasks(xmltask);
-        return_code = 0;
-      } catch (const std::exception& msg) {
-        cout << "Error: " << msg.what() << endl;
-        return_code = 1;
-      }
+      return_code = 1; // Signal other ranks to exit
     }
   }
 
-  // Broadcast the return code to all processes
+  // Broadcast the return code to check if we should exit early
   MPI_Bcast(&return_code, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  if (return_code != 0) {
+    MPI_Finalize();
+    return return_code;
+  }
+
+  // All ranks participate in task execution
+  try {
+    XMLHandler xmltask;
+    xmltask.set_exceptions_on();
+    
+    // Only rank 0 reads the file
+    if (rank == 0) {
+      if (tokens.size() > 0) {
+        string filename(tokens[0]);
+        xmltask.set_from_file(filename);
+      }
+    }
+    
+    // Serialize and broadcast the XML content to all ranks
+    string xml_content;
+    if (rank == 0) {
+      xml_content = xmltask.output();
+    }
+    
+    // Broadcast the XML content size first
+    int xml_size = xml_content.size();
+    MPI_Bcast(&xml_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    // Resize the string on non-root ranks and broadcast the content
+    if (rank != 0) {
+      xml_content.resize(xml_size);
+    }
+    MPI_Bcast(const_cast<char*>(xml_content.data()), xml_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+    
+    // Non-root ranks parse the XML from the broadcasted content
+    if (rank != 0) {
+      xmltask.set_from_string(xml_content);
+    }
+
+    // All ranks set up the task handler
+    TaskHandler tasker(xmltask, rank);
+
+    // All ranks do the tasks in sequence
+    tasker.do_batch_tasks(xmltask);
+    return_code = 0;
+  } catch (const std::exception& msg) {
+    if (rank == 0) {
+      cout << "Error: " << msg.what() << endl;
+    }
+    return_code = 1;
+  }
+
+  // Gather the return code from all ranks (use maximum to catch any errors)
+  int global_return_code;
+  MPI_Allreduce(&return_code, &global_return_code, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   // Finalize MPI
   MPI_Finalize();
   
-  return return_code;
+  return global_return_code;
 }
