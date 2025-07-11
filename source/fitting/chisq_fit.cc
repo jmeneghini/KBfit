@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <thread>
+#include <cstdio>
 using namespace std;
 
 // *************************************************************************
@@ -358,11 +359,11 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
   
   if (rank == 0) {
     std::cerr << "Starting minimization with resamplings across " << size << " MPI ranks" << std::endl;
+    std::cerr.flush();
   }
   
   // For progress tracking (rank 0 only)
   auto t0 = std::chrono::steady_clock::now();
-  int last_percent = -1; // Track progress percentage changes
   
   // Process assigned resamplings
   for (size_t i = 0; i < my_samples.size(); ++i) {
@@ -375,19 +376,20 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
     
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
     
-    // Show progress (rank 0 only) - similar to serial version
+    // Show progress (rank 0 only) - update more frequently for MPI
     if (rank == 0) {
       // Estimate total progress based on rank 0's work
       uint estimated_total = (i + 1) * size;
       if (estimated_total > nsamplings) estimated_total = nsamplings;
       
-      // Show progress when percentage changes (like the serial version)
-      int percent = static_cast<int>(100.0 * estimated_total / nsamplings + 0.5);
-      if (percent != last_percent || estimated_total == nsamplings) {
-        show_progress(estimated_total, nsamplings, t0, std::cerr);
-        std::cerr.flush(); // Ensure output is visible
-        last_percent = percent;
-      }
+             // Show progress more frequently in MPI mode since each rank has fewer samples
+       // Update every few samples instead of only when percentage changes
+       if ((i + 1) % max(1, (int)my_samples.size() / 20) == 0 || estimated_total == nsamplings) {
+         show_progress(estimated_total, nsamplings, t0, std::cout);
+         std::cout.flush(); // Force immediate output
+         std::cerr.flush(); // Also flush stderr just in case
+         fflush(stdout);    // Force system-level flush
+       }
     }
     
     // Detailed per-sample log
@@ -412,7 +414,9 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
   MPI_Barrier(comm);
   
   if (rank == 0) {
-    std::cerr << '\n'; // finish the progress line
+    std::cout << '\n'; // finish the progress line
+    std::cout.flush();
+    fflush(stdout);
     std::cerr << "Gathering results from all ranks..." << std::endl;
     
     // Write rank 0's results to kobs first
