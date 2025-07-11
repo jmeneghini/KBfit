@@ -197,11 +197,9 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   int current_size;
   MPI_Comm_size(MPI_COMM_WORLD, &current_size);
   
-  std::cerr << "doChiSquareFitting: current_size=" << current_size << ", num_mpi_processes=" << num_mpi_processes << std::endl;
-  
   // If we already have multiple processes, use them directly (traditional MPI mode)
   if (current_size > 1) {
-    std::cerr << "Using existing " << current_size << " MPI processes for chi-square fitting" << std::endl;
+    std::cerr << "Using traditional MPI mode with " << current_size << " processes for chi-square fitting" << std::endl;
     
     // Call the traditional MPI version that uses MPI_COMM_WORLD directly
     doChiSquareFittingMPI_Traditional(chisq_ref, csm_info, chisq_dof, fitqual,
@@ -538,7 +536,10 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   
-  std::cerr << "Rank " << rank << " entered traditional MPI fitting with size " << size << std::endl;
+  // Debug: Show rank assignment
+  if (rank == 0) {
+    std::cerr << "Distributing work across " << size << " MPI ranks" << std::endl;
+  }
   
   uint nparams = chisq_ref.getNumberOfFitParameters();
   uint nresiduals = chisq_ref.getNumberOfResiduals();
@@ -640,8 +641,10 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
     }
   }
   
-  // Debug: Show sample distribution
-  std::cerr << "Rank " << rank << " assigned " << my_samples.size() << " samples out of " << nsamplings << " total samples" << std::endl;
+  // Debug: Show sample distribution (only rank 0 for summary)
+  if (rank == 0) {
+    std::cerr << "Each rank will process approximately " << (nsamplings + size - 1) / size << " samples" << std::endl;
+  }
   
   // Each rank processes its assigned resamplings
   ChiSquareMinimizer CSM(chisq_ref, csm_info);

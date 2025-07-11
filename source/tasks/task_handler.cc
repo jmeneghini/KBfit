@@ -1,5 +1,6 @@
 #include "task_handler.h"
 #include "stopwatch.h"
+#include <mpi.h>
 using namespace std;
 
 // *************************************************************************
@@ -137,30 +138,49 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
   list<XMLHandler> taskxml = xmlt.find_among_children("Task");
   int count = 0;
   
+  // Get MPI info to determine execution mode
+  int mpi_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  
   if (m_mpi_rank == 0) {
     clog << endl
          << "<BeginTasks>****************************************</BeginTasks>"
          << endl;
   }
   
-  for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
-       it++, count++) {
-    if (m_mpi_rank == 0) {
-      clog << endl << "<Task>" << endl;
-      clog << " <Count>" << count << "</Count>" << endl;
+  // In traditional MPI mode (multiple processes), only rank 0 should execute tasks
+  // Other ranks will participate in work distribution when called by fitting functions
+  bool should_execute_tasks = (m_mpi_rank == 0) || (mpi_size == 1);
+  
+  if (should_execute_tasks) {
+    // Only rank 0 (or single process) executes tasks
+    for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
+         it++, count++) {
+      if (m_mpi_rank == 0) {
+        clog << endl << "<Task>" << endl;
+        clog << " <Count>" << count << "</Count>" << endl;
+      }
+      
+      XMLHandler xmlout;
+      StopWatch rolex;
+      rolex.start();
+      do_task(*it, xmlout, count);
+      rolex.stop();
+      
+      if (m_mpi_rank == 0) {
+        clog << xmlout.output() << endl;
+        clog << "<RunTimeInSeconds>" << rolex.getTimeInSeconds()
+             << "</RunTimeInSeconds>" << endl;
+        clog << "</Task>" << endl;
+      }
     }
-    
-    XMLHandler xmlout;
-    StopWatch rolex;
-    rolex.start();
-    do_task(*it, xmlout, count);
-    rolex.stop();
-    
-    if (m_mpi_rank == 0) {
-      clog << xmlout.output() << endl;
-      clog << "<RunTimeInSeconds>" << rolex.getTimeInSeconds()
-           << "</RunTimeInSeconds>" << endl;
-      clog << "</Task>" << endl;
+  } else {
+    // Non-root ranks in traditional MPI mode: wait for work distribution
+    // They will be called by the fitting functions when needed
+    if (m_mpi_rank != 0) {
+      // Wait for any MPI calls from the fitting functions
+      // This is handled by the MPI communication in the fitting functions
+      // No tasks are executed directly by non-root ranks
     }
   }
 }
