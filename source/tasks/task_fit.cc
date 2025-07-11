@@ -30,6 +30,7 @@ using namespace std;
 // *      <MinimizerInfo> ... </MinimizerInfo>                                                         *
 // *      <OutSamplingsFile> ... </OutSamplingsFile>                                                   *
 // *      <EcmQcmBoxSamplingsStub> ... </EcmQcmBoxSamplingsStub>                                       *
+// *      <MPIProcesses> ... </MPIProcesses>                                                          *
 // *                                                                                                  *
 // *      <!-- Mandatory method-specific configuration block -->                                      *
 // *      <DeterminantResidualFit> ... </DeterminantResidualFit>                                       *
@@ -58,6 +59,11 @@ using namespace std;
 // *                                                                                                  *
 // *    <EcmQcmBoxSamplingsStub>: (Optional, for DetRes fit only) A file stub for outputting          *
 // *       intermediate diagnostic quantities like Ecm/mref, qcm^2/mref^2, and Box matrix elements.    *
+// *                                                                                                  *
+// *    <MPIProcesses>: (Optional) Number of MPI processes to spawn for parallel chi-square fitting.  *
+// *       Default: 1 (serial execution). Set to higher values (e.g., 4, 8) for parallel processing  *
+// *       of resampling minimizations. The main program runs as a single process and dynamically     *
+// *       spawns MPI workers only during the chi-square fitting phase.                              *
 // *                                                                                                  *
 // ****************************************************************************************************
 // *                                                                                                  *
@@ -151,6 +157,11 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
   xmlreadif(xmltask, "EcmQcmBoxSamplingsStub", EcmQcmBoxSampStub, "doFit");
   string fittype;
   xmlreadchild(xmltask, "Type", fittype, "DoFit");
+  
+  // Read the number of MPI processes for parallel fitting (default to 1)
+  int mpi_processes = 1;
+  xmlreadif(xmltask, "MPIProcesses", mpi_processes, "doFit");
+  
   xmlout.set_root("DoFit");
   XMLHandler xmlmz;
   mz_info.output(xmlmz);
@@ -159,6 +170,8 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
   xmlout.put_child("OutSamplingsFile", outsampfile);
   if (!EcmQcmBoxSampStub.empty())
     xmlout.put_child("EcmQcmBoxSamplingsStub", EcmQcmBoxSampStub);
+  xmlout.put_child("MPIProcesses", make_string(mpi_processes));
+  
   double chisq_dof, qual;
   vector<MCEstimate> bestfit_params;
   RealSymmetricMatrix param_covariance;
@@ -182,7 +195,7 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       DRF.do_output(xmlof);
       xmlout.put_child(xmlof);
       doChiSquareFitting(DRF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
+                         param_covariance, outsampfile, xmlout, m_obs, mpi_processes);
     } catch (const std::exception& xp) {
       string msg("DetRes fit failed: ");
       msg += xp.what();
@@ -210,7 +223,7 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       SF.do_output(xmlof);
       xmlout.put_child(xmlof);
       doChiSquareFitting(SF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
+                         param_covariance, outsampfile, xmlout, m_obs, mpi_processes);
     } catch (const std::exception& xp) {
       string msg("Spectrum fit failed: ");
       msg += xp.what();

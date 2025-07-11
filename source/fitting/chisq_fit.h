@@ -6,6 +6,7 @@
 #include "mc_estimate.h"
 #include "minimizer.h"
 #include "xml_handler.h"
+#include "param_registry.h"
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -64,7 +65,7 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                         RealSymmetricMatrix& param_covariance,
                         const std::string& out_sampling_file,
                         XMLHandler& xmlout, KBObsHandler* kobs,
-                        MPI_Comm comm = MPI_COMM_WORLD);
+                        int num_mpi_processes = 1);
 
 // Serial version (original implementation)
 void doChiSquareFittingSerial(ChiSquare& chisq_ref,
@@ -74,6 +75,16 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
                               RealSymmetricMatrix& param_covariance,
                               const std::string& out_sampling_file,
                               XMLHandler& xmlout, KBObsHandler* kobs);
+
+// MPI version with dynamic process spawning
+void doChiSquareFittingMPI(ChiSquare& chisq_ref,
+                           const ChiSquareMinimizerInfo& csm_info,
+                           double& chisq_dof, double& fitqual,
+                           std::vector<MCEstimate>& bestfit_params,
+                           RealSymmetricMatrix& param_covariance,
+                           const std::string& out_sampling_file,
+                           XMLHandler& xmlout, KBObsHandler* kobs,
+                           int num_processes);
 
 // ************************************************************
 //

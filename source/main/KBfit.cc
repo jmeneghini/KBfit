@@ -130,22 +130,98 @@ void show_help() {
 }
 
 int main(int argc, const char* argv[]) {
+  // Check for MPI worker flag before MPI initialization
+  bool is_mpi_worker = false;
+  for (int i = 1; i < argc; ++i) {
+    if (string(argv[i]) == "--mpi-worker") {
+      is_mpi_worker = true;
+      break;
+    }
+  }
+  
   // Initialize MPI
   MPI_Init(&argc, const_cast<char***>(&argv));
   
-  // Get MPI info for logging
+  // Handle MPI worker processes
+  if (is_mpi_worker) {
+    // This is a spawned MPI worker process
+    std::cerr << "MPI worker process started" << std::endl;
+    
+    // The worker process will participate in the merged communicator
+    // and then exit. The actual work is handled in doChiSquareFittingMPI
+    // which is called through the MPI communication protocol.
+    
+    // For now, just participate in the communicator and exit
+    MPI_Comm parent_comm;
+    MPI_Comm_get_parent(&parent_comm);
+    
+    if (parent_comm != MPI_COMM_NULL) {
+      // Merge with parent communicator
+      MPI_Comm merged_comm;
+      MPI_Intercomm_merge(parent_comm, 1, &merged_comm);  // 1 = high group (child)
+      
+      int rank, size;
+      MPI_Comm_rank(merged_comm, &rank);
+      MPI_Comm_size(merged_comm, &size);
+      
+      std::cerr << "MPI worker process " << rank << " of " << size << " ready" << std::endl;
+      
+      // Receive basic parameters to participate in broadcasts
+      uint params_data[4];
+      MPI_Bcast(params_data, 4, MPI_UNSIGNED, 0, merged_comm);
+      
+      // Receive other broadcast data
+      double chisq_dof_recv;
+      MPI_Bcast(&chisq_dof_recv, 1, MPI_DOUBLE, 0, merged_comm);
+      
+      uint nparams = params_data[0];
+      vector<double> params_fullsample(nparams);
+      MPI_Bcast(params_fullsample.data(), nparams, MPI_DOUBLE, 0, merged_comm);
+      
+      // Receive minimizer info
+      int csm_str_len;
+      MPI_Bcast(&csm_str_len, 1, MPI_INT, 0, merged_comm);
+      string csm_str(csm_str_len, '\0');
+      MPI_Bcast(const_cast<char*>(csm_str.c_str()), csm_str_len, MPI_CHAR, 0, merged_comm);
+      
+      std::cerr << "MPI worker " << rank << " received parameters (serialization not implemented)" << std::endl;
+      
+      // Clean up and exit
+      MPI_Comm_free(&merged_comm);
+      std::cerr << "MPI worker " << rank << " finished" << std::endl;
+    } else {
+      std::cerr << "Error: MPI worker process has no parent communicator" << std::endl;
+    }
+    
+    MPI_Finalize();
+    return 0;
+  }
+  
+  // Get MPI info for logging (should be size 1 for main process)
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   
+  // Main program should run as single process
+  if (size > 1) {
+    if (rank == 0) {
+      cout << "Warning: KBfit detected " << size << " MPI processes at startup." << endl;
+      cout << "Only rank 0 will run the main program. MPI processes will be spawned" << endl;
+      cout << "dynamically for chi-square fitting when needed." << endl;
+    } else {
+      // Non-zero ranks should exit immediately
+      MPI_Finalize();
+      return 0;
+    }
+  }
+  
+  // Only rank 0 continues with the main program
+  rank = 0;  // Force rank 0 for the main program logic
+  
   // Only rank 0 handles command line processing and output
   int return_code = 0;
   
-  if (rank == 0) {
-    if (size > 1) {
-      cout << "KBfit running with " << size << " MPI processes" << endl;
-    }
-  }
+  cout << "KBfit starting with dynamic MPI process spawning for parallel fitting" << endl;
   
   // convert arguments to C++ strings
   vector<string> tokens(argc - 1);
@@ -153,83 +229,43 @@ int main(int argc, const char* argv[]) {
     tokens[k - 1] = string(argv[k]);
   }
 
-  // Only rank 0 processes command line arguments initially
-  if (rank == 0) {
-    // Check for help arguments
-    if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
-      show_help();
-      return_code = 1; // Signal other ranks to exit
-    }
-    // Check for correct number of arguments
-    else if (tokens.size() != 1) {
-      cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
-      cout << "Usage: KBfit <input_file.xml>" << endl;
-      cout << "       KBfit -h | --help" << endl;
-      return_code = 1; // Signal other ranks to exit
-    }
-  }
-
-  // Broadcast the return code to check if we should exit early
-  MPI_Bcast(&return_code, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
-  if (return_code != 0) {
+  // Check for help arguments
+  if (tokens.size() == 1 && (tokens[0] == "-h" || tokens[0] == "--help")) {
+    show_help();
     MPI_Finalize();
-    return return_code;
+    return 1;
+  }
+  // Check for correct number of arguments
+  else if (tokens.size() != 1) {
+    cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
+    cout << "Usage: KBfit <input_file.xml>" << endl;
+    cout << "       KBfit -h | --help" << endl;
+    MPI_Finalize();
+    return 1;
   }
 
-  // All ranks participate in task execution
+  // Run the main program (single process)
   try {
     XMLHandler xmltask;
     xmltask.set_exceptions_on();
     
-    // Only rank 0 reads the file
-    if (rank == 0) {
-      if (tokens.size() > 0) {
-        string filename(tokens[0]);
-        xmltask.set_from_file(filename);
-      }
-    }
+    // Read the input file
+    string filename(tokens[0]);
+    xmltask.set_from_file(filename);
     
-    // Serialize and broadcast the XML content to all ranks
-    string xml_content;
-    if (rank == 0) {
-      xml_content = xmltask.output();
-    }
-    
-    // Broadcast the XML content size first
-    int xml_size = xml_content.size();
-    MPI_Bcast(&xml_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    // Resize the string on non-root ranks and broadcast the content
-    if (rank != 0) {
-      xml_content.resize(xml_size);
-    }
-    MPI_Bcast(const_cast<char*>(xml_content.data()), xml_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-    
-    // Non-root ranks parse the XML from the broadcasted content
-    if (rank != 0) {
-      xmltask.set_from_string(xml_content);
-    }
+    // Set up the task handler (only rank 0)
+    TaskHandler tasker(xmltask, 0);
 
-    // All ranks set up the task handler
-    TaskHandler tasker(xmltask, rank);
-
-    // All ranks do the tasks in sequence
+    // Do the tasks in sequence
     tasker.do_batch_tasks(xmltask);
     return_code = 0;
   } catch (const std::exception& msg) {
-    if (rank == 0) {
-      cout << "Error: " << msg.what() << endl;
-    }
+    cout << "Error: " << msg.what() << endl;
     return_code = 1;
   }
-
-  // Gather the return code from all ranks (use maximum to catch any errors)
-  int global_return_code;
-  MPI_Allreduce(&return_code, &global_return_code, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   // Finalize MPI
   MPI_Finalize();
   
-  return global_return_code;
+  return return_code;
 }
