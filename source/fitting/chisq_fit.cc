@@ -376,14 +376,14 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   std::cerr << '\n'; // finish the progress line
   
   // Generate output (same as serial version)
+  xmlformat("ResamplingsMinimizationsLog", logger.str(), xmlz);
+  if (xmlz.good())
+    xmlout.put_child(xmlz);
+  
   if (!out_sampling_file.empty()) {
-    kobs->writeSamplingValuesToFile(kbfitparaminfoset, out_sampling_file);
-  }
-
-  if (logger.str().length() > 0) {
-    XMLHandler xmllog("FitLog");
-    xmllog.put_child("LogInfo", logger.str());
-    xmlout.put_child(xmllog);
+    XMLHandler xmlso;
+    kobs->writeSamplingValuesToFile(kbfitparaminfoset, out_sampling_file, xmlso, true);
+    xmlout.put_child(xmlso);
   }
 
   if (failed.size() > 0) {
