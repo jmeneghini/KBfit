@@ -193,14 +193,32 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                         XMLHandler& xmlout, KBObsHandler* kobs,
                         int num_mpi_processes) {
   
-  // If only 1 process requested, use serial version
-  if (num_mpi_processes <= 1) {
+  // Check if we're already running with multiple MPI processes
+  int current_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &current_size);
+  
+  // If only 1 process requested or we're in single-process mode, use serial version
+  if (num_mpi_processes <= 1 || current_size == 1) {
     doChiSquareFittingSerial(chisq_ref, csm_info, chisq_dof, fitqual,
                             bestfit_params, param_covariance, out_sampling_file,
                             xmlout, kobs);
     return;
   }
   
+  // If we already have multiple processes, use them directly (traditional MPI mode)
+  if (current_size > 1) {
+    std::cerr << "Using existing " << current_size << " MPI processes for chi-square fitting" << std::endl;
+    
+    // Call the original MPI version that was in the codebase before my changes
+    // This uses MPI_COMM_WORLD directly
+    doChiSquareFittingMPI_Traditional(chisq_ref, csm_info, chisq_dof, fitqual,
+                                     bestfit_params, param_covariance, out_sampling_file,
+                                     xmlout, kobs, MPI_COMM_WORLD);
+    return;
+  }
+  
+  // If we get here, we're in single-process mode but want parallel execution
+  // Try dynamic spawning (this may fail on clusters)
   std::cerr << "Starting dynamic MPI chi-square fitting with " << num_mpi_processes << " processes" << std::endl;
   
   uint nparams = chisq_ref.getNumberOfFitParameters();
@@ -499,6 +517,327 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   MPI_Comm_free(&merged_comm);
   
   std::cerr << "MPI worker " << rank << " finished (serialization not implemented)" << std::endl;
+}
+
+// *************************************************************************
+// Traditional MPI version using existing processes (original approach)
+// *************************************************************************
+
+void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
+                                      const ChiSquareMinimizerInfo& csm_info,
+                                      double& chisq_dof, double& fitqual,
+                                      vector<MCEstimate>& bestfit_params,
+                                      RealSymmetricMatrix& param_covariance,
+                                      const std::string& out_sampling_file,
+                                      XMLHandler& xmlout, KBObsHandler* kobs,
+                                      MPI_Comm comm) {
+  
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+  
+  std::cerr << "Rank " << rank << " entered traditional MPI fitting with size " << size << std::endl;
+  
+  uint nparams = chisq_ref.getNumberOfFitParameters();
+  uint nresiduals = chisq_ref.getNumberOfResiduals();
+  uint nsamplings = chisq_ref.getNumberOfResamplings();
+  
+  if (nresiduals <= (nparams + 1))
+    throw(std::invalid_argument("Too few residuals, fit cannot proceed"));
+  uint dof = nresiduals - nparams;
+  
+  MCEnsembleInfo mcindep(kobs->getNumberOfResamplings());
+
+  vector<double> start_params;
+  start_params.resize(nparams);
+  vector<MCObsInfo> fitparaminfos;
+  fitparaminfos.resize(nparams);
+  chisq_ref.getFitParamMCObsInfo(fitparaminfos);
+
+  vector<KBObsInfo> kbfitparaminfos;
+  set<KBObsInfo> kbfitparaminfoset;
+  for (vector<MCObsInfo>::const_iterator it = fitparaminfos.begin();
+       it != fitparaminfos.end(); ++it) {
+    kbfitparaminfos.push_back(KBObsInfo(mcindep, *it));
+    kbfitparaminfoset.insert(KBObsInfo(mcindep, *it));
+  }
+
+  stringstream logger;
+  vector<double> params_fullsample;
+  double chisq = 0.0;
+  RealSymmetricMatrix pcov;
+  int fit_success = 1; // 1 = success, 0 = failure
+  
+  // Only rank 0 does the full sample fit
+  if (rank == 0) {
+    try {
+      logger << "Degrees of freedom  = " << dof << endl;
+      
+      // Initial guess for fit parameters
+      uint sampindex = 0; // full sample
+      chisq_ref.setResamplingIndex(sampindex);
+      bool only_update_prior_initial_guesses = false;
+      chisq_ref.guessInitialFitParamValues(start_params, only_update_prior_initial_guesses);
+      
+      // Set up the minimizer
+      ChiSquareMinimizer CSM(chisq_ref, csm_info);
+      
+      XMLHandler xmlz;
+      std::cerr << "Starting minimization with full sample" << std::endl;
+      
+      bool flag = CSM.findMinimum(start_params, chisq, params_fullsample, pcov, xmlz);
+      
+      if (xmlz.good())
+        xmlout.put_child(xmlz);
+      if (!flag) {
+        fit_success = 0;
+      } else {
+        chisq_dof = chisq / double(dof);
+        std::cerr << "Full sample fit completed with chi-square = "
+                  << chisq << " and chi-square per dof = " << chisq_dof << std::endl;
+        logger << "Full sample chisq/dof = " << chisq_dof << endl;
+        for (uint p = 0; p < nparams; ++p) {
+          logger << "params_fullsample[" << p << "] = " << params_fullsample[p] << endl;
+        }
+        
+        // Store full sample results
+        for (uint p = 0; p < nparams; ++p)
+          kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params_fullsample[p]);
+      }
+    } catch (const std::exception& e) {
+      fit_success = 0;
+      std::cerr << "Full sample fit failed: " << e.what() << std::endl;
+    }
+  }
+  
+  // Broadcast fit success status to all ranks
+  MPI_Bcast(&fit_success, 1, MPI_INT, 0, comm);
+  if (!fit_success) {
+    throw(std::invalid_argument("Fitting with full sample failed"));
+  }
+  
+  // Broadcast full sample results to all ranks
+  if (rank == 0) {
+    start_params = params_fullsample;
+  }
+  
+  // Ensure all ranks have properly sized arrays before broadcast
+  start_params.resize(nparams);
+  params_fullsample.resize(nparams);
+  
+  // Broadcast the results
+  MPI_Bcast(&chisq_dof, 1, MPI_DOUBLE, 0, comm);
+  MPI_Bcast(start_params.data(), nparams, MPI_DOUBLE, 0, comm);
+  MPI_Bcast(params_fullsample.data(), nparams, MPI_DOUBLE, 0, comm);
+  
+  // Distribute resamplings among ranks
+  vector<uint> my_samples;
+  for (uint sampindex = 1; sampindex <= nsamplings; ++sampindex) {
+    if ((sampindex - 1) % size == (uint)rank) {
+      my_samples.push_back(sampindex);
+    }
+  }
+  
+  // Each rank processes its assigned resamplings
+  ChiSquareMinimizer CSM(chisq_ref, csm_info);
+  char origverbose = CSM.getVerbosity();
+  CSM.setVerbosity('L'); // quiet inner fits
+  
+  vector<double> params_sample;
+  bool only_update_prior_initial_guesses = true;
+  
+  // Store results locally instead of writing to shared kobs
+  vector<pair<uint, vector<double>>> my_successful_results;
+  vector<pair<uint, vector<double>>> my_failed_results;
+  list<uint> my_failed;
+  
+  if (rank == 0) {
+    std::cerr << "Starting minimization with resamplings across " << size << " MPI ranks" << std::endl;
+  }
+  
+  // Process assigned resamplings
+  for (size_t i = 0; i < my_samples.size(); ++i) {
+    uint sampindex = my_samples[i];
+    double chisq_samp;
+    
+    chisq_ref.setResamplingIndex(sampindex);
+    vector<double> start(start_params);
+    chisq_ref.guessInitialFitParamValues(start, only_update_prior_initial_guesses);
+    
+    bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
+    
+    // Show progress every 10% for rank 0 only
+    if (rank == 0 && my_samples.size() > 10) {
+      if ((i + 1) % (my_samples.size() / 10) == 0 || (i + 1) == my_samples.size()) {
+        std::cerr << "Rank 0 progress: " << (i + 1) << "/" << my_samples.size() 
+                  << " samples (" << (100 * (i + 1) / my_samples.size()) << "%)" << std::endl;
+      }
+    }
+    
+    // Detailed per-sample log
+    logger << "Rank " << rank << " Resamplings index = " << sampindex
+           << " chisq = " << chisq_samp << '\n';
+    for (uint p = 0; p < nparams; ++p)
+      logger << "params_sample[" << p << "] = " << params_sample[p] << '\n';
+    
+    // Store results locally instead of directly writing to kobs
+    if (flag) {
+      my_successful_results.push_back(make_pair(sampindex, params_sample));
+    } else {
+      logger << "Above fit failed!\n";
+      my_failed.push_back(sampindex);
+      my_failed_results.push_back(make_pair(sampindex, params_fullsample));
+    }
+  }
+  
+  CSM.setVerbosity(origverbose);
+  
+  // Wait for all ranks to complete
+  MPI_Barrier(comm);
+  
+  if (rank == 0) {
+    std::cerr << '\n'; // finish the progress line
+    std::cerr << "Gathering results from all ranks..." << std::endl;
+    
+    // Write rank 0's results to kobs first
+    for (const auto& result : my_successful_results) {
+      uint sampindex = result.first;
+      const vector<double>& params = result.second;
+      for (uint p = 0; p < nparams; ++p) {
+        kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params[p]);
+      }
+    }
+    for (const auto& result : my_failed_results) {
+      uint sampindex = result.first;
+      const vector<double>& params = result.second;
+      for (uint p = 0; p < nparams; ++p) {
+        kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params[p]);
+      }
+    }
+    
+    // Gather failed samples for output
+    list<uint> all_failed(my_failed);
+    
+    // Gather results from other ranks
+    for (int r = 1; r < size; ++r) {
+      // Receive successful results
+      int num_successful;
+      MPI_Recv(&num_successful, 1, MPI_INT, r, 0, comm, MPI_STATUS_IGNORE);
+      for (int i = 0; i < num_successful; ++i) {
+        int sampindex;
+        vector<double> params(nparams);
+        MPI_Recv(&sampindex, 1, MPI_INT, r, 1, comm, MPI_STATUS_IGNORE);
+        MPI_Recv(params.data(), nparams, MPI_DOUBLE, r, 2, comm, MPI_STATUS_IGNORE);
+        
+        for (uint p = 0; p < nparams; ++p) {
+          kobs->putSamplingValue(kbfitparaminfos[p], static_cast<uint>(sampindex), params[p]);
+        }
+      }
+      
+      // Receive failed results
+      int num_failed;
+      MPI_Recv(&num_failed, 1, MPI_INT, r, 3, comm, MPI_STATUS_IGNORE);
+      for (int i = 0; i < num_failed; ++i) {
+        int sampindex;
+        vector<double> params(nparams);
+        MPI_Recv(&sampindex, 1, MPI_INT, r, 4, comm, MPI_STATUS_IGNORE);
+        MPI_Recv(params.data(), nparams, MPI_DOUBLE, r, 5, comm, MPI_STATUS_IGNORE);
+        
+        for (uint p = 0; p < nparams; ++p) {
+          kobs->putSamplingValue(kbfitparaminfos[p], static_cast<uint>(sampindex), params[p]);
+        }
+        all_failed.push_back(static_cast<uint>(sampindex));
+      }
+    }
+    
+    // Generate output
+    XMLHandler xmlz;
+    xmlformat("ResamplingsMinimizationsLog", logger.str(), xmlz);
+    if (xmlz.good())
+      xmlout.put_child(xmlz);
+    
+    XMLHandler xmlso;
+    kobs->writeSamplingValuesToFile(kbfitparaminfoset, out_sampling_file, xmlso, true);
+    xmlout.put_child(xmlso);
+    
+    bestfit_params.resize(nparams);
+    XMLHandler xmlres("BestFitResult");
+    xmlres.put_child("NumberOfResiduals", make_string(nresiduals));
+    xmlres.put_child("NumberOfFitParameters", make_string(nparams));
+    xmlres.put_child("DegreesOfFreedom", make_string(dof));
+    xmlres.put_child("ChiSquarePerDof", make_string(chisq_dof));
+    double fitqual_local = getChiSquareFitQuality(dof, chisq);
+    fitqual = fitqual_local;
+    xmlres.put_child("FitQuality", make_string(fitqual));
+    
+    for (uint p = 0; p < nparams; ++p) {
+      XMLHandler xmlp("FitParameter" + make_string(p));
+      XMLHandler xmlpi;
+      fitparaminfos[p].output(xmlpi);
+      xmlp.put_child(xmlpi);
+      string obs_name = fitparaminfos[p].getObsName();
+      auto& registry = ParameterNameRegistry::getInstance();
+      string param_name = registry.getParameterNameFromMCObsName(obs_name);
+      if (!param_name.empty()) {
+        xmlp.put_child("ParameterName", param_name);
+      }
+      bestfit_params[p] = kobs->getEstimate(kbfitparaminfos[p]);
+      XMLHandler xmlfp;
+      bestfit_params[p].output(xmlfp);
+      xmlp.put_child(xmlfp);
+      xmlres.put_child(xmlp);
+    }
+    
+    XMLHandler xmlcov("FitParameterCovariances");
+    for (uint p = 0; p < nparams; ++p) {
+      for (uint pp = p; pp < nparams; ++pp) {
+        double cov = kobs->getCovariance(kbfitparaminfos[p], kbfitparaminfos[pp]);
+        xmlcov.put_child("Cov_" + make_string(p) + "_" + make_string(pp), make_string(cov));
+      }
+    }
+    xmlres.put_child(xmlcov);
+    xmlout.put_child(xmlres);
+    
+    if (all_failed.size() > 0) {
+      XMLHandler xmlf("FailedResamplings");
+      for (list<uint>::const_iterator it = all_failed.begin(); it != all_failed.end(); ++it) {
+        xmlf.put_child("FailedIndex", make_string(*it));
+      }
+      xmlout.put_child(xmlf);
+    }
+    
+  } else {
+    // Non-root ranks send their results
+    
+    // Send successful results
+    int num_successful = static_cast<int>(my_successful_results.size());
+    MPI_Send(&num_successful, 1, MPI_INT, 0, 0, comm);
+    for (const auto& result : my_successful_results) {
+      int sampindex = static_cast<int>(result.first);
+      MPI_Send(&sampindex, 1, MPI_INT, 0, 1, comm);
+      MPI_Send(result.second.data(), nparams, MPI_DOUBLE, 0, 2, comm);
+    }
+    
+    // Send failed results
+    int num_failed = static_cast<int>(my_failed_results.size());
+    MPI_Send(&num_failed, 1, MPI_INT, 0, 3, comm);
+    for (const auto& result : my_failed_results) {
+      int sampindex = static_cast<int>(result.first);
+      MPI_Send(&sampindex, 1, MPI_INT, 0, 4, comm);
+      MPI_Send(result.second.data(), nparams, MPI_DOUBLE, 0, 5, comm);
+    }
+  }
+  
+  // Final barrier to ensure all ranks complete together
+  MPI_Barrier(comm);
+  
+  // Broadcast final results to all ranks
+  MPI_Bcast(&fitqual, 1, MPI_DOUBLE, 0, comm);
+  
+  // All ranks need to have the final bestfit_params size
+  if (rank != 0) {
+    bestfit_params.resize(nparams);
+  }
 }
 
 // *************************************************
