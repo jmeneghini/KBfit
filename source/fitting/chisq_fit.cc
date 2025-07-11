@@ -197,29 +197,31 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   int current_size;
   MPI_Comm_size(MPI_COMM_WORLD, &current_size);
   
-  // If only 1 process requested or we're in single-process mode, use serial version
-  if (num_mpi_processes <= 1 || current_size == 1) {
-    doChiSquareFittingSerial(chisq_ref, csm_info, chisq_dof, fitqual,
-                            bestfit_params, param_covariance, out_sampling_file,
-                            xmlout, kobs);
-    return;
-  }
+  std::cerr << "doChiSquareFitting: current_size=" << current_size << ", num_mpi_processes=" << num_mpi_processes << std::endl;
   
   // If we already have multiple processes, use them directly (traditional MPI mode)
   if (current_size > 1) {
     std::cerr << "Using existing " << current_size << " MPI processes for chi-square fitting" << std::endl;
     
-    // Call the original MPI version that was in the codebase before my changes
-    // This uses MPI_COMM_WORLD directly
+    // Call the traditional MPI version that uses MPI_COMM_WORLD directly
     doChiSquareFittingMPI_Traditional(chisq_ref, csm_info, chisq_dof, fitqual,
                                      bestfit_params, param_covariance, out_sampling_file,
                                      xmlout, kobs, MPI_COMM_WORLD);
     return;
   }
   
+  // If only 1 process requested or we're in single-process mode, use serial version
+  if (num_mpi_processes <= 1) {
+    std::cerr << "Using serial execution (num_mpi_processes=" << num_mpi_processes << ")" << std::endl;
+    doChiSquareFittingSerial(chisq_ref, csm_info, chisq_dof, fitqual,
+                            bestfit_params, param_covariance, out_sampling_file,
+                            xmlout, kobs);
+    return;
+  }
+  
   // If we get here, we're in single-process mode but want parallel execution
   // Try dynamic spawning (this may fail on clusters)
-  std::cerr << "Starting dynamic MPI chi-square fitting with " << num_mpi_processes << " processes" << std::endl;
+  std::cerr << "Attempting dynamic MPI spawning with " << num_mpi_processes << " processes" << std::endl;
   
   uint nparams = chisq_ref.getNumberOfFitParameters();
   uint nresiduals = chisq_ref.getNumberOfResiduals();
@@ -638,6 +640,9 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
     }
   }
   
+  // Debug: Show sample distribution
+  std::cerr << "Rank " << rank << " assigned " << my_samples.size() << " samples out of " << nsamplings << " total samples" << std::endl;
+  
   // Each rank processes its assigned resamplings
   ChiSquareMinimizer CSM(chisq_ref, csm_info);
   char origverbose = CSM.getVerbosity();
@@ -655,6 +660,10 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
     std::cerr << "Starting minimization with resamplings across " << size << " MPI ranks" << std::endl;
   }
   
+  // For progress tracking (rank 0 only)
+  auto t0 = std::chrono::steady_clock::now();
+  uint total_completed = 0; // Track overall progress
+  
   // Process assigned resamplings
   for (size_t i = 0; i < my_samples.size(); ++i) {
     uint sampindex = my_samples[i];
@@ -666,12 +675,14 @@ void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
     
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
     
-    // Show progress every 10% for rank 0 only
-    if (rank == 0 && my_samples.size() > 10) {
-      if ((i + 1) % (my_samples.size() / 10) == 0 || (i + 1) == my_samples.size()) {
-        std::cerr << "Rank 0 progress: " << (i + 1) << "/" << my_samples.size() 
-                  << " samples (" << (100 * (i + 1) / my_samples.size()) << "%)" << std::endl;
-      }
+    // Show overall progress (rank 0 only, estimate based on all ranks)
+    if (rank == 0) {
+      // Estimate total completed samples across all ranks
+      total_completed = (i + 1) * size;
+      if (total_completed > nsamplings) total_completed = nsamplings;
+      
+      // Show progress using the original progress bar function
+      show_progress(total_completed, nsamplings, t0, std::cerr);
     }
     
     // Detailed per-sample log
