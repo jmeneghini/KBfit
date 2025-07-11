@@ -177,11 +177,8 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
   } else {
     // Non-root ranks in traditional MPI mode: wait for work distribution
     // They will be called by the fitting functions when needed
-    if (m_mpi_rank != 0) {
-      // Wait for any MPI calls from the fitting functions
-      // This is handled by the MPI communication in the fitting functions
-      // No tasks are executed directly by non-root ranks
-    }
+    // This is handled by the MPI communication in the fitting functions
+    // No tasks are executed directly by non-root ranks
   }
 }
 

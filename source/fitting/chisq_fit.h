@@ -64,8 +64,7 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                         std::vector<MCEstimate>& bestfit_params,
                         RealSymmetricMatrix& param_covariance,
                         const std::string& out_sampling_file,
-                        XMLHandler& xmlout, KBObsHandler* kobs,
-                        int num_mpi_processes = 1);
+                        XMLHandler& xmlout, KBObsHandler* kobs);
 
 // Serial version (original implementation)
 void doChiSquareFittingSerial(ChiSquare& chisq_ref,
@@ -76,15 +75,7 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
                               const std::string& out_sampling_file,
                               XMLHandler& xmlout, KBObsHandler* kobs);
 
-// MPI version with dynamic process spawning
-void doChiSquareFittingMPI(ChiSquare& chisq_ref,
-                           const ChiSquareMinimizerInfo& csm_info,
-                           double& chisq_dof, double& fitqual,
-                           std::vector<MCEstimate>& bestfit_params,
-                           RealSymmetricMatrix& param_covariance,
-                           const std::string& out_sampling_file,
-                           XMLHandler& xmlout, KBObsHandler* kobs,
-                           int num_processes);
+
 
 // Traditional MPI version using existing processes
 void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,

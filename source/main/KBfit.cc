@@ -130,72 +130,8 @@ void show_help() {
 }
 
 int main(int argc, const char* argv[]) {
-  // Check for MPI worker flag before MPI initialization
-  bool is_mpi_worker = false;
-  for (int i = 1; i < argc; ++i) {
-    if (string(argv[i]) == "--mpi-worker") {
-      is_mpi_worker = true;
-      break;
-    }
-  }
-  
   // Initialize MPI
   MPI_Init(&argc, const_cast<char***>(&argv));
-  
-  // Handle MPI worker processes (for dynamic spawning)
-  if (is_mpi_worker) {
-    // This is a spawned MPI worker process
-    std::cerr << "MPI worker process started" << std::endl;
-    
-    // The worker process will participate in the merged communicator
-    // and then exit. The actual work is handled in doChiSquareFittingMPI
-    // which is called through the MPI communication protocol.
-    
-    // For now, just participate in the communicator and exit
-    MPI_Comm parent_comm;
-    MPI_Comm_get_parent(&parent_comm);
-    
-    if (parent_comm != MPI_COMM_NULL) {
-      // Merge with parent communicator
-      MPI_Comm merged_comm;
-      MPI_Intercomm_merge(parent_comm, 1, &merged_comm);  // 1 = high group (child)
-      
-      int rank, size;
-      MPI_Comm_rank(merged_comm, &rank);
-      MPI_Comm_size(merged_comm, &size);
-      
-      std::cerr << "MPI worker process " << rank << " of " << size << " ready" << std::endl;
-      
-      // Receive basic parameters to participate in broadcasts
-      uint params_data[4];
-      MPI_Bcast(params_data, 4, MPI_UNSIGNED, 0, merged_comm);
-      
-      // Receive other broadcast data
-      double chisq_dof_recv;
-      MPI_Bcast(&chisq_dof_recv, 1, MPI_DOUBLE, 0, merged_comm);
-      
-      uint nparams = params_data[0];
-      vector<double> params_fullsample(nparams);
-      MPI_Bcast(params_fullsample.data(), nparams, MPI_DOUBLE, 0, merged_comm);
-      
-      // Receive minimizer info
-      int csm_str_len;
-      MPI_Bcast(&csm_str_len, 1, MPI_INT, 0, merged_comm);
-      string csm_str(csm_str_len, '\0');
-      MPI_Bcast(const_cast<char*>(csm_str.c_str()), csm_str_len, MPI_CHAR, 0, merged_comm);
-      
-      std::cerr << "MPI worker " << rank << " received parameters (serialization not implemented)" << std::endl;
-      
-      // Clean up and exit
-      MPI_Comm_free(&merged_comm);
-      std::cerr << "MPI worker " << rank << " finished" << std::endl;
-    } else {
-      std::cerr << "Error: MPI worker process has no parent communicator" << std::endl;
-    }
-    
-    MPI_Finalize();
-    return 0;
-  }
   
   // Get MPI info for main program
   int rank, size;
@@ -211,7 +147,7 @@ int main(int argc, const char* argv[]) {
     // All processes continue - this enables traditional MPI mode
   } else {
     if (rank == 0) {
-      cout << "KBfit starting in single-process mode with dynamic MPI spawning for parallel fitting" << endl;
+      cout << "KBfit starting in single-process mode - serial execution" << endl;
     }
   }
   
