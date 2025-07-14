@@ -6,6 +6,7 @@
 #include "kbobs_handler.h"
 #include "matrix.h"
 #include "xml_handler.h"
+#include <memory>
 
 enum class EnergyType {
   Elab,
@@ -84,6 +85,9 @@ public:
 
   void clear();
 
+  // Deep copy/clone method to create an identical object with new pointers
+  std::unique_ptr<SpectrumFit> clone(KBObsHandler* new_kboh = nullptr) const;
+
   // order of fitinfos and fitparams are the same
   void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const
   override;
@@ -96,6 +100,9 @@ private:
   // Performance-critical method called for every function evaluation during fitting
   void evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams)
   override;
+
+  // Private default constructor for clone method
+  SpectrumFit();
 
   // Calculated once at start, then ChiSquare will use it for remainder
   // of the fit. The evalResidualsAndInvCovCholesky function just

@@ -218,6 +218,105 @@ void BoxQuantization::clear() {
 
 BoxQuantization::~BoxQuantization() { clear(); }
 
+BoxQuantization::BoxQuantization() 
+    : m_mref_L(6.0), m_Kmat(nullptr), m_Kinv(nullptr) {
+  // Initialize to default/empty state - will be populated by clone method
+}
+
+std::unique_ptr<BoxQuantization> BoxQuantization::clone(KtildeMatrixCalculator* new_Kmat,
+                                                       KtildeInverseCalculator* new_Kinv) const {
+  // Create new instance using default constructor
+  auto cloned = std::unique_ptr<BoxQuantization>(new BoxQuantization());
+  
+  // Copy basic value-type members
+  cloned->m_lgirrep = this->m_lgirrep;
+  cloned->m_lgirrepB = this->m_lgirrepB;
+  cloned->m_momray = this->m_momray;
+  cloned->m_dx = this->m_dx;
+  cloned->m_dy = this->m_dy;
+  cloned->m_dz = this->m_dz;
+  cloned->m_Lmaxes = this->m_Lmaxes;
+  cloned->m_mref_L = this->m_mref_L;
+  cloned->m_masses1 = this->m_masses1;
+  cloned->m_masses2 = this->m_masses2;
+  cloned->m_decay_channel_S_num = this->m_decay_channel_S_num;
+  
+  // Copy basis (value types in set)
+  cloned->m_basis = this->m_basis;
+  
+  // Set K-matrix calculator pointers (external objects - shallow copy unless new ones provided)
+  if (new_Kmat != nullptr) {
+    cloned->m_Kmat = new_Kmat;
+    cloned->m_Kinv = nullptr;
+  } else if (new_Kinv != nullptr) {
+    cloned->m_Kinv = new_Kinv;
+    cloned->m_Kmat = nullptr;
+  } else {
+    // Use existing pointers (shallow copy)
+    cloned->m_Kmat = this->m_Kmat;
+    cloned->m_Kinv = this->m_Kinv;
+  }
+  
+  // Deep copy WZetaRGLCalculator objects
+  for (const auto* wzeta : this->m_wzetas) {
+    if (wzeta != nullptr) {
+      // WZetaRGLCalculator has private copy constructor, so create new one with same parameters
+      WZetaRGLCalculator* cloned_wzeta = new WZetaRGLCalculator();
+      cloned_wzeta->reset(wzeta->getSVector(), wzeta->getGamma(), wzeta->getUsq());
+      cloned->m_wzetas.push_back(cloned_wzeta);
+    } else {
+      cloned->m_wzetas.push_back(nullptr);
+    }
+  }
+  
+  // Deep copy BoxMatrix objects
+  // Note: We need to update the BoxQuantBasisState objects to point to the new BoxMatrix objects
+  std::map<BoxMatrix*, BoxMatrix*> box_ptr_map; // old -> new mapping
+  
+  for (const auto& pair : this->m_boxes) {
+    BoxMatrix* original_box = pair.first;
+    uint channel_index = pair.second;
+    
+    if (original_box != nullptr) {
+      // BoxMatrix has private copy constructor, so create new one with same parameters
+      // Need to find the corresponding WZetaRGLCalculator for this box
+      // The order of boxes and wzetas should correspond based on how they were created
+      auto wzeta_it = cloned->m_wzetas.begin();
+      std::advance(wzeta_it, std::distance(this->m_boxes.begin(), 
+                                          std::find_if(this->m_boxes.begin(), this->m_boxes.end(),
+                                                      [original_box](const auto& p) { return p.first == original_box; })));
+      
+      BoxMatrix* cloned_box = new BoxMatrix(original_box->getEcmTransform(), 
+                                          **wzeta_it,
+                                          original_box->getTotalSpinTimesTwo(),
+                                          original_box->getLittleGroupIrrep(),
+                                          original_box->getLmax());
+      cloned->m_boxes.push_back(std::make_pair(cloned_box, channel_index));
+      box_ptr_map[original_box] = cloned_box;
+    } else {
+      cloned->m_boxes.push_back(std::make_pair(nullptr, channel_index));
+      box_ptr_map[original_box] = nullptr;
+    }
+  }
+  
+  // Update basis states to point to new BoxMatrix objects
+  cloned->m_basis.clear();
+  for (const auto& basis_state : this->m_basis) {
+    BoxMatrix* old_ptr = basis_state.getBoxMatrixPtr();
+    BoxMatrix* new_ptr = box_ptr_map[old_ptr];
+    
+    BoxQuantBasisState new_state(new_ptr, 
+                                 basis_state.getChannelIndex(),
+                                 basis_state.getStimestwo(),
+                                 basis_state.getJtimestwo(),
+                                 basis_state.getL(),
+                                 basis_state.getOccurrence());
+    cloned->m_basis.insert(new_state);
+  }
+  
+  return cloned;
+}
+
 void BoxQuantization::initialize() {
   // set up default values of masses; these can be changed later
   const vector<DecayChannelInfo>& decay_infos = getDecayChannelInfos();
@@ -1525,7 +1624,7 @@ void BoxQuantization::get_DeltaE_predictions(
     if (best_j == static_cast<std::size_t>(-1))
       throw std::runtime_error("No root energy close to observation.");
 
-    // Delta E_pred = matched root − datum’s own free NI energy
+    // Delta E_pred = matched root − datum's own free NI energy
     shift_predictions[k] = E_pred[best_j] - E_free_obs[k];
   }
 }

@@ -8,6 +8,7 @@
 #include "xml_handler.h"
 #include <complex>
 #include <map>
+#include <memory>
 #include <optional>
 #include <root_finder.h>
 
@@ -288,9 +289,11 @@ class BoxQuantization {
 
   BoxQuantization(const BoxQuantization&);
   BoxQuantization& operator=(const BoxQuantization&);
-  BoxQuantization();
 
 public:
+  // Default constructor for cloning
+  BoxQuantization();
+
   enum QuantCondType { StildeCB, StildeinvCB, KtildeB, KtildeinvB };
 
   BoxQuantization(XMLHandler& xmlin, KtildeMatrixCalculator* Kmatptr);
@@ -314,6 +317,10 @@ public:
                   KtildeInverseCalculator* Kinvptr);
 
   ~BoxQuantization();
+
+  // Deep copy/clone method to create an identical object with new pointers
+  std::unique_ptr<BoxQuantization> clone(KtildeMatrixCalculator* new_Kmat = nullptr,
+                                        KtildeInverseCalculator* new_Kinv = nullptr) const;
 
   std::optional<QuantCondType>
   getQuantCondTypeFromString(const std::string& qctype) const;

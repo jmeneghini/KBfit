@@ -78,14 +78,16 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
 
 
 // Traditional MPI version using existing processes
-void doChiSquareFittingMPI_Traditional(ChiSquare& chisq_ref,
-                                      const ChiSquareMinimizerInfo& csm_info,
-                                      double& chisq_dof, double& fitqual,
-                                      std::vector<MCEstimate>& bestfit_params,
-                                      RealSymmetricMatrix& param_covariance,
-                                      const std::string& out_sampling_file,
-                                      XMLHandler& xmlout, KBObsHandler* kobs,
-                                      MPI_Comm comm);
+void doChiSquareFittingMPI(ChiSquare& chisq_ref,
+                                     const ChiSquareMinimizerInfo& csm_info,
+                                     double& chisq_dof, double& fitqual,
+                                     std::vector<MCEstimate>& bestfit_params,
+                                     RealSymmetricMatrix& param_covariance,
+                                     const std::string& out_sampling_file,
+                                     XMLHandler& xmlout, KBObsHandler* kobs,
+                                     MPI_Comm comm);
+
+
 
 // ************************************************************
 //

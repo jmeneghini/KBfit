@@ -7,6 +7,11 @@ using namespace std;
 
 // *************************************************************
 
+DeterminantResidualFit::DeterminantResidualFit()
+    : ChiSquare(), KBOH(nullptr), Kmat(nullptr), Kinv(nullptr), omega_mu(-1.0) {
+  // Initialize to default/empty state - will be populated by clone method
+}
+
 DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
                                                KBObsHandler* kboh,
                                                XMLHandler& xmlout,
@@ -503,6 +508,62 @@ void DeterminantResidualFit::clear() {
   delete Kmat;
   delete Kinv;
   BQ.clear();
+}
+
+std::unique_ptr<DeterminantResidualFit> DeterminantResidualFit::clone(KBObsHandler* new_kboh) const {
+  // Create a new instance using the private default constructor
+  // Note: This method requires that BoxQuantization, KtildeMatrixCalculator, 
+  // and KtildeInverseCalculator have working copy constructors.
+  // If they don't, you'll need to implement clone methods for those classes first.
+  auto cloned = std::unique_ptr<DeterminantResidualFit>(new DeterminantResidualFit());
+  
+  // Copy base class members
+  cloned->nresiduals = this->nresiduals;
+  cloned->nfitparams = this->nfitparams;
+  cloned->inv_cov_cholesky = this->inv_cov_cholesky;
+  cloned->residuals = this->residuals;
+  cloned->nresamplings = this->nresamplings;
+  cloned->resampling_index = this->resampling_index;
+  cloned->qctype_enum = this->qctype_enum;
+  
+  // Copy or assign KBObsHandler pointer (shallow copy - external object)
+  cloned->KBOH = (new_kboh != nullptr) ? new_kboh : this->KBOH;
+  
+  // Deep copy K-matrix calculators first (needed for BoxQuantization cloning)
+  if (this->Kmat != nullptr) {
+    // Use the new clone method instead of copy constructor
+    cloned->Kmat = this->Kmat->clone().release();
+    cloned->Kinv = nullptr;
+  } else if (this->Kinv != nullptr) {
+    // Use the new clone method instead of copy constructor
+    cloned->Kinv = this->Kinv->clone().release();
+    cloned->Kmat = nullptr;
+  } else {
+    cloned->Kmat = nullptr;
+    cloned->Kinv = nullptr;
+  }
+  
+  // Deep copy BoxQuantization objects (now that K-matrix calculators are available)
+  cloned->BQ.clear();
+  cloned->BQ.reserve(this->BQ.size());
+  for (const auto* bq : this->BQ) {
+    if (bq != nullptr) {
+      // Use the new clone method with the cloned K-matrix calculators
+      std::unique_ptr<BoxQuantization> cloned_bq = bq->clone(cloned->Kmat, cloned->Kinv);
+      cloned->BQ.push_back(cloned_bq.release());
+    } else {
+      cloned->BQ.push_back(nullptr);
+    }
+  }
+  
+  // Copy other data members (deep copy via default copy semantics)
+  cloned->Ecm_over_mref = this->Ecm_over_mref;
+  cloned->ensemble_id = this->ensemble_id;
+  cloned->Bmat = this->Bmat;
+  cloned->omega_mu = this->omega_mu;
+  cloned->nres_per_block = this->nres_per_block;
+  
+  return cloned;
 }
 
 void DeterminantResidualFit::evalResidualsAndInvCovCholesky(

@@ -1,5 +1,6 @@
 #include "task_handler.h"
 #include "stopwatch.h"
+#include "chisq_fit.h"
 #include <mpi.h>
 using namespace std;
 
@@ -148,14 +149,49 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
          << endl;
   }
   
-  // In traditional MPI mode (multiple processes), only rank 0 should execute tasks
-  // Other ranks will participate in work distribution when called by fitting functions
-  bool should_execute_tasks = (m_mpi_rank == 0) || (mpi_size == 1);
+  // Check if any task is a DoFit task that requires all ranks to participate
+  bool has_fit_task = false;
+  for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end(); it++) {
+    XMLHandler task_copy(*it);
+    if (task_copy.count_among_children("Action") == 1) {
+      XMLHandler xmlaction(task_copy, "Action");
+      if (xmlaction.is_simple_element()) {
+        string action = xmlaction.get_text_content();
+        if (action == "DoFit") {
+          has_fit_task = true;
+          break;
+        }
+      }
+    }
+  }
   
-  if (should_execute_tasks) {
-    // Only rank 0 (or single process) executes tasks
+  // In MPI mode, ALL ranks execute DoFit tasks (to avoid HDF5 issues, only rank 0 loads data)
+  // For other tasks, only rank 0 executes them
+  bool should_execute_tasks = (m_mpi_rank == 0) || (mpi_size == 1);
+  bool should_execute_fit_tasks = (mpi_size == 1) || has_fit_task;
+  
+  if (should_execute_tasks || should_execute_fit_tasks) {
     for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
          it++, count++) {
+      
+      // Check if this specific task is DoFit
+      bool is_fit_task = false;
+      XMLHandler task_copy(*it);
+      if (task_copy.count_among_children("Action") == 1) {
+        XMLHandler xmlaction(task_copy, "Action");
+        if (xmlaction.is_simple_element()) {
+          string action = xmlaction.get_text_content();
+          if (action == "DoFit") {
+            is_fit_task = true;
+          }
+        }
+      }
+      
+      // Skip non-fit tasks on non-root ranks in MPI mode
+      if (mpi_size > 1 && m_mpi_rank != 0 && !is_fit_task) {
+        continue;
+      }
+      
       if (m_mpi_rank == 0) {
         clog << endl << "<Task>" << endl;
         clog << " <Count>" << count << "</Count>" << endl;
@@ -174,11 +210,6 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
         clog << "</Task>" << endl;
       }
     }
-  } else {
-    // Non-root ranks in traditional MPI mode: wait for work distribution
-    // They will be called by the fitting functions when needed
-    // This is handled by the MPI communication in the fitting functions
-    // No tasks are executed directly by non-root ranks
   }
 }
 
@@ -447,4 +478,6 @@ taskcount)
  xmlout.put_child(xmlf);
 }
 */
+
+
 // ***************************************************************************************

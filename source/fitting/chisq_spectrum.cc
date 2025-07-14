@@ -70,6 +70,12 @@
 
 using namespace std;
 
+SpectrumFit::SpectrumFit()
+    : ChiSquare(), KBOH(nullptr), Kmat(nullptr), Kinv(nullptr), 
+      n_kmat_params(0), n_decay_channels(0), omega_mu(-1.0) {
+  // Initialize to default/empty state - will be populated by clone method
+}
+
 SpectrumFit::SpectrumFit(XMLHandler& xmlin,
                           KBObsHandler* kboh,
                           XMLHandler& xmlout,
@@ -587,6 +593,74 @@ void SpectrumFit::clear() {
   energy_shift_predictions.clear();
   fn_calls.clear();
   decay_channel_masses.clear();
+}
+
+std::unique_ptr<SpectrumFit> SpectrumFit::clone(KBObsHandler* new_kboh) const {
+  // Create a new instance using the private default constructor
+  auto cloned = std::unique_ptr<SpectrumFit>(new SpectrumFit());
+  
+  // Copy base class members
+  cloned->nresiduals = this->nresiduals;
+  cloned->nfitparams = this->nfitparams;
+  cloned->inv_cov_cholesky = this->inv_cov_cholesky;
+  cloned->residuals = this->residuals;
+  cloned->nresamplings = this->nresamplings;
+  cloned->resampling_index = this->resampling_index;
+  cloned->qctype_enum = this->qctype_enum;
+  
+  // Copy or assign KBObsHandler pointer (shallow copy - external object)
+  cloned->KBOH = (new_kboh != nullptr) ? new_kboh : this->KBOH;
+  
+  // Copy configuration data (value types - deep copied automatically)
+  cloned->root_finder_config = this->root_finder_config;
+  cloned->n_kmat_params = this->n_kmat_params;
+  cloned->n_decay_channels = this->n_decay_channels;
+  cloned->omega_mu = this->omega_mu;
+  cloned->are_decay_channels_identical = this->are_decay_channels_identical;
+  
+  // Deep copy K-matrix calculators first (needed for BoxQuantization cloning)
+  if (this->Kmat != nullptr) {
+    // Use the new clone method instead of copy constructor
+    cloned->Kmat = this->Kmat->clone().release();
+    cloned->Kinv = nullptr;
+  } else if (this->Kinv != nullptr) {
+    // Use the new clone method instead of copy constructor
+    cloned->Kinv = this->Kinv->clone().release();
+    cloned->Kmat = nullptr;
+  } else {
+    cloned->Kmat = nullptr;
+    cloned->Kinv = nullptr;
+  }
+  
+  // Deep copy ensemble fit data
+  cloned->ensemble_fit_data.clear();
+  cloned->ensemble_fit_data.reserve(this->ensemble_fit_data.size());
+  
+  for (const auto& ens_data : this->ensemble_fit_data) {
+    EnsembleFitData cloned_ens_data = ens_data; // Copy most members via default copy semantics
+    
+    // Deep copy BoxQuantization pointers within each ensemble
+    cloned_ens_data.BQ_blocks.clear();
+    cloned_ens_data.BQ_blocks.reserve(ens_data.BQ_blocks.size());
+    for (const auto* bq : ens_data.BQ_blocks) {
+      if (bq != nullptr) {
+        // Use the new clone method with the cloned K-matrix calculators
+        std::unique_ptr<BoxQuantization> cloned_bq = bq->clone(cloned->Kmat, cloned->Kinv);
+        cloned_ens_data.BQ_blocks.push_back(cloned_bq.release());
+      } else {
+        cloned_ens_data.BQ_blocks.push_back(nullptr);
+      }
+    }
+    
+    cloned->ensemble_fit_data.push_back(std::move(cloned_ens_data));
+  }
+  
+  // Initialize temporary vectors (these are mutable working space - start empty)
+  cloned->energy_shift_predictions.clear();
+  cloned->fn_calls.clear();
+  cloned->decay_channel_masses.resize(this->decay_channel_masses.size());
+  
+  return cloned;
 }
 
 // Need to add non-Kmatrix fit parameters below here

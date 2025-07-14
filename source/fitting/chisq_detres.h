@@ -6,6 +6,7 @@
 #include "kbobs_handler.h"
 #include "matrix.h"
 #include "xml_handler.h"
+#include <memory>
 
 // **************************************************************************
 // *                                                                        *
@@ -278,6 +279,9 @@ public:
 
   void clear();
 
+  // Deep copy/clone method to create an identical object with new pointers
+  std::unique_ptr<DeterminantResidualFit> clone(KBObsHandler* new_kboh = nullptr) const;
+
   void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const override;
 
   void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const override;
@@ -290,6 +294,8 @@ private:
   void
   evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) override;
 
+  // Private default constructor for clone method
+  DeterminantResidualFit();
 
   friend class TaskHandler;
 };

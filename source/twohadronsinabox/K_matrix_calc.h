@@ -5,6 +5,7 @@
 #include "fit_forms.h"
 #include "xml_handler.h"
 #include <map>
+#include <memory>
 
 // ***********************************************************************
 // *                                                                     *
@@ -150,9 +151,11 @@ class KtildeMatrixCalculator {
 
   KtildeMatrixCalculator(const KtildeMatrixCalculator& inK);
   KtildeMatrixCalculator& operator=(const KtildeMatrixCalculator& inK);
-  KtildeMatrixCalculator();
 
 public:
+  // Default constructor for cloning
+  KtildeMatrixCalculator();
+
   KtildeMatrixCalculator(XMLHandler& xmlin, bool require_initvals = false);
 
   KtildeMatrixCalculator(
@@ -163,6 +166,9 @@ public:
       const std::vector<DecayChannelInfo>& chans);
 
   ~KtildeMatrixCalculator();
+
+  // Deep copy/clone method to create an identical object with new pointers
+  std::unique_ptr<KtildeMatrixCalculator> clone() const;
 
   uint getNumberOfParameters() const;
 
@@ -229,9 +235,11 @@ class KtildeInverseCalculator {
 
   KtildeInverseCalculator(const KtildeInverseCalculator& inK);
   KtildeInverseCalculator& operator=(const KtildeInverseCalculator& inK);
-  KtildeInverseCalculator();
 
 public:
+  // Default constructor for cloning  
+  KtildeInverseCalculator();
+
   KtildeInverseCalculator(XMLHandler& xmlin, bool require_initvals = false);
 
   KtildeInverseCalculator(
@@ -239,6 +247,9 @@ public:
       const std::vector<DecayChannelInfo>& chans);
 
   ~KtildeInverseCalculator();
+
+  // Deep copy/clone method to create an identical object with new pointers
+  std::unique_ptr<KtildeInverseCalculator> clone() const;
 
   uint getNumberOfParameters() const;
 

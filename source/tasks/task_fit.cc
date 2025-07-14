@@ -147,6 +147,11 @@ using namespace std;
 
 void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
                         int taskcount) {
+  // Get MPI rank to handle data loading only on rank 0
+  int mpi_rank, mpi_size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  
   ChiSquareMinimizerInfo mz_info; // default minimizer info
   if (xmltask.count_among_children("MinimizerInfo") > 0) {
     ChiSquareMinimizerInfo mz_user(xmltask);
@@ -159,16 +164,17 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
   string fittype;
   xmlreadchild(xmltask, "Type", fittype, "DoFit");
   
-
-  
-  xmlout.set_root("DoFit");
-  XMLHandler xmlmz;
-  mz_info.output(xmlmz);
-  xmlout.put_child(xmlmz);
-  xmlout.put_child("Type", fittype);
-  xmlout.put_child("OutSamplingsFile", outsampfile);
-  if (!EcmQcmBoxSampStub.empty())
-    xmlout.put_child("EcmQcmBoxSamplingsStub", EcmQcmBoxSampStub);
+  // Only rank 0 sets up XML output to avoid conflicts
+  if (mpi_rank == 0) {
+    xmlout.set_root("DoFit");
+    XMLHandler xmlmz;
+    mz_info.output(xmlmz);
+    xmlout.put_child(xmlmz);
+    xmlout.put_child("Type", fittype);
+    xmlout.put_child("OutSamplingsFile", outsampfile);
+    if (!EcmQcmBoxSampStub.empty())
+      xmlout.put_child("EcmQcmBoxSamplingsStub", EcmQcmBoxSampStub);
+  }
   
   double chisq_dof, qual;
   vector<MCEstimate> bestfit_params;
@@ -181,24 +187,52 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       // get the quantization condition for the output directory
       string qctype;
       xmlreadif(xmltask, "QuantizationCondition", qctype, "DeterminantResidualFit");
-      filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+      
+      // Only rank 0 creates master object and handles output directory/XML
+      unique_ptr<DeterminantResidualFit> master_DRF = nullptr;
+      if (mpi_rank == 0) {
+        filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+        EcmQcmBoxSampStub = (output_path / EcmQcmBoxSampStub).string();
+        outsampfile = (output_path / outsampfile).string();
 
-      EcmQcmBoxSampStub = (output_path / EcmQcmBoxSampStub).string();
-      outsampfile = (output_path / outsampfile).string();
-
-      XMLHandler xmlcon;
-      DeterminantResidualFit DRF(xmlf, m_obs, xmlcon, EcmQcmBoxSampStub);
-      xmlout.put_child(xmlcon);
-      XMLHandler xmlof;
-      DRF.do_output(xmlof);
-      xmlout.put_child(xmlof);
-      doChiSquareFitting(DRF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs);
+        XMLHandler xmlcon;
+        master_DRF = make_unique<DeterminantResidualFit>(xmlf, m_obs, xmlcon, EcmQcmBoxSampStub);
+        xmlout.put_child(xmlcon);
+        XMLHandler xmlof;
+        master_DRF->do_output(xmlof);
+        xmlout.put_child(xmlof);
+      }
+      
+      if (mpi_size > 1) {
+        // Each rank creates its own clone for coordinated parallel fitting
+        unique_ptr<DeterminantResidualFit> DRF_clone = nullptr;
+        
+        if (mpi_rank == 0) {
+          // Rank 0 uses a clone of the master object
+          DRF_clone = master_DRF->clone(m_obs);
+        } else {
+          // Worker ranks create their own objects from XML (effectively independent clones)
+          XMLHandler xmlcon_dummy;
+          DRF_clone = make_unique<DeterminantResidualFit>(xmlf, m_obs, xmlcon_dummy, "");
+        }
+        
+        // All ranks (including rank 0) participate in coordinated MPI fitting using their own clones
+        // Rank 0 also does fitting work, not just initialization and output
+        string fitting_outsampfile = (mpi_rank == 0) ? outsampfile : "";
+        doChiSquareFittingMPI(*DRF_clone, mz_info, chisq_dof, qual, bestfit_params,
+                             param_covariance, fitting_outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
+      } else {
+        // Single process case - use the master object directly
+        doChiSquareFittingSerial(*master_DRF, mz_info, chisq_dof, qual, bestfit_params,
+                                param_covariance, outsampfile, xmlout, m_obs);
+      }
     } catch (const std::exception& xp) {
-      string msg("DetRes fit failed: ");
-      msg += xp.what();
-      xmlout.put_child("Error", msg);
-      throw(std::invalid_argument(msg));
+      if (mpi_rank == 0) {
+        string msg("DetRes fit failed: ");
+        msg += xp.what();
+        xmlout.put_child("Error", msg);
+        throw(std::invalid_argument(msg));
+      }
     }
   }
 
@@ -209,24 +243,52 @@ void TaskHandler::doFit(XMLHandler& xmltask, XMLHandler& xmlout,
       // get the quantization condition for the output directory
       string qctype;
       xmlreadif(xmltask, "QuantizationCondition", qctype, "SpectrumFit");
-      filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+      
+      // Only rank 0 creates master object and handles output directory/XML
+      unique_ptr<SpectrumFit> master_SF = nullptr;
+      if (mpi_rank == 0) {
+        filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+        EcmQcmBoxSampStub = (output_path / EcmQcmBoxSampStub).string();
+        outsampfile = (output_path / outsampfile).string();
 
-      EcmQcmBoxSampStub = (output_path / EcmQcmBoxSampStub).string();
-      outsampfile = (output_path / outsampfile).string();
-
-      XMLHandler xmlcon;
-      SpectrumFit SF(xmlf, m_obs, xmlcon, EcmQcmBoxSampStub);
-      xmlout.put_child(xmlcon);
-      XMLHandler xmlof;
-      SF.do_output(xmlof);
-      xmlout.put_child(xmlof);
-      doChiSquareFitting(SF, mz_info, chisq_dof, qual, bestfit_params,
-                         param_covariance, outsampfile, xmlout, m_obs);
+        XMLHandler xmlcon;
+        master_SF = make_unique<SpectrumFit>(xmlf, m_obs, xmlcon, EcmQcmBoxSampStub);
+        xmlout.put_child(xmlcon);
+        XMLHandler xmlof;
+        master_SF->do_output(xmlof);
+        xmlout.put_child(xmlof);
+      }
+      
+      if (mpi_size > 1) {
+        // Each rank creates its own clone for coordinated parallel fitting
+        unique_ptr<SpectrumFit> SF_clone = nullptr;
+        
+        if (mpi_rank == 0) {
+          // Rank 0 uses a clone of the master object
+          SF_clone = master_SF->clone(m_obs);
+        } else {
+          // Worker ranks create their own objects from XML (effectively independent clones)
+          XMLHandler xmlcon_dummy;
+          SF_clone = make_unique<SpectrumFit>(xmlf, m_obs, xmlcon_dummy, "");
+        }
+        
+        // All ranks (including rank 0) participate in coordinated MPI fitting using their own clones
+        // Rank 0 also does fitting work, not just initialization and output
+        string fitting_outsampfile = (mpi_rank == 0) ? outsampfile : "";
+        doChiSquareFittingMPI(*SF_clone, mz_info, chisq_dof, qual, bestfit_params,
+                             param_covariance, fitting_outsampfile, xmlout, m_obs, MPI_COMM_WORLD);
+      } else {
+        // Single process case - use the master object directly
+        doChiSquareFittingSerial(*master_SF, mz_info, chisq_dof, qual, bestfit_params,
+                                param_covariance, outsampfile, xmlout, m_obs);
+      }
     } catch (const std::exception& xp) {
-      string msg("Spectrum fit failed: ");
-      msg += xp.what();
-      xmlout.put_child("Error", msg);
-      throw(std::invalid_argument(msg));
+      if (mpi_rank == 0) {
+        string msg("Spectrum fit failed: ");
+        msg += xp.what();
+        xmlout.put_child("Error", msg);
+        throw(std::invalid_argument(msg));
+      }
     }
   }
 }
