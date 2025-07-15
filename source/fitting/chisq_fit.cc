@@ -326,9 +326,9 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   
   vector<double> params_sample;
   bool only_update_prior_initial_guesses = true;
-  
-  // Track failed fits for logging
-  list<uint> failed;
+
+  // Track failed fits for logging (local list per rank)
+  list<uint> failed_local;
   
 
   
@@ -339,6 +339,10 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
       my_samples.push_back(sampindex);
     }
   }
+
+  // Buffer to store this rank's fit results for communication
+  std::vector<double> local_results(my_samples.size() * nparams, 0.0);
+  std::size_t local_pos = 0;
   
   auto t0 = std::chrono::steady_clock::now();
   
@@ -365,18 +369,14 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     for (uint p = 0; p < nparams; ++p)
       logger << "params_sample[" << p << "] = " << params_sample[p] << '\n';
     
-    // Store results locally (don't write to kobs yet)
-    if (flag) {
-      for (uint p = 0; p < nparams; ++p)
-        kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
-                               params_sample[p]);
-    } else {
+    // Store results in local buffer for later communication
+    if (!flag) {
       logger << "Above fit failed!\n";
-      failed.push_back(sampindex);
-      for (uint p = 0; p < nparams; ++p)
-        kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
-                               params_fullsample[p]);
+      failed_local.push_back(sampindex);
+      params_sample = params_fullsample; // fall back to full-sample values
     }
+    for (uint p = 0; p < nparams; ++p)
+      local_results[local_pos++] = params_sample[p];
     
     // Show progress (rank 0 only). We extrapolate the work done by rank 0
     // to the whole set assuming balanced round-robin distribution. This
@@ -397,10 +397,89 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
 
   
   CSM.setVerbosity(origverbose);
-  
+
   // Critical: Ensure ALL ranks have completed writing their samples to kobs
   // before rank 0 tries to access the results
   MPI_Barrier(comm);
+
+  // ------------------------------------------------------------
+  // Gather fit results from all ranks to rank 0
+  // ------------------------------------------------------------
+  int sendcount = static_cast<int>(local_results.size());
+  std::vector<int> recvcounts;
+  std::vector<int> displs;
+  std::vector<double> all_results;
+  MPI_Gather(&sendcount, 1, MPI_INT,
+             rank == 0 ? (recvcounts.resize(size), recvcounts.data()) : nullptr,
+             1, MPI_INT, 0, comm);
+
+  if (rank == 0) {
+    displs.resize(size, 0);
+    int total = 0;
+    for (int r = 0; r < size; ++r) {
+      displs[r] = total;
+      total += recvcounts[r];
+    }
+    all_results.resize(total);
+  }
+
+  MPI_Gatherv(local_results.data(), sendcount, MPI_DOUBLE,
+               rank == 0 ? all_results.data() : nullptr,
+               rank == 0 ? recvcounts.data() : nullptr,
+               rank == 0 ? displs.data() : nullptr, MPI_DOUBLE, 0, comm);
+
+  // Gather failed sample indices
+  std::vector<uint> failed_vec(failed_local.begin(), failed_local.end());
+  int failed_count = static_cast<int>(failed_vec.size());
+  std::vector<int> recvcounts_fail;
+  std::vector<int> displs_fail;
+  std::vector<uint> all_failed;
+  MPI_Gather(&failed_count, 1, MPI_INT,
+             rank == 0 ? (recvcounts_fail.resize(size), recvcounts_fail.data()) : nullptr,
+             1, MPI_INT, 0, comm);
+
+  if (rank == 0) {
+    displs_fail.resize(size, 0);
+    int total_fail = 0;
+    for (int r = 0; r < size; ++r) {
+      displs_fail[r] = total_fail;
+      total_fail += recvcounts_fail[r];
+    }
+    all_failed.resize(total_fail);
+  }
+
+  MPI_Gatherv(failed_vec.data(), failed_count, MPI_UNSIGNED,
+               rank == 0 ? all_failed.data() : nullptr,
+               rank == 0 ? recvcounts_fail.data() : nullptr,
+               rank == 0 ? displs_fail.data() : nullptr,
+               MPI_UNSIGNED, 0, comm);
+
+  // Rank 0 inserts gathered results into its KBObsHandler
+  if (rank == 0) {
+    auto compute_samples = [&](int r) {
+      std::vector<uint> s;
+      for (uint samp = 1; samp <= nsamplings; ++samp)
+        if ((samp - 1) % size == static_cast<uint>(r))
+          s.push_back(samp);
+      return s;
+    };
+
+    for (int r = 0; r < size; ++r) {
+      auto samp_r = compute_samples(r);
+      for (std::size_t idx = 0; idx < samp_r.size(); ++idx) {
+        uint sampindex = samp_r[idx];
+        std::size_t base = displs[r] + idx * nparams;
+        for (uint p = 0; p < nparams; ++p) {
+          double val = all_results[base + p];
+          kobs->putSamplingValue(kbfitparaminfos[p], sampindex, val);
+        }
+      }
+    }
+
+    for (uint fi : all_failed) {
+      failed_local.push_back(fi);
+    }
+  }
   
   if (rank == 0) {
     std::cerr << "\nAll ranks completed resampling fits. Finalizing results..." << std::endl;
@@ -489,9 +568,9 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     xmlres.put_child(xmlcov);
     xmlout.put_child(xmlres);
     
-    if (failed.size() > 0) {
+    if (!failed_local.empty()) {
       XMLHandler xmlf("FailedResamplings");
-      for (list<uint>::const_iterator it = failed.begin(); it != failed.end(); ++it) {
+      for (list<uint>::const_iterator it = failed_local.begin(); it != failed_local.end(); ++it) {
         xmlf.put_child("FailedIndex", make_string(*it));
       }
       xmlout.put_child(xmlf);
