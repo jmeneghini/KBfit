@@ -612,6 +612,12 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
 
 void DeterminantResidualFit::guessInitialFitParamValues(
     vector<double>& fitparams, bool only_update_priors) const {
+
+  if (only_update_priors) {
+    // No priors, so simply leave the vector untouched.
+    return;
+  }
+
   if (Kmat != 0)
     fitparams = Kmat->getParameterValues();
   else

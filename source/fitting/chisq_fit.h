@@ -11,35 +11,56 @@
 #include <string>
 #include <iomanip>
 #include <chrono>
+#include <memory>
 #include <mpi.h>
+#include "indicators.h"  // single-header Indicators library
 
 // ****************************************************************
 // just a simple progress bar for the console output
 // it shows the progress of a loop, with an estimated time of arrival
 // ****************************************************************
 
-void inline show_progress(std::size_t i, std::size_t total,
-                          std::chrono::steady_clock::time_point t0,
-                          std::ostream& out = std::cerr)
+void inline show_progress(std::size_t i, std::size_t total)
 {
-  const int bar_width = 44;
-  double frac = static_cast<double>(i) / total;
+  // Use a static pointer to persist the bar across calls.
+  static std::unique_ptr<indicators::ProgressBar> bar_ptr;
+  // Use a static total to detect when a new fit with a different number of samples starts.
+  static std::size_t bar_total = 0;
 
-  int done = static_cast<int>(bar_width * frac);
-  int todo = bar_width - done;
+  // (Re)initialize if this is the first call, or if the total number of samples has changed.
+  if (!bar_ptr || bar_total != total) {
+    bar_total = total;
+    bar_ptr = std::make_unique<indicators::ProgressBar>(
+        indicators::option::BarWidth{50},
+        indicators::option::Start{"["},
+        indicators::option::Fill{"="},
+        indicators::option::Lead{">"},
+        indicators::option::Remainder{" "},
+        indicators::option::End{"]"},
+        indicators::option::ShowElapsedTime{true},
+        indicators::option::ShowRemainingTime{true},
+        indicators::option::MaxProgress{total},
+        indicators::option::ForegroundColor{indicators::Color::cyan}
+    );
+  }
 
-  // ETA:
-  using clock = std::chrono::steady_clock;
-  auto now   = clock::now();
-  double secs = std::chrono::duration<double>(now - t0).count();
-  double eta  = secs / (frac ? frac : 1) - secs;
+  if (bar_ptr) {
+    // Update the prefix to show the current sample count.
+    bar_ptr->set_option(indicators::option::PrefixText{
+        "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "
+    });
 
-  out << '\r' << "["
-      << std::string(done, '=') << std::string(todo, ' ')
-      << "] " << std::setw(5) << static_cast<int>(frac * 100) << "% "
-      << "(sample: " << i << "/" << total << ", ETA: " << std::fixed
-      << std::setprecision(0) << eta << " s)";
-  out.flush();
+    bar_ptr->set_progress(i);
+
+    // When the loop is finished, mark as complete and clean up.
+    if (i >= total) {
+      bar_ptr->set_option(indicators::option::ForegroundColor{indicators::Color::green});
+      bar_ptr->mark_as_completed();
+      // Reset the pointer to ensure a new bar is created for any subsequent fits.
+      // The ProgressBar destructor handles the final newline.
+      bar_ptr.reset();
+    }
+  }
 }
 
 

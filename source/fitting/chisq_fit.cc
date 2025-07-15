@@ -6,10 +6,7 @@
 #include <cstdio>
 using namespace std;
 
-// *************************************************************************
-
 // Runs the chi-square fitting procedure, either in serial or MPI mode.
-
 void doChiSquareFitting(ChiSquare& chisq_ref,
                         const ChiSquareMinimizerInfo& csm_info,
                         double& chisq_dof, double& fitqual,
@@ -35,7 +32,6 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                                      xmlout, kobs, MPI_COMM_WORLD);
     return;
   }
-
   std::cerr << "Running ChiSquareFitting in serial mode" << std::endl;
   doChiSquareFittingSerial(chisq_ref, csm_info, chisq_dof, fitqual,
                           bestfit_params, param_covariance, out_sampling_file,
@@ -121,8 +117,6 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   char origverbose = CSM.getVerbosity();
   CSM.setVerbosity('L');                             // quiet inner fits
 
-  auto   t0              = std::chrono::steady_clock::now();
-  int    last_percent    = -1;                       // nothing printed yet
   const  std::size_t N   = nsamplings;               // total samples
   only_update_prior_initial_guesses = true;
 
@@ -136,14 +130,10 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
 
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
 
-    // ── progress bar ------------------------------------------------------
-    int percent = static_cast<int>(100.0 * sampindex / N + 0.5); // round
-    if (percent != last_percent || sampindex == N) {
-      show_progress(sampindex, N, t0);          // updates the bar
-      last_percent = percent;
-    }
+    // progress bar (handled internally by Indicators)
+    show_progress(sampindex, N);
 
-    // ── detailed per-sample log------------------------------
+    // detailed per-sample log
     logger << "Resamplings index = " << sampindex
            << " chisq = "            << chisq_samp << '\n';
     for (uint p = 0; p < nparams; ++p)
@@ -215,10 +205,9 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   xmlout.put_child(xmlres);
 }
 
-// *************************************************************************
-// MPI Parallel version with coordinated ChiSquare access
-// *************************************************************************
 
+
+// MPI Parallel version
 void doChiSquareFittingMPI(ChiSquare& chisq_ref,
                                      const ChiSquareMinimizerInfo& csm_info,
                                      double& chisq_dof, double& fitqual,
@@ -347,8 +336,10 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   auto t0 = std::chrono::steady_clock::now();
   
   // Initialize counters for the rank-0 progress bar
-  std::size_t completed_local = 0;
-  int         last_percent    = -1;
+  std::size_t completed_local = 0; // only for estimating global progress
+  // progress bar handled inside show_progress; no extra bookkeeping needed
+  const  std::size_t N   = nsamplings;               // total samples
+  only_update_prior_initial_guesses = true;
 
   // Process assigned resamplings
   for (uint sampindex : my_samples) {
@@ -386,11 +377,7 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
       ++completed_local; // one more sample finished on rank 0
       std::size_t global_est = std::min<std::size_t>(completed_local * size,
                                                      nsamplings);
-      int percent = static_cast<int>(100.0 * global_est / nsamplings + 0.5);
-      if (percent != last_percent || global_est == nsamplings) {
-        show_progress(global_est, nsamplings, t0);
-        last_percent = percent;
-      }
+      show_progress(global_est, nsamplings);
     }
   }
   

@@ -138,19 +138,6 @@ int main(int argc, const char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   
-  // Handle different launch modes
-  if (size > 1) {
-    if (rank == 0) {
-      cout << "KBfit detected " << size << " MPI processes at startup." << endl;
-      cout << "Using traditional MPI mode - all processes will participate in chi-square fitting." << endl;
-    }
-    // All processes continue - this enables traditional MPI mode
-  } else {
-    if (rank == 0) {
-      cout << "KBfit starting in single-process mode - serial execution" << endl;
-    }
-  }
-  
   // Only rank 0 handles command line processing and output
   int return_code = 0;
   
