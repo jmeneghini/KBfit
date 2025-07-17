@@ -5,8 +5,14 @@ on:
   pull_request:
     branches: [ main, spectrum_fits ]
 
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
 jobs:
-  # Auto-format code on push (ensuring consistent formatting)
+  # Auto-format code on push
   auto-format:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
@@ -16,16 +22,31 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
       
+      - name: Check if last commit was auto-format
+        id: check-last-commit
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          if [[ "$LAST_COMMIT_MSG" == "Auto-format code with clang-format" ]]; then
+            echo "Last commit was auto-format, skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Last commit was not auto-format, proceeding"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      
       - name: Install clang-format
+        if: steps.check-last-commit.outputs.skip == 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-format
       
       - name: Run clang-format
+        if: steps.check-last-commit.outputs.skip == 'false'
         run: |
           find source -name "*.h" -o -name "*.cc" -o -name "*.cpp" -o -name "*.c" | xargs clang-format -i
       
       - name: Check for formatting changes
+        if: steps.check-last-commit.outputs.skip == 'false'
         id: format-check
         run: |
           if git diff --quiet; then
@@ -37,7 +58,7 @@ jobs:
           fi
       
       - name: Commit formatting changes
-        if: steps.format-check.outputs.changes == 'true'
+        if: steps.check-last-commit.outputs.skip == 'false' && steps.format-check.outputs.changes == 'true'
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
