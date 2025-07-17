@@ -862,9 +862,13 @@ namespace details {
 
 template <bool condition> struct if_else;
 
-template <> struct if_else<true> { using type = std::true_type; };
+template <> struct if_else<true> {
+  using type = std::true_type;
+};
 
-template <> struct if_else<false> { using type = std::false_type; };
+template <> struct if_else<false> {
+  using type = std::false_type;
+};
 
 template <bool condition, typename True, typename False> struct if_else_type;
 
@@ -1019,9 +1023,10 @@ struct option_idx<Id, std::tuple<>, counter> {
 };
 
 template <ProgressBarOption Id, typename Settings>
-auto get_value(Settings&& settings) -> decltype((
-    std::get<option_idx<Id, typename std::decay<Settings>::type>::value>(
-        std::declval<Settings&&>()))) {
+auto get_value(Settings&& settings)
+    -> decltype((
+        std::get<option_idx<Id, typename std::decay<Settings>::type>::value>(
+            std::declval<Settings&&>()))) {
   return std::get<option_idx<Id, typename std::decay<Settings>::type>::value>(
       std::forward<Settings>(settings));
 }
@@ -1967,8 +1972,9 @@ private:
   }
 
   template <details::ProgressBarOption id>
-  auto get_value() const -> decltype((
-      details::get_value<id>(std::declval<const Settings&>()).value)) {
+  auto get_value() const
+      -> decltype((
+          details::get_value<id>(std::declval<const Settings&>()).value)) {
     return details::get_value<id>(settings_).value;
   }
 
@@ -2303,8 +2309,9 @@ private:
   }
 
   template <details::ProgressBarOption id>
-  auto get_value() const -> decltype((
-      details::get_value<id>(std::declval<const Settings&>()).value)) {
+  auto get_value() const
+      -> decltype((
+          details::get_value<id>(std::declval<const Settings&>()).value)) {
     return details::get_value<id>(settings_).value;
   }
 
@@ -2631,8 +2638,9 @@ private:
   }
 
   template <details::ProgressBarOption id>
-  auto get_value() const -> decltype((
-      details::get_value<id>(std::declval<const Settings&>()).value)) {
+  auto get_value() const
+      -> decltype((
+          details::get_value<id>(std::declval<const Settings&>()).value)) {
     return details::get_value<id>(settings_).value;
   }
 
@@ -2892,8 +2900,9 @@ private:
   }
 
   template <details::ProgressBarOption id>
-  auto get_value() const -> decltype((
-      details::get_value<id>(std::declval<const Settings&>()).value)) {
+  auto get_value() const
+      -> decltype((
+          details::get_value<id>(std::declval<const Settings&>()).value)) {
     return details::get_value<id>(settings_).value;
   }
 
@@ -3106,8 +3115,9 @@ private:
   }
 
   template <details::ProgressBarOption id>
-  auto get_value() const -> decltype((
-      details::get_value<id>(std::declval<const Settings&>()).value)) {
+  auto get_value() const
+      -> decltype((
+          details::get_value<id>(std::declval<const Settings&>()).value)) {
     return details::get_value<id>(settings_).value;
   }
 

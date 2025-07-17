@@ -29,7 +29,7 @@ typedef unsigned int uint;
 
 // Use the #define below to include range checking code.
 // Do not define and range checking code is omitted (faster).
-//#define SAFETY_FLAG
+// #define SAFETY_FLAG
 
 template <typename T> class Array {
 

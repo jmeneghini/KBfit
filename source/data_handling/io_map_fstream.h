@@ -12,7 +12,7 @@
 #endif
 
 #define UINTSIZE 4
-//#define SIZETSIZE    4
+// #define SIZETSIZE    4
 #define SIZETSIZE 8
 #define ULONGLONG 8
 
