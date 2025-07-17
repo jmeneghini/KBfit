@@ -237,7 +237,7 @@ class KtildeInverseCalculator {
   KtildeInverseCalculator& operator=(const KtildeInverseCalculator& inK);
 
 public:
-  // Default constructor for cloning  
+  // Default constructor for cloning
   KtildeInverseCalculator();
 
   KtildeInverseCalculator(XMLHandler& xmlin, bool require_initvals = false);

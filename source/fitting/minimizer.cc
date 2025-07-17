@@ -300,7 +300,7 @@ bool ChiSquareMinimizer::find_minimum_minuit2(
     throw(std::invalid_argument("Invalid starting parameters"));
 
   /* --- OPTIONAL: turn live logging on/off from XML -------------- */
-  const bool want_trace = (verbosity != 'L');   // Medium or High
+  const bool want_trace = (verbosity != 'L'); // Medium or High
 
   if (want_trace) {
     // 0 = silent, 1 = low, 2 = medium, 3 = high (lots of lines)

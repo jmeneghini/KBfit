@@ -328,8 +328,8 @@ char IOHDF5Handler::query_obj(const std::string& objname) const {
       return 'N';
   }
   H5O_info2_t objinfo;
-  herr_t errhandle =
-      H5Oget_info_by_name(*cwdptr, objname.c_str(), &objinfo, H5O_INFO_ALL, H5P_DEFAULT);
+  herr_t errhandle = H5Oget_info_by_name(*cwdptr, objname.c_str(), &objinfo,
+                                         H5O_INFO_ALL, H5P_DEFAULT);
   if (errhandle < 0) {
     check_for_herr_failure(errhandle, "query_obj failed");
   }
@@ -778,7 +778,7 @@ void IOHDF5Handler::write(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
-  
+
   // Delete existing dataset if it exists (for overwriting)
   delete_dataset_if_exists(objname);
   int n = output.length();
@@ -1198,7 +1198,7 @@ void IOHDF5Handler::delete_dataset_if_exists(const std::string& objname) {
   if (!openflag || read_only) {
     return;
   }
-  
+
   // Check if the dataset exists
   if (queryData(objname)) {
     std::string obj(tidyString(objname));

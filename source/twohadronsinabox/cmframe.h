@@ -152,10 +152,10 @@ public:
 
   std::list<double>
   getAllFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
-                                   double max_Elab_over_mref) const;
+                                      double max_Elab_over_mref) const;
   std::list<double>
   getAllFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
-                                  double max_Ecm_over_mref) const;
+                                     double max_Ecm_over_mref) const;
 
 private:
   void assertlabmin(double Elab_over_mref) const {

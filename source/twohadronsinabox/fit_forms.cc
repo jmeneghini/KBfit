@@ -1,9 +1,9 @@
 #include "fit_forms.h"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <regex>
 #include <set>
-#include <limits>
 
 using namespace std;
 
@@ -233,7 +233,7 @@ void SumOfPolesPlusPolynomial::Kinitialize(
 
 // ***************************************************************************************
 
-Expression::Expression() 
+Expression::Expression()
     : m_expression("0"), m_x_value(0.0), m_parser_initialized(false) {}
 
 Expression::Expression(const std::string& expression)
@@ -244,12 +244,12 @@ Expression::Expression(const std::string& expression)
 Expression::Expression(XMLHandler& xmlin) : m_parser_initialized(false) {
   try {
     XMLHandler xmlf(xmlin, "Expression");
-    
+
     // Read expression
     xmlread(xmlf, "String", m_expression, "Expression");
-    
+
     m_x_value = 0.0;
-    
+
     // Parse the expression to extract parameter names
     parseExpression();
   } catch (const std::exception& xp) {
@@ -259,9 +259,9 @@ Expression::Expression(XMLHandler& xmlin) : m_parser_initialized(false) {
 }
 
 Expression::Expression(const Expression& in)
-    : m_expression(in.m_expression), 
-      m_param_names(in.m_param_names), m_param_indices(in.m_param_indices),
-      m_x_value(0.0), m_parser_initialized(false) {}
+    : m_expression(in.m_expression), m_param_names(in.m_param_names),
+      m_param_indices(in.m_param_indices), m_x_value(0.0),
+      m_parser_initialized(false) {}
 
 Expression& Expression::operator=(const Expression& in) {
   m_expression = in.m_expression;
@@ -277,18 +277,21 @@ void Expression::parseExpression() {
   // This approach finds all potential variable names before setting up muParser
   try {
     m_param_names.clear();
-    
-    // Use regex to find all potential variable names (alphanumeric + underscore, not starting with digit or underscore)
-    // TODO: this will be changed later when MCObs support is added for constants
+
+    // Use regex to find all potential variable names (alphanumeric +
+    // underscore, not starting with digit or underscore)
+    // TODO: this will be changed later when MCObs support is added for
+    // constants
     std::regex var_regex(R"([a-zA-Z][a-zA-Z0-9_]*)");
-    std::sregex_iterator iter(m_expression.begin(), m_expression.end(), var_regex);
+    std::sregex_iterator iter(m_expression.begin(), m_expression.end(),
+                              var_regex);
     std::sregex_iterator end;
-    
+
     std::set<std::string> unique_vars;
     for (; iter != end; ++iter) {
       std::string var = iter->str();
       // Skip common mathematical functions and constants
-      if (var != "x" && var != "sin" && var != "cos" && var != "tan" && 
+      if (var != "x" && var != "sin" && var != "cos" && var != "tan" &&
           var != "exp" && var != "log" && var != "sqrt" && var != "abs" &&
           var != "pi" && var != "e" && var != "ln" && var != "log10" &&
           var != "sinh" && var != "cosh" && var != "tanh" && var != "asin" &&
@@ -297,23 +300,25 @@ void Expression::parseExpression() {
         unique_vars.insert(var);
       }
     }
-    
+
     // Convert set to vector
     for (const auto& var : unique_vars) {
       m_param_names.push_back(var);
     }
-    
+
     // Now set up muParser with all discovered variables
     setupMuParser();
-    
+
     // Test parsing
     m_parser.SetExpr(m_expression);
     m_parser.Eval(); // This will throw if there are syntax errors
-    
-  } catch (mu::Parser::exception_type &e) {
-    throw std::invalid_argument("Expression parsing error: " + std::string(e.GetMsg()));
+
+  } catch (mu::Parser::exception_type& e) {
+    throw std::invalid_argument("Expression parsing error: " +
+                                std::string(e.GetMsg()));
   } catch (const std::exception& e) {
-    throw std::invalid_argument("Expression parsing error: " + std::string(e.what()));
+    throw std::invalid_argument("Expression parsing error: " +
+                                std::string(e.what()));
   }
 }
 
@@ -324,33 +329,34 @@ void Expression::setupMuParser() const {
 
   // Clear only variables, keep built-in functions and operators
   m_parser.ClearVar();
-  
+
   // Define the independent variable
   m_parser.DefineVar("x", &m_x_value);
-  
+
   // Resize parameter values vector if needed
   if (m_param_values.size() != m_param_names.size()) {
     m_param_values.resize(m_param_names.size(), 0.0);
   }
-  
+
   // Define parameter variables
   for (size_t i = 0; i < m_param_names.size(); ++i) {
     m_parser.DefineVar(m_param_names[i], &m_param_values[i]);
   }
-  
+
   // Set the expression
   m_parser.SetExpr(m_expression);
   m_parser_initialized = true;
 }
 
-double Expression::evaluate(const std::vector<double>& params, double Ecm_over_mref) const {
+double Expression::evaluate(const std::vector<double>& params,
+                            double Ecm_over_mref) const {
   try {
     // Set up muParser if not already done
     setupMuParser();
-    
+
     // Set the independent variable directly to Ecm_over_mref
     m_x_value = Ecm_over_mref;
-    
+
     // Set parameter values
     for (size_t i = 0; i < m_param_names.size(); ++i) {
       if (i < m_param_indices.size() && m_param_indices[i] < params.size()) {
@@ -359,18 +365,19 @@ double Expression::evaluate(const std::vector<double>& params, double Ecm_over_m
         }
       } else {
         if (i < m_param_values.size()) {
-          throw std::out_of_range("Parameter index out of range for params vector."
-                                  " Likely a failure in parameter initialization.");
+          throw std::out_of_range(
+              "Parameter index out of range for params vector."
+              " Likely a failure in parameter initialization.");
         }
       }
     }
-    
+
     // Evaluate the expression using muParser
     double result = m_parser.Eval();
-    
+
     return result;
-    
-  } catch (mu::Parser::exception_type &e) {
+
+  } catch (mu::Parser::exception_type& e) {
     return std::numeric_limits<double>::quiet_NaN();
   } catch (const std::exception& e) {
     return std::numeric_limits<double>::quiet_NaN();
@@ -388,19 +395,18 @@ std::vector<std::string> Expression::getParameterNames() const {
   return param_names_copy;
 }
 
-
 void Expression::Kinitialize(const KElementInfo& kelem,
-                                         std::map<KFitParamInfo, uint>& paramindices) {
+                             std::map<KFitParamInfo, uint>& paramindices) {
   m_param_indices.resize(m_param_names.size());
-  
+
   // Get registry instance
   ParameterNameRegistry& registry = ParameterNameRegistry::getInstance();
-  
+
   for (size_t i = 0; i < m_param_names.size(); ++i) {
 
     // Create a KFitParamInfo using the hash from the registry
     KFitParamInfo kpinfo(kelem, m_param_names[i], registry);
-    
+
     auto it = paramindices.find(kpinfo);
     if (it != paramindices.end()) {
       m_param_indices[i] = it->second;

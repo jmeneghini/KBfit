@@ -16,32 +16,38 @@ KtildeMatrixCalculator::~KtildeMatrixCalculator() {
 
 std::unique_ptr<KtildeMatrixCalculator> KtildeMatrixCalculator::clone() const {
   // Create new instance using default constructor
-  auto cloned = std::unique_ptr<KtildeMatrixCalculator>(new KtildeMatrixCalculator());
-  
+  auto cloned =
+      std::unique_ptr<KtildeMatrixCalculator>(new KtildeMatrixCalculator());
+
   // Copy value-type members
   cloned->m_paraminfo = this->m_paraminfo;
   cloned->m_paramindices = this->m_paramindices;
   cloned->m_kappa_params = this->m_kappa_params;
   cloned->m_decay_infos = this->m_decay_infos;
-  
+
   // Deep copy FitForm objects in m_fit
   for (const auto& pair : this->m_fit) {
     const KElementInfo& key = pair.first;
     const FitForm* original_fitform = pair.second;
-    
+
     if (original_fitform != nullptr) {
       // Note: This requires FitForm to have a proper copy/clone mechanism
       // You may need to implement virtual clone methods in FitForm hierarchy
       // Use dynamic_cast to determine actual type and create appropriate copy
       FitForm* cloned_fitform = nullptr;
-      
-      if (const Polynomial* poly = dynamic_cast<const Polynomial*>(original_fitform)) {
+
+      if (const Polynomial* poly =
+              dynamic_cast<const Polynomial*>(original_fitform)) {
         cloned_fitform = new Polynomial(*poly);
-      } else if (const SumOfPoles* sumpoles = dynamic_cast<const SumOfPoles*>(original_fitform)) {
+      } else if (const SumOfPoles* sumpoles =
+                     dynamic_cast<const SumOfPoles*>(original_fitform)) {
         cloned_fitform = new SumOfPoles(*sumpoles);
-      } else if (const SumOfPolesPlusPolynomial* sumpolespoly = dynamic_cast<const SumOfPolesPlusPolynomial*>(original_fitform)) {
+      } else if (const SumOfPolesPlusPolynomial* sumpolespoly =
+                     dynamic_cast<const SumOfPolesPlusPolynomial*>(
+                         original_fitform)) {
         cloned_fitform = new SumOfPolesPlusPolynomial(*sumpolespoly);
-      } else if (const Expression* expr = dynamic_cast<const Expression*>(original_fitform)) {
+      } else if (const Expression* expr =
+                     dynamic_cast<const Expression*>(original_fitform)) {
         cloned_fitform = new Expression(*expr);
       } else {
         throw std::runtime_error("Unknown FitForm type in clone()");
@@ -51,7 +57,7 @@ std::unique_ptr<KtildeMatrixCalculator> KtildeMatrixCalculator::clone() const {
       cloned->m_fit[key] = nullptr;
     }
   }
-  
+
   return cloned;
 }
 
@@ -321,34 +327,41 @@ KtildeInverseCalculator::~KtildeInverseCalculator() {
     delete it->second;
 }
 
-std::unique_ptr<KtildeInverseCalculator> KtildeInverseCalculator::clone() const {
+std::unique_ptr<KtildeInverseCalculator>
+KtildeInverseCalculator::clone() const {
   // Create new instance using default constructor
-  auto cloned = std::unique_ptr<KtildeInverseCalculator>(new KtildeInverseCalculator());
-  
+  auto cloned =
+      std::unique_ptr<KtildeInverseCalculator>(new KtildeInverseCalculator());
+
   // Copy value-type members
   cloned->m_paraminfo = this->m_paraminfo;
   cloned->m_paramindices = this->m_paramindices;
   cloned->m_kappa_params = this->m_kappa_params;
   cloned->m_decay_infos = this->m_decay_infos;
-  
+
   // Deep copy FitForm objects in m_fit
   for (const auto& pair : this->m_fit) {
     const KElementInfo& key = pair.first;
     const FitForm* original_fitform = pair.second;
-    
+
     if (original_fitform != nullptr) {
       // Note: This requires FitForm to have a proper copy/clone mechanism
       // You may need to implement virtual clone methods in FitForm hierarchy
       // Use dynamic_cast to determine actual type and create appropriate copy
       FitForm* cloned_fitform = nullptr;
-      
-      if (const Polynomial* poly = dynamic_cast<const Polynomial*>(original_fitform)) {
+
+      if (const Polynomial* poly =
+              dynamic_cast<const Polynomial*>(original_fitform)) {
         cloned_fitform = new Polynomial(*poly);
-      } else if (const SumOfPoles* sumpoles = dynamic_cast<const SumOfPoles*>(original_fitform)) {
+      } else if (const SumOfPoles* sumpoles =
+                     dynamic_cast<const SumOfPoles*>(original_fitform)) {
         cloned_fitform = new SumOfPoles(*sumpoles);
-      } else if (const SumOfPolesPlusPolynomial* sumpolespoly = dynamic_cast<const SumOfPolesPlusPolynomial*>(original_fitform)) {
+      } else if (const SumOfPolesPlusPolynomial* sumpolespoly =
+                     dynamic_cast<const SumOfPolesPlusPolynomial*>(
+                         original_fitform)) {
         cloned_fitform = new SumOfPolesPlusPolynomial(*sumpolespoly);
-      } else if (const Expression* expr = dynamic_cast<const Expression*>(original_fitform)) {
+      } else if (const Expression* expr =
+                     dynamic_cast<const Expression*>(original_fitform)) {
         cloned_fitform = new Expression(*expr);
       } else {
         throw std::runtime_error("Unknown FitForm type in clone()");
@@ -358,7 +371,7 @@ std::unique_ptr<KtildeInverseCalculator> KtildeInverseCalculator::clone() const 
       cloned->m_fit[key] = nullptr;
     }
   }
-  
+
   return cloned;
 }
 

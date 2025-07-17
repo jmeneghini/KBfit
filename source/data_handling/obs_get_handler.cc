@@ -151,8 +151,8 @@ void MCObsGetHandler::connectSamplingFiles(
         if ((kt != keys_to_keep.end()) && (!((kt->second).empty()))) {
           if (!(pt->second->keepKeys(kt->second)))
             throw(std::runtime_error(" The observable " +
-                                   kt->second.begin()->output() +
-                                   " from the ensemble " + mcens.output()));
+                                     kt->second.begin()->output() +
+                                     " from the ensemble " + mcens.output()));
         }
       }
     } catch (const std::exception& xp) {
@@ -379,12 +379,13 @@ void MCObsGetHandler::getFileMap(XMLHandler& xmlout) const {
 
 std::pair<MCBinsInfo, MCSamplingInfo>
 MCObsGetHandler::get_info_from_file(const std::string& filename) {
-  // First, try to peek the file ID to determine the format and verify it's a Sigmond file
+  // First, try to peek the file ID to determine the format and verify it's a
+  // Sigmond file
   std::string ID;
   IOFSTRHandler iohA;
   IOHDF5Handler iohB;
   bool is_hdf5 = false;
-  
+
   string::size_type pos = filename.find("[");
   string basename;
   if (pos != string::npos) {
@@ -399,12 +400,12 @@ MCObsGetHandler::get_info_from_file(const std::string& filename) {
   // If that fails, try HDF5 format
   else if (iohB.peekID(ID, basename)) {
     is_hdf5 = true;
-  }
-  else {
-    m_logger << "Error: could not extract ID string from file " << filename << endl;
+  } else {
+    m_logger << "Error: could not extract ID string from file " << filename
+             << endl;
     throw(std::runtime_error("Could not extract ID string from file"));
   }
-  
+
   ID = tidyString(ID);
   string sID("Sigmond--SamplingsFile");
   if (ID != sID) {
@@ -413,7 +414,7 @@ MCObsGetHandler::get_info_from_file(const std::string& filename) {
     m_logger << "Expected ID: <" << sID << ">" << endl;
     throw(std::runtime_error("Invalid Sigmond samplings file"));
   }
-  
+
   // Now open the file using IOMap which will auto-detect the format
   IOMap<MCObsInfo, Vector<double>> iom;
   iom.openReadOnly(filename, sID);

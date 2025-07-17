@@ -268,7 +268,6 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     KtildeMatrixCalculator* Kmat = 0;
     KtildeInverseCalculator* Kinv = 0;
 
-
     // check if we're printing eigenvalues
     int count_print_eigenvals =
         xmltask.count_among_children("PrintEigenvalues");
@@ -348,8 +347,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     bool energy_ratios = true;
     {
       string reply;
-      xmlreadif(xmltask, "DefaultEnergyFormat", reply,
-                "DoPrint");
+      xmlreadif(xmltask, "DefaultEnergyFormat", reply, "DoPrint");
       if ((reply == "reference_ratio") || (reply.empty()))
         energy_ratios = true;
       else if (reply == "time_spacing_product")
@@ -394,17 +392,16 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       string pname;
       MCObsInfo rkey;
       // get lattice spacing times reference scale info
-      ChiSquare::read_obs(*it, "ReferenceMassTimeSpacingProduct",
-                                       false, rkey, kset, pname, mcens,
-                                       fixed_values);
+      ChiSquare::read_obs(*it, "ReferenceMassTimeSpacingProduct", false, rkey,
+                          kset, pname, mcens, fixed_values);
       ref_at_mass.insert(make_pair(mcens, rkey));
       if (!energy_ratios) {
         kset.erase(rkey);
       } // remove ref_at_mass from kset
       // get anisotropy info
       if (xml_tag_count(*it, "LatticeAnisotropy") == 1) {
-        ChiSquare::read_obs(*it, "LatticeAnisotropy", false, rkey,
-                                         kset, pname, mcens, fixed_values);
+        ChiSquare::read_obs(*it, "LatticeAnisotropy", false, rkey, kset, pname,
+                            mcens, fixed_values);
         anisotropy.insert(make_pair(mcens, rkey));
       }
       // get particle mass infos
@@ -412,8 +409,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
       list<XMLHandler> xmlp = it->find("ParticleMass");
       for (list<XMLHandler>::iterator pt = xmlp.begin(); pt != xmlp.end();
            ++pt) {
-        ChiSquare::read_obs(*pt, "ParticleMass", true, rkey, kset,
-                                         pname, mcens, fixed_values);
+        ChiSquare::read_obs(*pt, "ParticleMass", true, rkey, kset, pname, mcens,
+                            fixed_values);
         if (pmap.find(pname) != pmap.end())
           throw(std::invalid_argument("Duplicate particle masses"));
         pmap.insert(make_pair(pname, rkey));
@@ -598,7 +595,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
     }
 
     //  Create output directory structure using the new utility function
-    filesystem::path output_path = createKBOutputDirectory(m_output_directory, qctype);
+    filesystem::path output_path =
+        createKBOutputDirectory(m_output_directory, qctype);
 
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
       const MCEnsembleInfo& mcens = blockens[blocknum];
@@ -676,7 +674,8 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
 
       fout_nis << "E_lab,E_cm" << endl;
 
-      list<double> ni_energies = bqptr->getFreeTwoParticleEnergiesInElab(emin, emax);
+      list<double> ni_energies =
+          bqptr->getFreeTwoParticleEnergiesInElab(emin, emax);
       for (double& ni_energy : ni_energies) {
         double ecm_energy = bqptr->getEcmOverMrefFromElab(ni_energy);
         fout_nis << ni_energy << "," << ecm_energy << endl;
@@ -746,7 +745,7 @@ void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
         std::vector<double> roots;
         std::vector<uint> fn_calls;
         bqptr->getEcmRootsInElabInterval(omega_mu, emin, emax, qctype_enum,
-                                      root_config, roots, fn_calls);
+                                         root_config, roots, fn_calls);
         ofstream fout_roots(roots_filepath.string());
 
         fout_roots << header << "\n\n";

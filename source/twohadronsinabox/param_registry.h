@@ -17,7 +17,6 @@ typedef unsigned int uint;
 //  storing duplicate parameter name strings in multiple objects while still
 //  allowing retrieval of the original names when needed.
 
-
 class ParameterNameRegistry {
 public:
   // Get the singleton instance
@@ -63,4 +62,4 @@ private:
   std::unordered_map<std::string, uint> m_name_to_hash;
 };
 
-#endif //PARAM_REGISTRY_H
+#endif // PARAM_REGISTRY_H

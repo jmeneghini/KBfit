@@ -3,8 +3,8 @@
 
 #include "K_matrix_info.h"
 #include "xml_handler.h"
-#include <map>
 #include <cassert>
+#include <map>
 #include <muParser.h>
 #include <string>
 
@@ -218,8 +218,9 @@ private:
 };
 
 //  The class "Expression" describes a fit function defined by
-//  a mathematical expression string that is parsed and evaluated using muParser.
-//  The expression can contain an independent variable (x: Ecm/mref) and named parameters.
+//  a mathematical expression string that is parsed and evaluated using
+//  muParser. The expression can contain an independent variable (x: Ecm/mref)
+//  and named parameters.
 //
 //  XML input:
 //       <Expression>
@@ -227,16 +228,16 @@ private:
 //       </Expression>
 //
 //  The parameters (a, b, c in the example; alphanumeric + underscore,
-//  not starting with a digit, in general) are automatically detected from the expression
-//  and their starting values are provided through the KFitParamInfo mechanism
-//  in the StartingValues section of the K-matrix calculator.
+//  not starting with a digit, in general) are automatically detected from the
+//  expression and their starting values are provided through the KFitParamInfo
+//  mechanism in the StartingValues section of the K-matrix calculator.
 
 class Expression : public FitForm {
-  
+
   std::string m_expression;
   std::vector<std::string> m_param_names;
   std::vector<uint> m_param_indices;
-  
+
   // muParser related members
   mutable mu::Parser m_parser;
   mutable double m_x_value;
@@ -250,7 +251,8 @@ public:
   Expression(const Expression& in);
   Expression& operator=(const Expression& in);
   virtual ~Expression() {}
-  double evaluate(const std::vector<double>& params, double Ecm_over_mref) const override;
+  double evaluate(const std::vector<double>& params,
+                  double Ecm_over_mref) const override;
   void output(XMLHandler& xmlout) const override; // XML output
   std::vector<std::string> getParameterNames() const;
   using FitForm::output;
@@ -259,7 +261,7 @@ private:
   void parseExpression();
   void setupMuParser() const;
   void Kinitialize(const KElementInfo& kelem,
-                           std::map<KFitParamInfo, uint>& paramindices) override;
+                   std::map<KFitParamInfo, uint>& paramindices) override;
   friend class KtildeMatrixCalculator;
   friend class KtildeInverseCalculator;
 };

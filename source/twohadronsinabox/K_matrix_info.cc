@@ -266,7 +266,8 @@ void KFitParamInfo::set_pole_coupling(const KIndex& kindex, uint pole_index,
 //         - m_store2 contains the m_store of the K-matrix element
 //               the parameter is associated with
 
-void KFitParamInfo::set_string_expr_param(const KElementInfo& keleminfo, uint param_hash) {
+void KFitParamInfo::set_string_expr_param(const KElementInfo& keleminfo,
+                                          uint param_hash) {
   m_store1 = 3;
   m_store1 <<= 28;
   m_store1 |= (param_hash & 0xFFFFFFFu);
@@ -353,7 +354,8 @@ string KFitParamInfo::getMCObsName() const {
     // String expression parameter
     uint param_hash = m_store1 & 0xFFFFFFFu;
     KElementInfo keleminfo(m_store2);
-    return string("KStrExpr") + make_stringtuple(param_hash, keleminfo.getJtimestwo()) +
+    return string("KStrExpr") +
+           make_stringtuple(param_hash, keleminfo.getJtimestwo()) +
            make_stringtuple(keleminfo.getRowL(), keleminfo.getRowStimestwo(),
                             keleminfo.getRowChannelIndex()) +
            make_stringtuple(keleminfo.getColumnL(),

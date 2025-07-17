@@ -140,7 +140,7 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
 
     if (outstub.empty())
       throw(std::runtime_error("No output stub specified"));
-    
+
     string outmode = "full";
     xmlreadif(xmltask, "OutputMode", outmode, "doSingleChannel");
     if ((outmode != "full") && (outmode != "resampled"))
@@ -148,7 +148,8 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
 
     // get optional samplings output stub
     string samplings_outstub;
-    xmlreadif(xmltask, "SamplingsOutputStub", samplings_outstub, "doSingleChannel");
+    xmlreadif(xmltask, "SamplingsOutputStub", samplings_outstub,
+              "doSingleChannel");
     samplings_outstub = tidyString(samplings_outstub);
 
     //  get sampling mode and names of input files
@@ -429,21 +430,19 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
     logger << "Found " << labenergies.size() << " energy observables across "
            << blockcount << " blocks" << endl;
 
-
     // Create output directory
     filesystem::path output_path = createKBOutputDirectory(m_output_directory);
 
     // init the output samplings storage (elab already stored,
     // but we'll use new keys)
     vector<KBObsInfo> elab_over_mref_obskeys, ecm_over_mref_obskeys,
-      qsqr_over_mrefsqr_obskeys, qcot_over_mref_cot_delta_obskeys;
+        qsqr_over_mrefsqr_obskeys, qcot_over_mref_cot_delta_obskeys;
 
     // Now start the single-channel computations, block by block (following
     // task_print.cc pattern)
     for (uint blocknum = 0; blocknum < BQ.size(); ++blocknum) {
       const MCEnsembleInfo& mcens = blockens[blocknum];
 
-      
       string filename = "Block" + make_string(blocknum) + ".csv";
       filesystem::path full_filepath = output_path / filename;
 
@@ -497,11 +496,11 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
                << "q/mref_cot_delta,q/mref_cot_delta_upper_err,q/"
                   "mref_cot_delta_lower_err,"
                << "q/mref_cot_delta_sym_err" << endl;
-        }
-        else { // jackknife only provides symmetric errors
+        } else { // jackknife only provides symmetric errors
           fout << "E_lab/mref,E_lab/mref_sym_err,E_cm/mref,E_cm/"
                   "mref_sym_err,(q/mref)^2,(q/mref)^2_sym_err,q/mref_cot_delta,"
-                  "q/mref_cot_delta_sym_err" << endl;
+                  "q/mref_cot_delta_sym_err"
+               << endl;
         }
       }
 
@@ -559,7 +558,6 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
           qsqr_values.push_back(qsqr_over_mrefsq);
           qcot_values.push_back(q_cot_delta);
         }
-
 
         // Output results based on mode
         if (outmode == "full") {
@@ -622,18 +620,15 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
             double qcot_lower =
                 qcot_est.getAverageEstimate() - qcot_est.getLowerConfLimit();
 
-            fout << elab_avg << "," << elab_upper << "," << elab_lower
-               << "," << elab_sym_err << "," << ecm_avg << ","
-               << ecm_upper << "," << ecm_lower << "," << ecm_sym_err << ","
-               << qsqr_avg << "," << qsqr_upper << "," << qsqr_lower
-               << "," << qsqr_sym_err << "," << qcot_avg << ","
-               << qcot_upper << "," << qcot_lower << "," << qcot_sym_err
-               << endl;
-          }
-          else { // jackknife mode
-            fout << elab_avg << "," << elab_sym_err << ","
-                 << ecm_avg << "," << ecm_sym_err << ","
-                 << qsqr_avg << "," << qsqr_sym_err << ","
+            fout << elab_avg << "," << elab_upper << "," << elab_lower << ","
+                 << elab_sym_err << "," << ecm_avg << "," << ecm_upper << ","
+                 << ecm_lower << "," << ecm_sym_err << "," << qsqr_avg << ","
+                 << qsqr_upper << "," << qsqr_lower << "," << qsqr_sym_err
+                 << "," << qcot_avg << "," << qcot_upper << "," << qcot_lower
+                 << "," << qcot_sym_err << endl;
+          } else { // jackknife mode
+            fout << elab_avg << "," << elab_sym_err << "," << ecm_avg << ","
+                 << ecm_sym_err << "," << qsqr_avg << "," << qsqr_sym_err << ","
                  << qcot_avg << "," << qcot_sym_err << endl;
           }
         }
@@ -641,19 +636,23 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
       }
       fout.close();
     }
-    
+
     // output elab, ecm, q^2, qcot samplings to file, if requested
     if (!samplings_outstub.empty() && (outmode == "resampled")) {
-      // If samplings_outstub contains no path separators, put it in the project directory
+      // If samplings_outstub contains no path separators, put it in the project
+      // directory
       filesystem::path samplings_path;
-      if (samplings_outstub.find('/') == string::npos && samplings_outstub.find('\\') == string::npos) {
-        filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
+      if (samplings_outstub.find('/') == string::npos &&
+          samplings_outstub.find('\\') == string::npos) {
+        filesystem::path project_dir =
+            createKBOutputDirectory(m_output_directory);
         samplings_path = project_dir / samplings_outstub;
       } else {
         samplings_path = filesystem::path(samplings_outstub);
       }
-      
-      logger << "Outputting E_lab/mref, E_cm/mref, (q/mref)^2, q/mref_cot_delta to "
+
+      logger << "Outputting E_lab/mref, E_cm/mref, (q/mref)^2, "
+                "q/mref_cot_delta to "
                 "samplings files with stub "
              << samplings_path.string() << endl;
       std::vector<SamplingsPutHandler*> sampput(ensemble_idmap.size(), 0);
@@ -668,35 +667,41 @@ void TaskHandler::doSingleChannel(XMLHandler& xmltask, XMLHandler& xmlout,
                                     m_obs->getSamplingInfo(), fname, overwrite);
         sampput[it->second] = sp;
       }
-      
+
       // write elab, ecm, q^2, qcot data for all observables
-      for (uint obs_idx = 0; obs_idx < elab_over_mref_obskeys.size(); ++obs_idx) {
+      for (uint obs_idx = 0; obs_idx < elab_over_mref_obskeys.size();
+           ++obs_idx) {
         const KBObsInfo& elab_key = elab_over_mref_obskeys[obs_idx];
         const KBObsInfo& ecm_key = ecm_over_mref_obskeys[obs_idx];
         const KBObsInfo& qsqr_key = qsqr_over_mrefsqr_obskeys[obs_idx];
         const KBObsInfo& qcot_key = qcot_over_mref_cot_delta_obskeys[obs_idx];
-        
+
         uint ensid = ensemble_idmap[elab_key.getMCEnsembleInfo()];
-        
+
         // get the samplings from m_obs and write them
-        const RVector& elab_samplings = m_obs->getFullAndSamplingValues(elab_key);
+        const RVector& elab_samplings =
+            m_obs->getFullAndSamplingValues(elab_key);
         const RVector& ecm_samplings = m_obs->getFullAndSamplingValues(ecm_key);
-        const RVector& qsqr_samplings = m_obs->getFullAndSamplingValues(qsqr_key);
-        const RVector& qcot_samplings = m_obs->getFullAndSamplingValues(qcot_key);
-        
+        const RVector& qsqr_samplings =
+            m_obs->getFullAndSamplingValues(qsqr_key);
+        const RVector& qcot_samplings =
+            m_obs->getFullAndSamplingValues(qcot_key);
+
         sampput[ensid]->putData(elab_key.getMCObsInfo(), elab_samplings);
         sampput[ensid]->putData(ecm_key.getMCObsInfo(), ecm_samplings);
         sampput[ensid]->putData(qsqr_key.getMCObsInfo(), qsqr_samplings);
         sampput[ensid]->putData(qcot_key.getMCObsInfo(), qcot_samplings);
       }
-      
+
       // close files
       for (uint k = 0; k < ensemble_idmap.size(); ++k) {
         delete sampput[k];
       }
     } else if (!samplings_outstub.empty() && (outmode == "full")) {
-      logger << "Warning: SamplingsOutputStub specified but OutputMode is 'full'. "
-                "Samplings output requires OutputMode='resampled'." << endl;
+      logger
+          << "Warning: SamplingsOutputStub specified but OutputMode is 'full'. "
+             "Samplings output requires OutputMode='resampled'."
+          << endl;
     }
 
     // Clean up BoxQuantization objects

@@ -170,8 +170,8 @@ public:
 private:
   static const unsigned int max_ints = 24;
 
-  void encode(const std::vector<uint>& precode, unsigned int optype, 
-               bool simple, ComplexArg arg);
+  void encode(const std::vector<uint>& precode, unsigned int optype,
+              bool simple, ComplexArg arg);
 
   void encode(const std::string& name, uint index, bool simple, ComplexArg arg);
 

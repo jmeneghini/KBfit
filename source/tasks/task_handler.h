@@ -3,10 +3,10 @@
 
 #include "kbobs_handler.h"
 #include "xml_handler.h"
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <filesystem>
 #include <mpi.h>
 
 // ***************************************************************
@@ -14,8 +14,9 @@
 //  Create a directory with the project name and quantization condition
 //  if it does not already exist.
 
-std::filesystem::path createKBOutputDirectory(const std::string& base_directory = "",
-                                              const std::string& quantization_condition = "");
+std::filesystem::path
+createKBOutputDirectory(const std::string& base_directory = "",
+                        const std::string& quantization_condition = "");
 
 class TaskHandlerData; // base class for persistent data
 
@@ -91,7 +92,7 @@ class TaskHandler {
   std::ofstream clog;
   std::string m_project_name;
   std::string m_output_directory;
-  int m_mpi_rank;  // MPI rank for this process
+  int m_mpi_rank; // MPI rank for this process
 
   typedef void (TaskHandler::*task_ptr)(XMLHandler&, XMLHandler&, int);
   std::map<std::string, task_ptr> m_task_map;

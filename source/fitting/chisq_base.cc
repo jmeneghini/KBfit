@@ -36,15 +36,14 @@ void ChiSquare::setResamplingIndex(uint in_resampling_index) {
   resampling_index = in_resampling_index;
 }
 
-double ChiSquare::evalChiSquare(const vector<double>& fitparams) {\
-  static uint call = 0;            // running counter
+double ChiSquare::evalChiSquare(const vector<double>& fitparams) {
+  static uint call = 0; // running counter
   ++call;
 
   evalResidualsAndInvCovCholesky(fitparams);
 
   const uint n = residuals.size();
   static thread_local std::vector<double> rhat(n, 0.0);
-
 
   double chisq = 0.0;
   uint nres = residuals.size();
@@ -101,7 +100,6 @@ double ChiSquare::evalChiSquare(const vector<double>& fitparams) {\
   // }
   // std::cout << "  diag(L) range  " << minDiag << " ... "
   //           << maxDiag << "  (ratio ≈ " << maxDiag/minDiag << ")\n";
-
 
   return chisq;
 }
@@ -248,11 +246,10 @@ void ChiSquare::evalDiagonalResiduals(const vector<double>& fitparams,
   // /* --------------------------------------------------------------- */
 }
 
-void ChiSquare::read_obs(XMLHandler& xmlin, const string& tag,
-                                      bool get_name, MCObsInfo& obskey,
-                                      set<MCObsInfo>& kset, string& name,
-                                      const MCEnsembleInfo& mcens,
-                                      map<KBObsInfo, double>& fixed_values) {
+void ChiSquare::read_obs(XMLHandler& xmlin, const string& tag, bool get_name,
+                         MCObsInfo& obskey, set<MCObsInfo>& kset, string& name,
+                         const MCEnsembleInfo& mcens,
+                         map<KBObsInfo, double>& fixed_values) {
   try {
     XMLHandler xmlt(xmlin, tag);
     name.clear();
@@ -298,7 +295,7 @@ void ChiSquare::read_obs(XMLHandler& xmlin, const string& tag,
 //    -- "obskey" must be nonsimple and real.
 
 void ChiSquare::read_obs(XMLHandler& xmlin, const string& tag,
-                                      MCObsInfo& obskey, set<MCObsInfo>& kset) {
+                         MCObsInfo& obskey, set<MCObsInfo>& kset) {
   try {
     XMLHandler xmlt(xmlin, tag);
     uint mcount = xmlt.count("MCObs") + xmlt.count("MCObservable");

@@ -1,76 +1,74 @@
 /**
  * @file chisq_fit.cc
  * @brief Implementation of chi-square fitting workflow with MPI support
- * 
+ *
  * This file implements the complete chi-square fitting workflow for KBfit,
  * including both serial and MPI parallel execution modes. The fitting process
  * uses bootstrap/jackknife resampling to estimate parameter uncertainties.
- * 
+ *
  * Key features:
  * - Automatic detection of MPI environment
  * - Load-balanced parallel resampling fitting across MPI ranks
  * - Progress tracking with visual progress bars
  * - Comprehensive error handling and logging
  * - Efficient result aggregation and output generation
- * 
+ *
  * @author KBfit Development Team
  * @date 2024
  */
 
 #include "chisq_fit.h"
+#include <algorithm>
+#include <cstdio>
 #include <mpi.h>
 #include <sstream>
-#include <algorithm>
 #include <thread>
-#include <cstdio>
 using namespace std;
 
 /**
  * @brief Display progress bar for fitting operations
  * @param i Current iteration number
  * @param total Total number of iterations
- * 
- * Implementation of visual progress bar with elapsed time and estimated time remaining.
- * Uses static state to persist across calls for the same fitting session.
+ *
+ * Implementation of visual progress bar with elapsed time and estimated time
+ * remaining. Uses static state to persist across calls for the same fitting
+ * session.
  */
-void show_progress(std::size_t i, std::size_t total)
-{
+void show_progress(std::size_t i, std::size_t total) {
   // Use a static pointer to persist the bar across calls.
   static std::unique_ptr<indicators::ProgressBar> bar_ptr;
-  // Use a static total to detect when a new fit with a different number of samples starts.
+  // Use a static total to detect when a new fit with a different number of
+  // samples starts.
   static std::size_t bar_total = 0;
 
-  // (Re)initialize if this is the first call, or if the total number of samples has changed.
+  // (Re)initialize if this is the first call, or if the total number of samples
+  // has changed.
   if (!bar_ptr || bar_total != total) {
     bar_total = total;
     bar_ptr = std::make_unique<indicators::ProgressBar>(
-        indicators::option::BarWidth{50},
-        indicators::option::Start{"["},
-        indicators::option::Fill{"="},
-        indicators::option::Lead{">"},
-        indicators::option::Remainder{" "},
-        indicators::option::End{"]"},
+        indicators::option::BarWidth{50}, indicators::option::Start{"["},
+        indicators::option::Fill{"="}, indicators::option::Lead{">"},
+        indicators::option::Remainder{" "}, indicators::option::End{"]"},
         indicators::option::ShowElapsedTime{true},
         indicators::option::ShowRemainingTime{true},
         indicators::option::MaxProgress{total},
-        indicators::option::ForegroundColor{indicators::Color::cyan}
-    );
+        indicators::option::ForegroundColor{indicators::Color::cyan});
   }
 
   if (bar_ptr) {
     // Update the prefix to show the current sample count.
     bar_ptr->set_option(indicators::option::PrefixText{
-        "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "
-    });
+        "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "});
 
     bar_ptr->set_progress(i);
 
     // When the loop is finished, mark as complete and clean up.
     if (i >= total) {
-      bar_ptr->set_option(indicators::option::ForegroundColor{indicators::Color::green});
+      bar_ptr->set_option(
+          indicators::option::ForegroundColor{indicators::Color::green});
       bar_ptr->mark_as_completed();
-      // Reset the pointer to ensure a new bar is created for any subsequent fits.
-      // The ProgressBar destructor handles the final newline.
+      // Reset the pointer to ensure a new bar is created for any subsequent
+      // fits. The ProgressBar destructor handles the final newline.
       bar_ptr.reset();
     }
   }
@@ -87,7 +85,7 @@ void show_progress(std::size_t i, std::size_t total)
  * @param out_sampling_file Output file for sampling results
  * @param xmlout XML handler for output
  * @param kobs Observable handler for data management
- * 
+ *
  * Automatically detects MPI environment and chooses appropriate execution mode:
  * - Single process: Serial execution
  * - Multiple processes: MPI parallel execution
@@ -108,19 +106,20 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
   // If we have multiple processes, use traditional MPI mode
   if (current_size > 1) {
     if (current_rank == 0) {
-      std::cerr << "Running ChiSquareFitting with " << current_size << "MPI processes" << std::endl;
+      std::cerr << "Running ChiSquareFitting with " << current_size
+                << "MPI processes" << std::endl;
     }
 
     // Call the traditional MPI version that uses MPI_COMM_WORLD directly
     doChiSquareFittingMPI(chisq_ref, csm_info, chisq_dof, fitqual,
-                                     bestfit_params, param_covariance, out_sampling_file,
-                                     xmlout, kobs, MPI_COMM_WORLD);
+                          bestfit_params, param_covariance, out_sampling_file,
+                          xmlout, kobs, MPI_COMM_WORLD);
     return;
   }
   std::cerr << "Running ChiSquareFitting in serial mode" << std::endl;
   doChiSquareFittingSerial(chisq_ref, csm_info, chisq_dof, fitqual,
-                          bestfit_params, param_covariance, out_sampling_file,
-                          xmlout, kobs);
+                           bestfit_params, param_covariance, out_sampling_file,
+                           xmlout, kobs);
 }
 
 /**
@@ -134,12 +133,12 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
  * @param out_sampling_file Output file for sampling results
  * @param xmlout XML handler for output
  * @param kobs Observable handler
- * 
+ *
  * Performs the complete fitting workflow in serial mode:
  * 1. Full sample fit to get initial best-fit parameters
  * 2. Bootstrap/jackknife resampling fits for uncertainty estimation
  * 3. Result aggregation and output generation
- * 
+ *
  * The progress is tracked with a visual progress bar.
  */
 void doChiSquareFittingSerial(ChiSquare& chisq_ref,
@@ -165,7 +164,8 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   vector<double> start_params;
   start_params.resize(nparams);
   bool only_update_prior_initial_guesses = false;
-  chisq_ref.guessInitialFitParamValues(start_params, only_update_prior_initial_guesses);
+  chisq_ref.guessInitialFitParamValues(start_params,
+                                       only_update_prior_initial_guesses);
   vector<MCObsInfo> fitparaminfos;
   fitparaminfos.resize(nparams);
   chisq_ref.getFitParamMCObsInfo(fitparaminfos);
@@ -202,8 +202,8 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
     throw(std::invalid_argument("Fitting with full sample failed"));
   }
   chisq_dof = chisq / double(dof);
-  std::cerr << "Full sample fit completed with chi-square = "
-            << chisq << " and chi-square per dof = " << chisq_dof << std::endl;
+  std::cerr << "Full sample fit completed with chi-square = " << chisq
+            << " and chi-square per dof = " << chisq_dof << std::endl;
   logger << "Full sample chisq/dof = " << chisq_dof << endl;
   for (uint p = 0; p < nparams; ++p) {
     logger << "params_fullsample[" << p << "] = " << params_fullsample[p]
@@ -218,18 +218,18 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   //   loop over the re-samplings
   list<uint> failed;
   char origverbose = CSM.getVerbosity();
-  CSM.setVerbosity('L');                             // quiet inner fits
+  CSM.setVerbosity('L'); // quiet inner fits
 
-  const  std::size_t N   = nsamplings;               // total samples
+  const std::size_t N = nsamplings; // total samples
   only_update_prior_initial_guesses = true;
 
   std::cerr << "Starting minimization with resamplings" << std::endl;
-  for (sampindex = 1; sampindex <= N; ++sampindex)
-  {
+  for (sampindex = 1; sampindex <= N; ++sampindex) {
     vector<double> start(params_fullsample);
     double chisq_samp;
     chisq_ref.setResamplingIndex(sampindex);
-    chisq_ref.guessInitialFitParamValues(start, only_update_prior_initial_guesses);
+    chisq_ref.guessInitialFitParamValues(start,
+                                         only_update_prior_initial_guesses);
 
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
 
@@ -237,16 +237,14 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
     show_progress(sampindex, N);
 
     // detailed per-sample log
-    logger << "Resamplings index = " << sampindex
-           << " chisq = "            << chisq_samp << '\n';
+    logger << "Resamplings index = " << sampindex << " chisq = " << chisq_samp
+           << '\n';
     for (uint p = 0; p < nparams; ++p)
-      logger << "params_sample[" << p << "] = "
-             << params_sample[p] << '\n';
+      logger << "params_sample[" << p << "] = " << params_sample[p] << '\n';
 
     if (flag) {
       for (uint p = 0; p < nparams; ++p)
-        kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
-                               params_sample[p]);
+        kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params_sample[p]);
     } else {
       logger << "Above fit failed!\n";
       failed.push_back(sampindex);
@@ -256,8 +254,8 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
     }
   }
 
-  std::cerr << '\n';               // finish the progress line
-  CSM.setVerbosity(origverbose);   // restore caller’s verbosity
+  std::cerr << '\n';             // finish the progress line
+  CSM.setVerbosity(origverbose); // restore caller’s verbosity
 
   xmlformat("ResamplingsMinimizationsLog", logger.str(), xmlz);
   if (xmlz.good())
@@ -284,8 +282,7 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
     // if param has a name, output it
     string obs_name = fitparaminfos[p].getObsName();
     auto& registry = ParameterNameRegistry::getInstance();
-    string param_name =
-        registry.getParameterNameFromMCObsName(obs_name);
+    string param_name = registry.getParameterNameFromMCObsName(obs_name);
     if (!param_name.empty()) {
       xmlp.put_child("ParameterName", param_name);
     }
@@ -308,8 +305,6 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   xmlout.put_child(xmlres);
 }
 
-
-
 /**
  * @brief MPI parallel implementation of chi-square fitting
  * @param chisq_ref Reference to ChiSquare object
@@ -322,41 +317,38 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
  * @param xmlout XML handler for output
  * @param kobs Observable handler
  * @param comm MPI communicator
- * 
+ *
  * Performs chi-square fitting with MPI parallelization:
  * 1. Rank 0 performs full sample fit
  * 2. Results are broadcast to all ranks
  * 3. Resampling fits are distributed across ranks in round-robin fashion
  * 4. Results are gathered back to rank 0
  * 5. Rank 0 aggregates results and generates output
- * 
+ *
  * Features:
  * - Load-balanced work distribution
  * - Efficient result aggregation with MPI_Gatherv
  * - Progress tracking on rank 0
  * - Comprehensive error handling and logging
  */
-void doChiSquareFittingMPI(ChiSquare& chisq_ref,
-                                     const ChiSquareMinimizerInfo& csm_info,
-                                     double& chisq_dof, double& fitqual,
-                                     vector<MCEstimate>& bestfit_params,
-                                     RealSymmetricMatrix& param_covariance,
-                                     const std::string& out_sampling_file,
-                                     XMLHandler& xmlout, KBObsHandler* kobs,
-                                     MPI_Comm comm) {
-  
+void doChiSquareFittingMPI(
+    ChiSquare& chisq_ref, const ChiSquareMinimizerInfo& csm_info,
+    double& chisq_dof, double& fitqual, vector<MCEstimate>& bestfit_params,
+    RealSymmetricMatrix& param_covariance, const std::string& out_sampling_file,
+    XMLHandler& xmlout, KBObsHandler* kobs, MPI_Comm comm) {
+
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
-  
+
   uint nparams = chisq_ref.getNumberOfFitParameters();
   uint nresiduals = chisq_ref.getNumberOfResiduals();
   uint nsamplings = chisq_ref.getNumberOfResamplings();
-  
+
   if (nresiduals <= (nparams + 1))
     throw(std::invalid_argument("Too few residuals, fit cannot proceed"));
   uint dof = nresiduals - nparams;
-  
+
   MCEnsembleInfo mcindep(kobs->getNumberOfResamplings());
 
   vector<double> start_params;
@@ -377,44 +369,48 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   vector<double> params_fullsample;
   double chisq = 0.0;
   RealSymmetricMatrix pcov;
-  
+
   // Full sample fit (only rank 0)
   if (rank == 0) {
     try {
       logger << "Degrees of freedom  = " << dof << endl;
-      
+
       // Initial guess for fit parameters
       uint sampindex = 0; // full sample
       chisq_ref.setResamplingIndex(sampindex);
       bool only_update_prior_initial_guesses = false;
-      chisq_ref.guessInitialFitParamValues(start_params, only_update_prior_initial_guesses);
-      
+      chisq_ref.guessInitialFitParamValues(start_params,
+                                           only_update_prior_initial_guesses);
+
       // Set up the minimizer
       ChiSquareMinimizer CSM(chisq_ref, csm_info);
-      
+
       XMLHandler xmlz;
       std::cerr << "Starting minimization with full sample" << std::endl;
-      
-      bool flag = CSM.findMinimum(start_params, chisq, params_fullsample, pcov, xmlz);
-      
+
+      bool flag =
+          CSM.findMinimum(start_params, chisq, params_fullsample, pcov, xmlz);
+
       if (xmlz.good())
         xmlout.put_child(xmlz);
       if (!flag) {
         throw(std::runtime_error("Full sample fit failed"));
       }
-      
+
       chisq_dof = chisq / double(dof);
-      std::cerr << "Full sample fit completed with chi-square = "
-                << chisq << " and chi-square per dof = " << chisq_dof << std::endl;
+      std::cerr << "Full sample fit completed with chi-square = " << chisq
+                << " and chi-square per dof = " << chisq_dof << std::endl;
       logger << "Full sample chisq/dof = " << chisq_dof << endl;
       for (uint p = 0; p < nparams; ++p) {
-        logger << "params_fullsample[" << p << "] = " << params_fullsample[p] << endl;
+        logger << "params_fullsample[" << p << "] = " << params_fullsample[p]
+               << endl;
       }
-      
+
       // Store full sample results
       for (uint p = 0; p < nparams; ++p)
-        kobs->putSamplingValue(kbfitparaminfos[p], sampindex, params_fullsample[p]);
-        
+        kobs->putSamplingValue(kbfitparaminfos[p], sampindex,
+                               params_fullsample[p]);
+
     } catch (const std::exception& e) {
       std::cerr << "Full sample fit failed: " << e.what() << std::endl;
       throw;
@@ -425,28 +421,30 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   if (rank != 0) {
     params_fullsample.resize(nparams);
   }
-  
-  // Broadcast the full-sample fit parameters to all ranks (workers only need the parameters)
+
+  // Broadcast the full-sample fit parameters to all ranks (workers only need
+  // the parameters)
   MPI_Bcast(params_fullsample.data(), nparams, MPI_DOUBLE, 0, comm);
-  
+
   // Ensure all ranks have consistent data before starting resampling
   MPI_Barrier(comm);
-  
+
   if (rank == 0) {
-    std::cerr << "Starting parallel minimization with resamplings across " << size << " MPI ranks" << std::endl;
+    std::cerr << "Starting parallel minimization with resamplings across "
+              << size << " MPI ranks" << std::endl;
   }
-  
+
   // Each rank processes its assigned resamplings
   ChiSquareMinimizer CSM(chisq_ref, csm_info);
   char origverbose = CSM.getVerbosity();
   CSM.setVerbosity('L'); // quiet inner fits
-  
+
   vector<double> params_sample;
   bool only_update_prior_initial_guesses = true;
 
   // Track failed fits for logging (local list per rank)
   list<uint> failed_local;
-  
+
   // Distribute samples among ranks (round-robin)
   vector<uint> my_samples;
   for (uint sampindex = 1; sampindex <= nsamplings; ++sampindex) {
@@ -458,34 +456,35 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   // Buffer to store this rank's fit results for communication
   std::vector<double> local_results(my_samples.size() * nparams, 0.0);
   std::size_t local_pos = 0;
-  
+
   auto t0 = std::chrono::steady_clock::now();
-  
+
   // Initialize counters for the rank-0 progress bar
   std::size_t completed_local = 0; // only for estimating global progress
   // progress bar handled inside show_progress; no extra bookkeeping needed
-  const  std::size_t N   = nsamplings;               // total samples
+  const std::size_t N = nsamplings; // total samples
   only_update_prior_initial_guesses = true;
 
   // Process assigned resamplings
   for (uint sampindex : my_samples) {
-    
+
     vector<double> start(params_fullsample);
     double chisq_samp;
-    
+
     // Set up ChiSquare for this sample
     chisq_ref.setResamplingIndex(sampindex);
-    chisq_ref.guessInitialFitParamValues(start, only_update_prior_initial_guesses);
-    
+    chisq_ref.guessInitialFitParamValues(start,
+                                         only_update_prior_initial_guesses);
+
     // Perform minimization (start vector will be modified and carry forward)
     bool flag = CSM.findMinimum(start, chisq_samp, params_sample);
-    
+
     // Log results (all ranks log)
     logger << "Rank " << rank << " Resamplings index = " << sampindex
            << " chisq = " << chisq_samp << '\n';
     for (uint p = 0; p < nparams; ++p)
       logger << "params_sample[" << p << "] = " << params_sample[p] << '\n';
-    
+
     // Store results in local buffer for later communication
     if (!flag) {
       logger << "Above fit failed!\n";
@@ -494,18 +493,16 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     }
     for (uint p = 0; p < nparams; ++p)
       local_results[local_pos++] = params_sample[p];
-    
+
     // Show progress (rank 0 only). We extrapolate the work done by rank 0
     if (rank == 0) {
       ++completed_local; // one more sample finished on rank 0
-      std::size_t global_est = std::min<std::size_t>(completed_local * size,
-                                                     nsamplings);
+      std::size_t global_est =
+          std::min<std::size_t>(completed_local * size, nsamplings);
       show_progress(global_est, nsamplings);
     }
   }
-  
 
-  
   CSM.setVerbosity(origverbose);
 
   // Critical: Ensure ALL ranks have completed writing their samples to kobs
@@ -534,9 +531,9 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   }
 
   MPI_Gatherv(local_results.data(), sendcount, MPI_DOUBLE,
-               rank == 0 ? all_results.data() : nullptr,
-               rank == 0 ? recvcounts.data() : nullptr,
-               rank == 0 ? displs.data() : nullptr, MPI_DOUBLE, 0, comm);
+              rank == 0 ? all_results.data() : nullptr,
+              rank == 0 ? recvcounts.data() : nullptr,
+              rank == 0 ? displs.data() : nullptr, MPI_DOUBLE, 0, comm);
 
   // Gather failed sample indices
   std::vector<uint> failed_vec(failed_local.begin(), failed_local.end());
@@ -545,7 +542,8 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   std::vector<int> displs_fail;
   std::vector<uint> all_failed;
   MPI_Gather(&failed_count, 1, MPI_INT,
-             rank == 0 ? (recvcounts_fail.resize(size), recvcounts_fail.data()) : nullptr,
+             rank == 0 ? (recvcounts_fail.resize(size), recvcounts_fail.data())
+                       : nullptr,
              1, MPI_INT, 0, comm);
 
   if (rank == 0) {
@@ -559,10 +557,9 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   }
 
   MPI_Gatherv(failed_vec.data(), failed_count, MPI_UNSIGNED,
-               rank == 0 ? all_failed.data() : nullptr,
-               rank == 0 ? recvcounts_fail.data() : nullptr,
-               rank == 0 ? displs_fail.data() : nullptr,
-               MPI_UNSIGNED, 0, comm);
+              rank == 0 ? all_failed.data() : nullptr,
+              rank == 0 ? recvcounts_fail.data() : nullptr,
+              rank == 0 ? displs_fail.data() : nullptr, MPI_UNSIGNED, 0, comm);
 
   // Rank 0 inserts gathered results into its KBObsHandler
   if (rank == 0) {
@@ -590,29 +587,31 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
       failed_local.push_back(fi);
     }
   }
-  
+
   if (rank == 0) {
-    std::cerr << "\nAll ranks completed resampling fits. Finalizing results..." << std::endl;
+    std::cerr << "\nAll ranks completed resampling fits. Finalizing results..."
+              << std::endl;
   }
-  
+
   // Collect logger strings from all ranks for combined output
   if (rank == 0) {
     // Start with rank 0's logger
     std::ostringstream combined_logger;
     combined_logger << logger.str();
-    
+
     // Collect logger strings from other ranks
     for (int r = 1; r < size; ++r) {
       int log_size;
       MPI_Recv(&log_size, 1, MPI_INT, r, 100, comm, MPI_STATUS_IGNORE);
       std::vector<char> log_buffer(log_size + 1);
-      MPI_Recv(log_buffer.data(), log_size, MPI_CHAR, r, 101, comm, MPI_STATUS_IGNORE);
+      MPI_Recv(log_buffer.data(), log_size, MPI_CHAR, r, 101, comm,
+               MPI_STATUS_IGNORE);
       log_buffer[log_size] = '\0';
-      
+
       // Append this rank's log to combined output
       combined_logger << log_buffer.data();
     }
-    
+
     XMLHandler xmlz;
     xmlformat("ResamplingsMinimizationsLog", combined_logger.str(), xmlz);
     if (xmlz.good())
@@ -624,18 +623,20 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     MPI_Send(&log_size, 1, MPI_INT, 0, 100, comm);
     MPI_Send(my_log.c_str(), log_size, MPI_CHAR, 0, 101, comm);
   }
-  
+
   // Additional barrier to ensure kobs writes are fully synchronized
   MPI_Barrier(comm);
-  
-  // Only rank 0 generates final output (all sampling data should now be in kobs)
+
+  // Only rank 0 generates final output (all sampling data should now be in
+  // kobs)
   if (rank == 0) {
     // Generate remaining output (same structure as serial version)
-    
+
     XMLHandler xmlso;
-    kobs->writeSamplingValuesToFile(kbfitparaminfoset, out_sampling_file, xmlso, true);
+    kobs->writeSamplingValuesToFile(kbfitparaminfoset, out_sampling_file, xmlso,
+                                    true);
     xmlout.put_child(xmlso);
-    
+
     bestfit_params.resize(nparams);
     XMLHandler xmlres("BestFitResult");
     xmlres.put_child("NumberOfResiduals", make_string(nresiduals));
@@ -644,7 +645,7 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     xmlres.put_child("ChiSquarePerDof", make_string(chisq_dof));
     fitqual = getChiSquareFitQuality(dof, chisq);
     xmlres.put_child("FitQuality", make_string(fitqual));
-    
+
     for (uint p = 0; p < nparams; ++p) {
       XMLHandler xmlp("FitParameter" + make_string(p));
       XMLHandler xmlpi;
@@ -662,26 +663,29 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
       xmlp.put_child(xmlfp);
       xmlres.put_child(xmlp);
     }
-    
+
     XMLHandler xmlcov("FitParameterCovariances");
     for (uint p = 0; p < nparams; ++p) {
       for (uint pp = p; pp < nparams; ++pp) {
-        double cov = kobs->getCovariance(kbfitparaminfos[p], kbfitparaminfos[pp]);
-        xmlcov.put_child("Cov_" + make_string(p) + "_" + make_string(pp), make_string(cov));
+        double cov =
+            kobs->getCovariance(kbfitparaminfos[p], kbfitparaminfos[pp]);
+        xmlcov.put_child("Cov_" + make_string(p) + "_" + make_string(pp),
+                         make_string(cov));
       }
     }
     xmlres.put_child(xmlcov);
     xmlout.put_child(xmlres);
-    
+
     if (!failed_local.empty()) {
       XMLHandler xmlf("FailedResamplings");
-      for (list<uint>::const_iterator it = failed_local.begin(); it != failed_local.end(); ++it) {
+      for (list<uint>::const_iterator it = failed_local.begin();
+           it != failed_local.end(); ++it) {
         xmlf.put_child("FailedIndex", make_string(*it));
       }
       xmlout.put_child(xmlf);
     }
   }
-  
+
   // Final synchronization
   MPI_Barrier(comm);
 }
@@ -689,16 +693,16 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
 /**
  * @name Gamma Function Utilities
  * @brief Incomplete gamma function implementations for chi-square statistics
- * 
+ *
  * These functions provide implementations of the incomplete gamma function
  * and related utilities needed for computing chi-square fit quality (p-values).
- * 
+ *
  * Functions provided:
  * - gammln(xx): Natural logarithm of gamma function
  * - Qgamma(s, x): Upper incomplete gamma function ratio
  * - Pgamma(s, x): Lower incomplete gamma function ratio
  * - getChiSquareFitQuality(dof, chisq): Chi-square p-value calculation
- * 
+ *
  * The implementation uses series expansion for small x and continued fraction
  * for large x to ensure numerical stability across the full domain.
  *
@@ -709,7 +713,7 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
  * @brief Natural logarithm of the gamma function
  * @param xx Input value (must be > 0)
  * @return ln(Gamma(xx))
- * 
+ *
  * Uses Lanczos approximation for numerical stability.
  */
 double gammln(double xx) {
@@ -821,13 +825,13 @@ double Pgamma(double a, double x) {
  * @param dof Degrees of freedom
  * @param chisquare Chi-square value
  * @return Fit quality (p-value)
- * 
+ *
  * Returns the chi-square quality of fit, given by:
  *     Q = Qgamma(dof/2, chisquare/2)
- * 
+ *
  * This is the probability that a chi-square random variable with
  * 'dof' degrees of freedom would exceed the observed value.
- * 
+ *
  * Interpretation:
  * - Values near 1: Very good fit
  * - Values near 0: Very poor fit
@@ -838,7 +842,5 @@ double getChiSquareFitQuality(unsigned int dof, double chisquare) {
 }
 
 /** @} */ // End of Gamma Function Utilities
-
-
 
 // ****************************************************************************

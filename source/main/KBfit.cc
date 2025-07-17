@@ -3,8 +3,8 @@
 #include <ctime>
 #include <iostream>
 #include <map>
-#include <vector>
 #include <mpi.h>
+#include <vector>
 
 using namespace std;
 
@@ -72,9 +72,11 @@ void show_help() {
   cout << "=====================================================" << endl;
   cout << endl;
   cout << "DESCRIPTION:" << endl;
-  cout << "  KBfit is a lattice QCD analysis tool for studying two-hadron" << endl;
+  cout << "  KBfit is a lattice QCD analysis tool for studying two-hadron"
+       << endl;
   cout << "  interactions in a finite box using the Luscher method." << endl;
-  cout << "  It performs K-matrix fitting, along with helpers to assist in" << endl;
+  cout << "  It performs K-matrix fitting, along with helpers to assist in"
+       << endl;
   cout << "  the analysis." << endl;
   cout << endl;
   cout << "USAGE:" << endl;
@@ -82,12 +84,15 @@ void show_help() {
   cout << "  KBfit -h | --help" << endl;
   cout << endl;
   cout << "ARGUMENTS:" << endl;
-  cout << "  input_file.xml    XML input file containing analysis configuration" << endl;
+  cout << "  input_file.xml    XML input file containing analysis configuration"
+       << endl;
   cout << "  -h, --help        Show this help message and exit" << endl;
   cout << endl;
   cout << "AVAILABLE TASKS:" << endl;
-  cout << "  DoPrint           Print quantization condition results and spectra" << endl;
-  cout << "  DoFit             Perform K-matrix fitting to lattice data" << endl;
+  cout << "  DoPrint           Print quantization condition results and spectra"
+       << endl;
+  cout << "  DoFit             Perform K-matrix fitting to lattice data"
+       << endl;
   cout << "  DoSingleChannel   Single-channel scattering analysis" << endl;
   cout << endl;
   cout << "XML INPUT STRUCTURE:" << endl;
@@ -113,11 +118,16 @@ void show_help() {
   cout << "  </KBFit>" << endl;
   cout << endl;
   cout << "NOTES:" << endl;
-  cout << "  - If <ProjectName> is missing, a default name will be created" << endl;
-  cout << "  - If <LogFile> is missing, a default log file name is used" << endl;
-  cout << "  - <MCSamplingInfo> is mandatory and controls the resampling method" << endl;
-  cout << "  - <EchoXML/> causes the input XML to be written to the log file" << endl;
-  cout << "  - Example XML files are available in the examples/ directory" << endl;
+  cout << "  - If <ProjectName> is missing, a default name will be created"
+       << endl;
+  cout << "  - If <LogFile> is missing, a default log file name is used"
+       << endl;
+  cout << "  - <MCSamplingInfo> is mandatory and controls the resampling method"
+       << endl;
+  cout << "  - <EchoXML/> causes the input XML to be written to the log file"
+       << endl;
+  cout << "  - Example XML files are available in the examples/ directory"
+       << endl;
   cout << endl;
   cout << "OUTPUT:" << endl;
   cout << "  - Log file with detailed analysis results" << endl;
@@ -132,15 +142,15 @@ void show_help() {
 int main(int argc, const char* argv[]) {
   // Initialize MPI
   MPI_Init(&argc, const_cast<char***>(&argv));
-  
+
   // Get MPI info for main program
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
+
   // Only rank 0 handles command line processing and output
   int return_code = 0;
-  
+
   // convert arguments to C++ strings
   vector<string> tokens;
   if (rank == 0) {
@@ -157,54 +167,57 @@ int main(int argc, const char* argv[]) {
     }
     // Check for correct number of arguments
     else if (tokens.size() != 1) {
-      cout << "Error: KBfit requires exactly one argument (the XML input file)" << endl;
+      cout << "Error: KBfit requires exactly one argument (the XML input file)"
+           << endl;
       cout << "Usage: KBfit <input_file.xml>" << endl;
       cout << "       KBfit -h | --help" << endl;
       MPI_Finalize();
       return 1;
     }
   }
-  
+
   // Broadcast return code to check if we should exit early
   MPI_Bcast(&return_code, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
   if (return_code != 0) {
     MPI_Finalize();
     return return_code;
   }
 
-  // Run the main program 
+  // Run the main program
   try {
     XMLHandler xmltask;
     xmltask.set_exceptions_on();
-    
+
     // Only rank 0 reads the file
     if (rank == 0) {
       string filename(tokens[0]);
       xmltask.set_from_file(filename);
     }
-    
-    // Serialize and broadcast the XML content to all ranks (needed for multi-process mode)
+
+    // Serialize and broadcast the XML content to all ranks (needed for
+    // multi-process mode)
     string xml_content;
     if (rank == 0) {
       xml_content = xmltask.output();
     }
-    
+
     // Broadcast the XML content size first
     int xml_size = xml_content.size();
     MPI_Bcast(&xml_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
+
     // Resize the string on non-root ranks and broadcast the content
     if (rank != 0) {
       xml_content.resize(xml_size);
     }
-    MPI_Bcast(const_cast<char*>(xml_content.data()), xml_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-    
+    MPI_Bcast(const_cast<char*>(xml_content.data()), xml_size, MPI_CHAR, 0,
+              MPI_COMM_WORLD);
+
     // Non-root ranks parse the XML from the broadcasted content
     if (rank != 0) {
       xmltask.set_from_string(xml_content);
     }
-    
+
     // All ranks set up the task handler
     TaskHandler tasker(xmltask, rank);
 
@@ -220,10 +233,11 @@ int main(int argc, const char* argv[]) {
 
   // Gather the return code from all ranks (use maximum to catch any errors)
   int global_return_code;
-  MPI_Allreduce(&return_code, &global_return_code, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&return_code, &global_return_code, 1, MPI_INT, MPI_MAX,
+                MPI_COMM_WORLD);
 
   // Finalize MPI
   MPI_Finalize();
-  
+
   return global_return_code;
 }

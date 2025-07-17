@@ -1,20 +1,20 @@
 #include "task_handler.h"
-#include "stopwatch.h"
 #include "chisq_fit.h"
+#include "stopwatch.h"
 #include <mpi.h>
 using namespace std;
 
 // *************************************************************************
 
-std::filesystem::path createKBOutputDirectory(const std::string& base_directory,
-                                              const std::string& quantization_condition) {
+std::filesystem::path
+createKBOutputDirectory(const std::string& base_directory,
+                        const std::string& quantization_condition) {
   std::filesystem::path output_path;
-  
+
   // Start with base directory if specified, this typically is the project name
   if (!base_directory.empty()) {
     output_path = std::filesystem::path(base_directory);
-  }
-  else {
+  } else {
     // current working directory
     output_path = std::filesystem::current_path();
   }
@@ -23,7 +23,7 @@ std::filesystem::path createKBOutputDirectory(const std::string& base_directory,
   if (!quantization_condition.empty()) {
     output_path = output_path / quantization_condition;
   }
-  
+
   // Create the directory structure
   std::error_code ec;
   if (!std::filesystem::exists(output_path)) {
@@ -38,7 +38,8 @@ std::filesystem::path createKBOutputDirectory(const std::string& base_directory,
 
 // set up the known tasks, create logfile, open stream for logging
 
-TaskHandler::TaskHandler(XMLHandler& xmlin, int mpi_rank) : m_mpi_rank(mpi_rank) {
+TaskHandler::TaskHandler(XMLHandler& xmlin, int mpi_rank)
+    : m_mpi_rank(mpi_rank) {
   if (xmlin.get_node_name() != "KBFit")
     throw(std::invalid_argument("Input file must have root tag <KBFit>"));
   string nowstr = get_date_time();
@@ -72,10 +73,12 @@ TaskHandler::TaskHandler(XMLHandler& xmlin, int mpi_rank) : m_mpi_rank(mpi_rank)
       logfile = string("kbfit_log_") + nowstr + ".xml";
 
     // put log file in the output directory
-    
+
     filesystem::path logfile_path;
-    if (logfile.find('/') == string::npos && logfile.find('\\') == string::npos) {
-      filesystem::path project_dir = createKBOutputDirectory(m_output_directory);
+    if (logfile.find('/') == string::npos &&
+        logfile.find('\\') == string::npos) {
+      filesystem::path project_dir =
+          createKBOutputDirectory(m_output_directory);
       logfile_path = project_dir / logfile;
     } else {
       logfile_path = filesystem::path(logfile);
@@ -95,7 +98,7 @@ TaskHandler::TaskHandler(XMLHandler& xmlin, int mpi_rank) : m_mpi_rank(mpi_rank)
   } else
     projname = string("KBFit Project ") + nowstr;
   m_project_name = projname;
-  
+
   // Only rank 0 writes to log
   if (m_mpi_rank == 0) {
     clog << " <ProjectName>" << projname << "</ProjectName>" << endl;
@@ -138,20 +141,21 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
   XMLHandler xmlt(xmlin, "TaskSequence");
   list<XMLHandler> taskxml = xmlt.find_among_children("Task");
   int count = 0;
-  
+
   // Get MPI info to determine execution mode
   int mpi_size;
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-  
+
   if (m_mpi_rank == 0) {
     clog << endl
          << "<BeginTasks>****************************************</BeginTasks>"
          << endl;
   }
-  
+
   // Check if any task is a DoFit task that requires all ranks to participate
   bool has_fit_task = false;
-  for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end(); it++) {
+  for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
+       it++) {
     XMLHandler task_copy(*it);
     if (task_copy.count_among_children("Action") == 1) {
       XMLHandler xmlaction(task_copy, "Action");
@@ -164,16 +168,16 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
       }
     }
   }
-  
-  // In MPI mode, ALL ranks execute DoFit tasks (to avoid HDF5 issues, only rank 0 loads data)
-  // For other tasks, only rank 0 executes them
+
+  // In MPI mode, ALL ranks execute DoFit tasks (to avoid HDF5 issues, only rank
+  // 0 loads data) For other tasks, only rank 0 executes them
   bool should_execute_tasks = (m_mpi_rank == 0) || (mpi_size == 1);
   bool should_execute_fit_tasks = (mpi_size == 1) || has_fit_task;
-  
+
   if (should_execute_tasks || should_execute_fit_tasks) {
     for (list<XMLHandler>::iterator it = taskxml.begin(); it != taskxml.end();
          it++, count++) {
-      
+
       // Check if this specific task is DoFit
       bool is_fit_task = false;
       XMLHandler task_copy(*it);
@@ -186,23 +190,23 @@ void TaskHandler::do_batch_tasks(XMLHandler& xmlin) {
           }
         }
       }
-      
+
       // Skip non-fit tasks on non-root ranks in MPI mode
       if (mpi_size > 1 && m_mpi_rank != 0 && !is_fit_task) {
         continue;
       }
-      
+
       if (m_mpi_rank == 0) {
         clog << endl << "<Task>" << endl;
         clog << " <Count>" << count << "</Count>" << endl;
       }
-      
+
       XMLHandler xmlout;
       StopWatch rolex;
       rolex.start();
       do_task(*it, xmlout, count);
       rolex.stop();
-      
+
       if (m_mpi_rank == 0) {
         clog << xmlout.output() << endl;
         clog << "<RunTimeInSeconds>" << rolex.getTimeInSeconds()
@@ -478,6 +482,5 @@ taskcount)
  xmlout.put_child(xmlf);
 }
 */
-
 
 // ***************************************************************************************

@@ -28,15 +28,13 @@ struct AdaptiveBracketConfig {
     std::ostringstream os;
     os << std::fixed << std::setprecision(3);
     os << "AdaptiveBracketConfig{"
-       << "initial_step_percent="   << initial_step_percent
-       << ", x_tol="                << std::scientific << x_tol
-       << ", zero_tol="             << zero_tol
-       << ", min_step_percent="     << min_step_percent
-       << ", max_step_percent="     << max_step_percent
-       << ", step_scale_limit="     << std::fixed << step_scale_limit
+       << "initial_step_percent=" << initial_step_percent
+       << ", x_tol=" << std::scientific << x_tol << ", zero_tol=" << zero_tol
+       << ", min_step_percent=" << min_step_percent
+       << ", max_step_percent=" << max_step_percent
+       << ", step_scale_limit=" << std::fixed << step_scale_limit
        << ", plateau_mod2_threshold=" << plateau_mod2_threshold
-       << ", plateau_count_before_jump=" << plateau_count_before_jump
-       << "}";
+       << ", plateau_count_before_jump=" << plateau_count_before_jump << "}";
     return os.str();
   }
 };

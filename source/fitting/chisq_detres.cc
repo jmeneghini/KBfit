@@ -1,19 +1,19 @@
 /**
  * @file chisq_detres.cc
  * @brief Implementation of determinant residual fitting methodology
- * 
+ *
  * This file implements the DeterminantResidualFit class, which provides
  * an efficient alternative to spectrum fitting by directly minimizing
  * the quantization condition determinant rather than solving for roots.
- * 
+ *
  * Key advantages over spectrum fitting:
  * - Box matrix is constructed at startup, not during each evaluation
  * - No expensive root finding operations required
- * 
+ *
  * The method uses the filter function Ω(μ, A) = det(A)/det[(μ² + AA†)^(1/2)]
  * to ensure residuals remain bounded between -1 and 1, providing excellent
  * numerical stability even for large matrix eigenvalues.
- * 
+ *
  * @author KBfit Development Team
  * @date 2024
  */
@@ -484,7 +484,8 @@ DeterminantResidualFit::DeterminantResidualFit(XMLHandler& xmlin,
             string belemname = bqptr->getKeyString(row, col);
             for (uint resind = indstart; resind < indstop; ++resind) {
               const MCObsInfo& ekey = labenergies[resind].getMCObsInfo();
-              // TODO: revert quick/dirty fix for too long of names; just enumerate the energies
+              // TODO: revert quick/dirty fix for too long of names; just
+              // enumerate the energies
               MCObsInfo bkey(belemname + "[" + to_string(resind) + "]",
                              ekey.getObsIndex());
               uint nb = Bmat[resind].size();
@@ -528,13 +529,16 @@ void DeterminantResidualFit::clear() {
   BQ.clear();
 }
 
-std::unique_ptr<DeterminantResidualFit> DeterminantResidualFit::clone(KBObsHandler* new_kboh) const {
+std::unique_ptr<DeterminantResidualFit>
+DeterminantResidualFit::clone(KBObsHandler* new_kboh) const {
   // Create a new instance using the private default constructor
-  // Note: This method requires that BoxQuantization, KtildeMatrixCalculator, 
+  // Note: This method requires that BoxQuantization, KtildeMatrixCalculator,
   // and KtildeInverseCalculator have working copy constructors.
-  // If they don't, you'll need to implement clone methods for those classes first.
-  auto cloned = std::unique_ptr<DeterminantResidualFit>(new DeterminantResidualFit());
-  
+  // If they don't, you'll need to implement clone methods for those classes
+  // first.
+  auto cloned =
+      std::unique_ptr<DeterminantResidualFit>(new DeterminantResidualFit());
+
   // Copy base class members
   cloned->nresiduals = this->nresiduals;
   cloned->nfitparams = this->nfitparams;
@@ -543,10 +547,10 @@ std::unique_ptr<DeterminantResidualFit> DeterminantResidualFit::clone(KBObsHandl
   cloned->nresamplings = this->nresamplings;
   cloned->resampling_index = this->resampling_index;
   cloned->qctype_enum = this->qctype_enum;
-  
+
   // Copy or assign KBObsHandler pointer (shallow copy - external object)
   cloned->KBOH = (new_kboh != nullptr) ? new_kboh : this->KBOH;
-  
+
   // Deep copy K-matrix calculators first (needed for BoxQuantization cloning)
   if (this->Kmat != nullptr) {
     // Use the new clone method instead of copy constructor
@@ -560,27 +564,29 @@ std::unique_ptr<DeterminantResidualFit> DeterminantResidualFit::clone(KBObsHandl
     cloned->Kmat = nullptr;
     cloned->Kinv = nullptr;
   }
-  
-  // Deep copy BoxQuantization objects (now that K-matrix calculators are available)
+
+  // Deep copy BoxQuantization objects (now that K-matrix calculators are
+  // available)
   cloned->BQ.clear();
   cloned->BQ.reserve(this->BQ.size());
   for (const auto* bq : this->BQ) {
     if (bq != nullptr) {
       // Use the new clone method with the cloned K-matrix calculators
-      std::unique_ptr<BoxQuantization> cloned_bq = bq->clone(cloned->Kmat, cloned->Kinv);
+      std::unique_ptr<BoxQuantization> cloned_bq =
+          bq->clone(cloned->Kmat, cloned->Kinv);
       cloned->BQ.push_back(cloned_bq.release());
     } else {
       cloned->BQ.push_back(nullptr);
     }
   }
-  
+
   // Copy other data members (deep copy via default copy semantics)
   cloned->Ecm_over_mref = this->Ecm_over_mref;
   cloned->ensemble_id = this->ensemble_id;
   cloned->Bmat = this->Bmat;
   cloned->omega_mu = this->omega_mu;
   cloned->nres_per_block = this->nres_per_block;
-  
+
   return cloned;
 }
 
@@ -603,8 +609,10 @@ void DeterminantResidualFit::evalResidualsAndInvCovCholesky(
       uint kk = indstart + k;
       res[kk].resize(nssize);
       for (uint b = 0; b < nssize; ++b) {
-        res[kk][b] = bqptr->getOmegaFromEcm(omega_mu, Ecm_over_mref[kk][b],
-                                            Bmat[kk][b], qctype_enum).real();
+        res[kk][b] = bqptr
+                         ->getOmegaFromEcm(omega_mu, Ecm_over_mref[kk][b],
+                                           Bmat[kk][b], qctype_enum)
+                         .real();
       }
     }
     for (uint k = 0; k < nbres; ++k) {

@@ -1,16 +1,16 @@
 /**
  * @file chisq_base.h
  * @brief Base class for correlated least-squares fitting in KBfit
- * 
- * This header defines the ChiSquare base class that provides the fundamental framework
- * for correlated χ² fitting in KBfit. All fitting methods (spectrum, determinant residual)
- * inherit from this base class.
- * 
+ *
+ * This header defines the ChiSquare base class that provides the fundamental
+ * framework for correlated χ² fitting in KBfit. All fitting methods (spectrum,
+ * determinant residual) inherit from this base class.
+ *
  * Key features:
  * - Pure virtual interface for derived classes
  * - Cholesky decomposition for efficient χ² computation
  * - XML-based configuration and output
- * 
+ *
  * @author KBfit Development Team
  * @date 2024
  */
@@ -19,55 +19,56 @@
 #define CHISQ_BASE_H
 
 #include "box_quant.h"
+#include "ensemble_info.h"
+#include "kbobs_info.h"
 #include "matrix.h"
 #include "mcobs_info.h"
 #include "xml_handler.h"
-#include "kbobs_info.h"
-#include "ensemble_info.h"
 
 /**
  * @brief Base class for correlated least-squares fitting in KBfit
- * 
+ *
  * @author KBfit Development Team
  * @date 2024
- * 
- * The ChiSquare class provides the fundamental framework for correlated χ² fitting
- * in KBfit. It cannot be constructed directly as it contains pure virtual functions
- * that must be implemented by derived classes.
- * 
+ *
+ * The ChiSquare class provides the fundamental framework for correlated χ²
+ * fitting in KBfit. It cannot be constructed directly as it contains pure
+ * virtual functions that must be implemented by derived classes.
+ *
  * ## Mathematical Framework
- * 
+ *
  * The fitting uses a correlated chi-square cost function:
- * 
+ *
  *     residual[j] = model[j] - obs[j]
  *     χ² = Σ_j,k residual[j] × inv_cov(j,k) × residual[k]
- * 
+ *
  * Where inv_cov is the inverse of the covariance matrix:
- * 
+ *
  *     cov(j,k) = cov(residual[j], residual[k])
- * 
+ *
  * The model can depend on the observations. A Cholesky decomposition is used:
- * 
+ *
  *     inv_cov = transpose(L) × L,   where L is lower triangular
- * 
+ *
  * ## Usage Requirements
- * 
+ *
  * Any derived class constructor must:
- * 1. Call initialize_base(number_fit_parameters, number_residuals, number_resamplings)
+ * 1. Call initialize_base(number_fit_parameters, number_residuals,
+ * number_resamplings)
  *    - Sets nresiduals, nfitparams, nresamplings
  *    - Sizes residuals and inv_cov_cholesky appropriately
  * 2. Implement the required virtual functions
- * 
+ *
  * ## Required Virtual Functions
- * 
+ *
  * Derived classes must implement:
  * - do_output(XMLHandler& xmlout): Generate XML output
  * - evalResidualsAndInvCovCholesky(fitparams): Compute residuals and covariance
  * - guessInitialFitParamValues(fitparams): Provide initial parameter estimates
  * - getFitParamMCObsInfo(fitinfos): Get observable information for parameters
- * 
+ *
  * ## Performance Considerations
- * 
+ *
  * The evalResidualsAndInvCovCholesky method is called repeatedly during fitting
  * and should be optimized for performance. The base class provides efficient
  * χ² computation using the pre-computed Cholesky decomposition.
@@ -77,37 +78,47 @@ class ChiSquare {
 
 private:
 #ifndef NO_CXX11
-  ChiSquare(const ChiSquare&) = delete;              ///< Copy constructor disabled
-  ChiSquare& operator=(const ChiSquare&) = delete;   ///< Assignment operator disabled
+  ChiSquare(const ChiSquare&) = delete; ///< Copy constructor disabled
+  ChiSquare&
+  operator=(const ChiSquare&) = delete; ///< Assignment operator disabled
 #else
-  ChiSquare(const ChiSquare&);                       ///< Copy constructor disabled (C++03)
-  ChiSquare& operator=(const ChiSquare&);            ///< Assignment operator disabled (C++03)
+  ChiSquare(const ChiSquare&); ///< Copy constructor disabled (C++03)
+  ChiSquare&
+  operator=(const ChiSquare&); ///< Assignment operator disabled (C++03)
 #endif
 
-protected: 
+protected:
   /// @name Core Fitting Data
   /// @{
-  uint nresiduals;                                   ///< Number of residuals in the fit
-  uint nfitparams;                                   ///< Number of fit parameters
-  LowerTriangularMatrix<double> inv_cov_cholesky;    ///< Cholesky decomposition of inverse covariance
-  std::vector<double> residuals;                     ///< Current residual values
-  uint nresamplings;                                 ///< Number of bootstrap/jackknife resamplings
-  uint resampling_index;                             ///< Current resampling index (0 = full sample)
-  BoxQuantization::QuantCondType qctype_enum;        ///< Type of quantization condition
+  uint nresiduals; ///< Number of residuals in the fit
+  uint nfitparams; ///< Number of fit parameters
+  LowerTriangularMatrix<double>
+      inv_cov_cholesky; ///< Cholesky decomposition of inverse covariance
+  std::vector<double> residuals; ///< Current residual values
+  uint nresamplings;             ///< Number of bootstrap/jackknife resamplings
+  uint resampling_index;         ///< Current resampling index (0 = full sample)
+  BoxQuantization::QuantCondType
+      qctype_enum; ///< Type of quantization condition
   /// @}
 
 public:
   /// @name Construction and Destruction
   /// @{
-  ChiSquare() {}                                     ///< Default constructor
-  virtual ~ChiSquare() {}                            ///< Virtual destructor
+  ChiSquare() {}          ///< Default constructor
+  virtual ~ChiSquare() {} ///< Virtual destructor
   /// @}
 
   /// @name Accessors
   /// @{
-  uint getNumberOfFitParameters() const { return nfitparams; }   ///< Get number of fit parameters
-  uint getNumberOfResiduals() const { return nresiduals; }       ///< Get number of residuals
-  uint getNumberOfResamplings() const { return nresamplings; }   ///< Get number of resamplings
+  uint getNumberOfFitParameters() const {
+    return nfitparams;
+  } ///< Get number of fit parameters
+  uint getNumberOfResiduals() const {
+    return nresiduals;
+  } ///< Get number of residuals
+  uint getNumberOfResamplings() const {
+    return nresamplings;
+  } ///< Get number of resamplings
   /// @}
 
   /// @name Resampling Control
@@ -122,7 +133,8 @@ public:
   /// @name Output Functions
   /// @{
   /**
-   * @brief Generate XML output (pure virtual - must be implemented by derived classes)
+   * @brief Generate XML output (pure virtual - must be implemented by derived
+   * classes)
    * @param xmlout XML handler for output
    */
   virtual void do_output(XMLHandler& xmlout) const = 0;
@@ -148,7 +160,8 @@ public:
    * @param fitparams Vector to store initial parameter values
    * @param only_update_priors If true, only update prior-related parameters
    */
-  virtual void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const = 0;
+  virtual void guessInitialFitParamValues(std::vector<double>& fitparams,
+                                          bool only_update_priors) const = 0;
 
   /**
    * @brief Get observable information for fit parameters (pure virtual)
@@ -176,7 +189,7 @@ public:
 
   /**
    * @brief Evaluate diagonal residuals (whitened residuals)
-   * @param fitparams Current fit parameter values  
+   * @param fitparams Current fit parameter values
    * @param diag_residuals Array to store diagonal residuals
    */
   void evalDiagonalResiduals(const std::vector<double>& fitparams,
@@ -220,7 +233,7 @@ protected:
    * @param number_fit_parameters Number of fit parameters
    * @param number_residuals Number of residuals
    * @param number_resamplings Number of bootstrap/jackknife resamplings
-   * 
+   *
    * This method must be called by derived class constructors to set up
    * the base class data structures properly.
    */
@@ -228,23 +241,24 @@ protected:
                        uint number_resamplings);
 
   /**
-   * @brief Evaluate residuals and inverse covariance Cholesky decomposition (pure virtual)
+   * @brief Evaluate residuals and inverse covariance Cholesky decomposition
+   * (pure virtual)
    * @param fitparams Current fit parameter values
-   * 
+   *
    * This is the core method that derived classes must implement. It should:
    * 1. Compute model predictions for the given parameters
    * 2. Calculate residuals = predictions - observations
    * 3. Store residuals in the residuals member variable
-   * 
+   *
    * The covariance matrix and its Cholesky decomposition are typically
    * computed once during initialization and stored in inv_cov_cholesky.
-   * 
-   * @note This method is called repeatedly during fitting and should be optimized.
+   *
+   * @note This method is called repeatedly during fitting and should be
+   * optimized.
    */
-  virtual void evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) = 0;
+  virtual void
+  evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) = 0;
   /// @}
-
-
 };
 
 // *****************************************************************

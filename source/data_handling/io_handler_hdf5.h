@@ -11,8 +11,8 @@
 #endif
 #include "array.h"
 #include "byte_handler.h"
-#include <complex>
 #include <algorithm>
+#include <complex>
 #include <iostream>
 #include <stdexcept>
 
@@ -436,7 +436,7 @@ void IOHDF5Handler::write_atomics(const std::string& objname, const T* output,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
-  
+
   // Delete existing dataset if it exists (for overwriting)
   delete_dataset_if_exists(objname);
   hsize_t dsize = nT;
@@ -503,7 +503,7 @@ void IOHDF5Handler::write_array(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
-  
+
   // Delete existing dataset if it exists (for overwriting)
   delete_dataset_if_exists(objname);
   uint rank = output.numDimensions();
@@ -544,7 +544,7 @@ void IOHDF5Handler::write_complex_array(const std::string& objname,
     check_for_failure(IO_ERR_ACCESS, "Attempt to write to read-only file");
   }
   check_path(objname);
-  
+
   // Delete existing dataset if it exists (for overwriting)
   delete_dataset_if_exists(objname);
   uint rank = output.numDimensions() + 1;

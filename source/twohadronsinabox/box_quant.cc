@@ -218,16 +218,17 @@ void BoxQuantization::clear() {
 
 BoxQuantization::~BoxQuantization() { clear(); }
 
-BoxQuantization::BoxQuantization() 
+BoxQuantization::BoxQuantization()
     : m_mref_L(6.0), m_Kmat(nullptr), m_Kinv(nullptr) {
   // Initialize to default/empty state - will be populated by clone method
 }
 
-std::unique_ptr<BoxQuantization> BoxQuantization::clone(KtildeMatrixCalculator* new_Kmat,
-                                                       KtildeInverseCalculator* new_Kinv) const {
+std::unique_ptr<BoxQuantization>
+BoxQuantization::clone(KtildeMatrixCalculator* new_Kmat,
+                       KtildeInverseCalculator* new_Kinv) const {
   // Create new instance using default constructor
   auto cloned = std::unique_ptr<BoxQuantization>(new BoxQuantization());
-  
+
   // Copy basic value-type members
   cloned->m_lgirrep = this->m_lgirrep;
   cloned->m_lgirrepB = this->m_lgirrepB;
@@ -240,11 +241,12 @@ std::unique_ptr<BoxQuantization> BoxQuantization::clone(KtildeMatrixCalculator* 
   cloned->m_masses1 = this->m_masses1;
   cloned->m_masses2 = this->m_masses2;
   cloned->m_decay_channel_S_num = this->m_decay_channel_S_num;
-  
+
   // Copy basis (value types in set)
   cloned->m_basis = this->m_basis;
-  
-  // Set K-matrix calculator pointers (external objects - shallow copy unless new ones provided)
+
+  // Set K-matrix calculator pointers (external objects - shallow copy unless
+  // new ones provided)
   if (new_Kmat != nullptr) {
     cloned->m_Kmat = new_Kmat;
     cloned->m_Kinv = nullptr;
@@ -256,41 +258,48 @@ std::unique_ptr<BoxQuantization> BoxQuantization::clone(KtildeMatrixCalculator* 
     cloned->m_Kmat = this->m_Kmat;
     cloned->m_Kinv = this->m_Kinv;
   }
-  
+
   // Deep copy WZetaRGLCalculator objects
   for (const auto* wzeta : this->m_wzetas) {
     if (wzeta != nullptr) {
-      // WZetaRGLCalculator has private copy constructor, so create new one with same parameters
+      // WZetaRGLCalculator has private copy constructor, so create new one with
+      // same parameters
       WZetaRGLCalculator* cloned_wzeta = new WZetaRGLCalculator();
-      cloned_wzeta->reset(wzeta->getSVector(), wzeta->getGamma(), wzeta->getUsq());
+      cloned_wzeta->reset(wzeta->getSVector(), wzeta->getGamma(),
+                          wzeta->getUsq());
       cloned->m_wzetas.push_back(cloned_wzeta);
     } else {
       cloned->m_wzetas.push_back(nullptr);
     }
   }
-  
+
   // Deep copy BoxMatrix objects
-  // Note: We need to update the BoxQuantBasisState objects to point to the new BoxMatrix objects
+  // Note: We need to update the BoxQuantBasisState objects to point to the new
+  // BoxMatrix objects
   std::map<BoxMatrix*, BoxMatrix*> box_ptr_map; // old -> new mapping
-  
+
   for (const auto& pair : this->m_boxes) {
     BoxMatrix* original_box = pair.first;
     uint channel_index = pair.second;
-    
+
     if (original_box != nullptr) {
-      // BoxMatrix has private copy constructor, so create new one with same parameters
-      // Need to find the corresponding WZetaRGLCalculator for this box
-      // The order of boxes and wzetas should correspond based on how they were created
+      // BoxMatrix has private copy constructor, so create new one with same
+      // parameters Need to find the corresponding WZetaRGLCalculator for this
+      // box The order of boxes and wzetas should correspond based on how they
+      // were created
       auto wzeta_it = cloned->m_wzetas.begin();
-      std::advance(wzeta_it, std::distance(this->m_boxes.begin(), 
-                                          std::find_if(this->m_boxes.begin(), this->m_boxes.end(),
-                                                      [original_box](const auto& p) { return p.first == original_box; })));
-      
-      BoxMatrix* cloned_box = new BoxMatrix(original_box->getEcmTransform(), 
-                                          **wzeta_it,
-                                          original_box->getTotalSpinTimesTwo(),
-                                          original_box->getLittleGroupIrrep(),
-                                          original_box->getLmax());
+      std::advance(
+          wzeta_it,
+          std::distance(this->m_boxes.begin(),
+                        std::find_if(this->m_boxes.begin(), this->m_boxes.end(),
+                                     [original_box](const auto& p) {
+                                       return p.first == original_box;
+                                     })));
+
+      BoxMatrix* cloned_box = new BoxMatrix(
+          original_box->getEcmTransform(), **wzeta_it,
+          original_box->getTotalSpinTimesTwo(),
+          original_box->getLittleGroupIrrep(), original_box->getLmax());
       cloned->m_boxes.push_back(std::make_pair(cloned_box, channel_index));
       box_ptr_map[original_box] = cloned_box;
     } else {
@@ -298,22 +307,20 @@ std::unique_ptr<BoxQuantization> BoxQuantization::clone(KtildeMatrixCalculator* 
       box_ptr_map[original_box] = nullptr;
     }
   }
-  
+
   // Update basis states to point to new BoxMatrix objects
   cloned->m_basis.clear();
   for (const auto& basis_state : this->m_basis) {
     BoxMatrix* old_ptr = basis_state.getBoxMatrixPtr();
     BoxMatrix* new_ptr = box_ptr_map[old_ptr];
-    
-    BoxQuantBasisState new_state(new_ptr, 
-                                 basis_state.getChannelIndex(),
+
+    BoxQuantBasisState new_state(new_ptr, basis_state.getChannelIndex(),
                                  basis_state.getStimestwo(),
-                                 basis_state.getJtimestwo(),
-                                 basis_state.getL(),
+                                 basis_state.getJtimestwo(), basis_state.getL(),
                                  basis_state.getOccurrence());
     cloned->m_basis.insert(new_state);
   }
-  
+
   return cloned;
 }
 
@@ -612,7 +619,7 @@ void BoxQuantization::setup_basis() {
     uint Stimestwomax =
         min(s1timestwo + s2timestwo, BoxMatrix::getTotalSpinTimesTwoMax(Ecm));
     uint Stimestwomin = std::abs(int(s1timestwo) - int(s2timestwo));
-    uint num_S = (Stimestwomax - Stimestwomin)/2 + 1;
+    uint num_S = (Stimestwomax - Stimestwomin) / 2 + 1;
     m_decay_channel_S_num.push_back(num_S);
     for (uint Stimestwo = Stimestwomin; Stimestwo <= Stimestwomax;
          Stimestwo += 2) {
@@ -821,15 +828,13 @@ void BoxQuantization::getStildeFromEcm(double Ecm_over_mref, CMatrix& Stilde) {
 //  computes the quantization matrix and its eigenvaleus
 //  specified by the "qctype" enum
 
-void BoxQuantization::getQCMatrixFromElab(
-    double Elab_over_mref, CMatrix& QC,
-    QuantCondType qctype) {
+void BoxQuantization::getQCMatrixFromElab(double Elab_over_mref, CMatrix& QC,
+                                          QuantCondType qctype) {
   get_qc_matrix(Elab_over_mref, true, qctype, QC);
 }
 
-void BoxQuantization::getQCMatrixFromEcm(
-    double Ecm_over_mref, CMatrix& QC,
-    QuantCondType qctype) {
+void BoxQuantization::getQCMatrixFromEcm(double Ecm_over_mref, CMatrix& QC,
+                                         QuantCondType qctype) {
   get_qc_matrix(Ecm_over_mref, false, qctype, QC);
 }
 
@@ -854,8 +859,8 @@ cmplx BoxQuantization::getOmegaFromElab(double mu, double Elab_over_mref,
 }
 
 cmplx BoxQuantization::getOmegaFromElab(double mu, double Elab_over_mref,
-                                       const ComplexHermitianMatrix& B,
-                                       QuantCondType qctype) {
+                                        const ComplexHermitianMatrix& B,
+                                        QuantCondType qctype) {
   return get_omega(mu, Elab_over_mref, B, true, qctype);
 }
 
@@ -870,20 +875,17 @@ cmplx BoxQuantization::getOmegaFromEcm(double mu, double Ecm_over_mref,
   return get_omega(mu, Ecm_over_mref, B, false, qctype);
 }
 
-std::list<double>
-BoxQuantization::getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
-                                                  double max_Elab_over_mref) const
-{
-  std::list<double> all_energies;                  // final container
+std::list<double> BoxQuantization::getFreeTwoParticleEnergiesInElab(
+    double min_Elab_over_mref, double max_Elab_over_mref) const {
+  std::list<double> all_energies; // final container
 
   auto box_it = m_boxes.begin();
   for (std::size_t chan = 0; chan < m_decay_channel_S_num.size(); ++chan) {
     // Collect NI energies for the *first* BoxMatrix in this channel
     std::list<double> tmp =
-        box_it->first->getEcmTransform()
-                     .getAllFreeTwoParticleEnergiesInElab(min_Elab_over_mref,
-                                                       max_Elab_over_mref);
-    all_energies.splice(all_energies.end(), std::move(tmp));   // O(1)
+        box_it->first->getEcmTransform().getAllFreeTwoParticleEnergiesInElab(
+            min_Elab_over_mref, max_Elab_over_mref);
+    all_energies.splice(all_energies.end(), std::move(tmp)); // O(1)
 
     // Skip the remaining S–blocks that belong to this channel
     std::advance(box_it, m_decay_channel_S_num[chan]);
@@ -896,19 +898,17 @@ BoxQuantization::getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
   return all_energies;
 }
 
-list<double>
-BoxQuantization::getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
-                                            double max_Ecm_over_mref) const {
-  std::list<double> all_energies;                  // final container
+list<double> BoxQuantization::getFreeTwoParticleEnergiesInEcm(
+    double min_Ecm_over_mref, double max_Ecm_over_mref) const {
+  std::list<double> all_energies; // final container
 
   auto box_it = m_boxes.begin();
   for (std::size_t chan = 0; chan < m_decay_channel_S_num.size(); ++chan) {
     // Collect NI energies for the *first* BoxMatrix in this channel
     std::list<double> tmp =
-        box_it->first->getEcmTransform()
-                     .getAllFreeTwoParticleEnergiesInEcm(min_Ecm_over_mref,
-                                                       max_Ecm_over_mref);
-    all_energies.splice(all_energies.end(), std::move(tmp));   // O(1)
+        box_it->first->getEcmTransform().getAllFreeTwoParticleEnergiesInEcm(
+            min_Ecm_over_mref, max_Ecm_over_mref);
+    all_energies.splice(all_energies.end(), std::move(tmp)); // O(1)
 
     // Skip the remaining S–blocks that belong to this channel
     std::advance(box_it, m_decay_channel_S_num[chan]);
@@ -921,26 +921,23 @@ BoxQuantization::getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
   return all_energies;
 }
 
-void BoxQuantization::getEcmRootsInEcmInterval(double mu, double Ecm_over_mref_min,
-                                            double Ecm_over_mref_max,
-                                            QuantCondType qctype,
-                                            AdaptiveBracketConfig P,
-                                            std::vector<double>& roots,
-                                            std::vector<uint>& fn_calls) {
-  get_roots_in_interval_bracketed_by_NIs(
-    mu, Ecm_over_mref_min, Ecm_over_mref_max, false, qctype, P, roots,
-    fn_calls);
+void BoxQuantization::getEcmRootsInEcmInterval(
+    double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
+  get_roots_in_interval_bracketed_by_NIs(mu, Ecm_over_mref_min,
+                                         Ecm_over_mref_max, false, qctype, P,
+                                         roots, fn_calls);
 }
-
 
 // fn calls is the number of function calls made for each NI/endpoint interval
 void BoxQuantization::getEcmRootsInElabInterval(
     double mu, double Elab_over_mref_min, double Elab_over_mref_max,
     QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
     std::vector<uint>& fn_calls) {
-  get_roots_in_interval_bracketed_by_NIs(
-    mu, Elab_over_mref_min, Elab_over_mref_max, true, qctype, P, roots,
-    fn_calls);
+  get_roots_in_interval_bracketed_by_NIs(mu, Elab_over_mref_min,
+                                         Elab_over_mref_max, true, qctype, P,
+                                         roots, fn_calls);
 }
 
 // -----------------------------------------------------------------------------
@@ -948,144 +945,123 @@ void BoxQuantization::getEcmRootsInElabInterval(
 // observations and non-interacting pairs (NIs) as guidance
 // -----------------------------------------------------------------------------
 void BoxQuantization::getDeltaEcmPredictionsInEcmInterval(
-        double  mu,
-        double  Ecm_over_mref_min,
-        double  Ecm_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        double                 guard_tol_frac) {
-  get_DeltaE_predictions(
-      mu,
-      Ecm_over_mref_min,
-      Ecm_over_mref_max,
-      /* Elab = */ false,
-      qctype,
-      P,
-      shift_obs_w_NIs,
-      shift_predictions,
-      fn_calls,
-      guard_tol_frac);
+    double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+    QuantCondType qctype, const AdaptiveBracketConfig P,
+    const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+    std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+    double guard_tol_frac) {
+  get_DeltaE_predictions(mu, Ecm_over_mref_min, Ecm_over_mref_max,
+                         /* Elab = */ false, qctype, P, shift_obs_w_NIs,
+                         shift_predictions, fn_calls, guard_tol_frac);
 }
 
 void BoxQuantization::getDeltaElabPredictionsInElabInterval(
-        double  mu,
-        double  Elab_over_mref_min,
-        double  Elab_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        double                 guard_tol_frac) {
-  get_DeltaE_predictions(
-      mu,
-      Elab_over_mref_min,
-      Elab_over_mref_max,
-      /* Elab = */ true,
-      qctype,
-      P,
-      shift_obs_w_NIs,
-      shift_predictions,
-      fn_calls,
-      guard_tol_frac);
+    double mu, double Elab_over_mref_min, double Elab_over_mref_max,
+    QuantCondType qctype, const AdaptiveBracketConfig P,
+    const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+    std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+    double guard_tol_frac) {
+  get_DeltaE_predictions(mu, Elab_over_mref_min, Elab_over_mref_max,
+                         /* Elab = */ true, qctype, P, shift_obs_w_NIs,
+                         shift_predictions, fn_calls, guard_tol_frac);
 }
 
 /**
  * @brief Optimized energy shift prediction working directly in Ecm coordinates
- * 
- * This function performs root finding directly in the center-of-mass frame to avoid 
- * redundant coordinate transformations. The quantization condition Ω(Ecm) = 0 is 
- * solved in CM frame, then energy shifts are computed in the requested output frame.
- * 
+ *
+ * This function performs root finding directly in the center-of-mass frame to
+ * avoid redundant coordinate transformations. The quantization condition Ω(Ecm)
+ * = 0 is solved in CM frame, then energy shifts are computed in the requested
+ * output frame.
+ *
  * @param mu Filter parameter for Omega function
  * @param Ecm_over_mref_min Minimum CM energy for root finding
  * @param Ecm_over_mref_max Maximum CM energy for root finding
  * @param qctype Quantization condition type (StildeCB, KtildeB, etc.)
  * @param P Adaptive bracket configuration for root finding
- * @param shift_obs_w_NIs Vector of observed energy shifts with non-interacting pairs
+ * @param shift_obs_w_NIs Vector of observed energy shifts with non-interacting
+ * pairs
  * @param shift_predictions Output vector of predicted energy shifts
  * @param fn_calls Output vector of function evaluation counts per interval
- * @param output_in_lab_frame If true, output shifts in lab frame; if false, in CM frame
+ * @param output_in_lab_frame If true, output shifts in lab frame; if false, in
+ * CM frame
  * @param guard_tol_frac Tolerance fraction to check other side of NI interval
- * 
+ *
  * @performance Optimizations implemented:
- * - Root finding performed directly in CM frame to avoid coordinate transformations
+ * - Root finding performed directly in CM frame to avoid coordinate
+ * transformations
  */
 void BoxQuantization::getDeltaEnergyPredictionsOptimized(
-        double  mu,
-        double  Ecm_over_mref_min,
-        double  Ecm_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        bool                   output_in_lab_frame,
-        double                 guard_tol_frac) {
-  
+    double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+    QuantCondType qctype, const AdaptiveBracketConfig P,
+    const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+    std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+    bool output_in_lab_frame, double guard_tol_frac) {
+
   // ---- 1. Get non-interacting energies in CM frame -------------------------
-  std::list<double> NI_energies_cm = getFreeTwoParticleEnergiesInEcm(
-      Ecm_over_mref_min, Ecm_over_mref_max);
-  
+  std::list<double> NI_energies_cm =
+      getFreeTwoParticleEnergiesInEcm(Ecm_over_mref_min, Ecm_over_mref_max);
+
   if (NI_energies_cm.empty())
     throw std::runtime_error("No NI energies in requested CM interval.");
-  
+
   std::vector<double> NI_vec_cm(NI_energies_cm.begin(), NI_energies_cm.end());
-  
+
   // ---- 2. Process observations and convert to CM frame ------------------
-  std::vector<double> Ecm_obs;                    // observed energies in CM frame
-  std::vector<double> Ecm_free_obs;               // matching NI free energies in CM frame
-  std::vector<NonInteractingPair> ni_pairs;       // store NI pairs for deferred lab frame calculations
-  std::unordered_map<uint, std::reference_wrapper<const EcmTransform>> ecm_transforms;
-  std::vector<uint> NI_interval_ids;              // intervals to search
-  
+  std::vector<double> Ecm_obs;      // observed energies in CM frame
+  std::vector<double> Ecm_free_obs; // matching NI free energies in CM frame
+  std::vector<NonInteractingPair>
+      ni_pairs; // store NI pairs for deferred lab frame calculations
+  std::unordered_map<uint, std::reference_wrapper<const EcmTransform>>
+      ecm_transforms;
+  std::vector<uint> NI_interval_ids; // intervals to search
+
   for (const auto& obs : shift_obs_w_NIs) {
     double dE_obs = obs.first;
     const NonInteractingPair& ni = obs.second;
-    
+
     // Cache EcmTransform for this decay channel
     auto [it, inserted] = ecm_transforms.try_emplace(
         ni.decay_channel_idx,
         std::cref(getDecayChannelEcmTransform(ni.decay_channel_idx)));
     const EcmTransform& et = it->second.get();
-    
+
     // Get free two-particle energies - only CM frame for now
     double Ecm_free = et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
-    
+
     // Convert observed energy to CM frame
     // Assumption: dE_obs is in lab frame initially. TODO: generalize
     // We need lab frame free energy for this conversion
     double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
     double Elab_obs = dE_obs + Elab_free;
     double Ecm_obs_val = getEcmOverMrefFromElab(Elab_obs);
-    
+
     // Check if CM energy is within bounds
     if (Ecm_obs_val < Ecm_over_mref_min || Ecm_obs_val > Ecm_over_mref_max)
       throw std::invalid_argument("Observation outside CM energy interval.");
-    
+
     Ecm_obs.push_back(Ecm_obs_val);
     Ecm_free_obs.push_back(Ecm_free);
-    ni_pairs.push_back(ni);  // Store for deferred lab frame calculations
-    
+    ni_pairs.push_back(ni); // Store for deferred lab frame calculations
+
     // Locate NI interval in CM frame
     uint interval = 0;
     double left = Ecm_over_mref_min;
     for (double pole : NI_vec_cm) {
-      if (Ecm_obs_val <= pole) break;
+      if (Ecm_obs_val <= pole)
+        break;
       left = pole;
       ++interval;
     }
     NI_interval_ids.push_back(interval);
-    
+
     // Apply guard tolerance for roots that cross the interval boundaries
-    double right = (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
+    double right =
+        (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
     double width = right - left;
     double distL = Ecm_obs_val - left;
     double distR = right - Ecm_obs_val;
-    
+
     if (width > 0) {
       if (distL / width < guard_tol_frac && interval > 0)
         NI_interval_ids.push_back(interval - 1);
@@ -1093,45 +1069,45 @@ void BoxQuantization::getDeltaEnergyPredictionsOptimized(
         NI_interval_ids.push_back(interval + 1);
     }
   }
-  
+
   // ---- 3. Deduplicate interval list -------------------------------------
   std::sort(NI_interval_ids.begin(), NI_interval_ids.end());
-  NI_interval_ids.erase(std::unique(NI_interval_ids.begin(), NI_interval_ids.end()), 
-                        NI_interval_ids.end());
-  
+  NI_interval_ids.erase(
+      std::unique(NI_interval_ids.begin(), NI_interval_ids.end()),
+      NI_interval_ids.end());
+
   // ---- 4. Root finding in CM frame ----------------------------------
-  std::vector<double> Ecm_pred;          // predicted root energies in CM frame
+  std::vector<double> Ecm_pred; // predicted root energies in CM frame
   fn_calls.clear();
   const double eps = 1e-9;
-  
+
   for (uint interval : NI_interval_ids) {
-    double Ecm_min = (interval == 0) ? Ecm_over_mref_min : NI_vec_cm[interval-1];
-    double Ecm_max = (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
-    
+    double Ecm_min =
+        (interval == 0) ? Ecm_over_mref_min : NI_vec_cm[interval - 1];
+    double Ecm_max =
+        (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
+
     std::vector<double> roots;
-    uint ncall = get_roots_in_interval(mu,
-                                       Ecm_min + eps,
-                                       Ecm_max - eps,
-                                       /* Elab = */ false,  // Work in CM frame
-                                       qctype,
-                                       P,
-                                       roots);
+    uint ncall = get_roots_in_interval(mu, Ecm_min + eps, Ecm_max - eps,
+                                       /* Elab = */ false, // Work in CM frame
+                                       qctype, P, roots);
     fn_calls.push_back(ncall);
     Ecm_pred.insert(Ecm_pred.end(), roots.begin(), roots.end());
   }
-  
+
   shift_predictions.resize(Ecm_obs.size(), 0.0);
-  
+
   if (Ecm_pred.empty()) {
-    std::cout << "\033[31m\u25A0\033[0m No roots found in CM frame" << std::endl;
+    std::cout << "\033[31m\u25A0\033[0m No roots found in CM frame"
+              << std::endl;
     return;
   }
-  
+
   // ---- 5. Match roots to observations and compute energy shifts -------
   for (std::size_t k = 0; k < Ecm_obs.size(); ++k) {
     double best_diff = std::numeric_limits<double>::max();
     std::size_t best_j = static_cast<std::size_t>(-1);
-    
+
     // Find closest predicted root to observed energy (both in CM frame)
     for (std::size_t j = 0; j < Ecm_pred.size(); ++j) {
       double diff = std::abs(Ecm_pred[j] - Ecm_obs[k]);
@@ -1140,20 +1116,21 @@ void BoxQuantization::getDeltaEnergyPredictionsOptimized(
         best_j = j;
       }
     }
-    
+
     if (best_j == static_cast<std::size_t>(-1))
       throw std::runtime_error("No root energy close to observation.");
-    
+
     // Compute energy shift in requested output frame
     if (output_in_lab_frame) {
       // Convert predicted CM root to lab frame
       double Elab_pred = getElabOverMrefFromEcm(Ecm_pred[best_j]);
-      
+
       // Get lab frame free energy for this observation (computed on demand)
       const NonInteractingPair& ni = ni_pairs[k];
       const EcmTransform& et = ecm_transforms.at(ni.decay_channel_idx);
-      double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
-      
+      double Elab_free =
+          et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
+
       // Energy shift in lab frame = predicted lab energy - free lab energy
       shift_predictions[k] = Elab_pred - Elab_free;
     } else {
@@ -1163,27 +1140,23 @@ void BoxQuantization::getDeltaEnergyPredictionsOptimized(
   }
 }
 
-
-void BoxQuantization::getDeltaERootsInEcmInterval(double mu, double Ecm_over_mref_min,
-                             double Ecm_over_mref_max, QuantCondType qctype,
-                             AdaptiveBracketConfig P,
-                             std::vector<double>& roots,
-                             std::vector<uint>& fn_calls) {
-  get_deltaE_roots_in_interval_bracketed_by_NIs(
-    mu, Ecm_over_mref_min, Ecm_over_mref_max, false, qctype, P, roots,
-    fn_calls);
+void BoxQuantization::getDeltaERootsInEcmInterval(
+    double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
+  get_deltaE_roots_in_interval_bracketed_by_NIs(mu, Ecm_over_mref_min,
+                                                Ecm_over_mref_max, false,
+                                                qctype, P, roots, fn_calls);
 }
 
-void BoxQuantization::getDeltaERootsInElabInterval(double mu, double Ecm_over_mref_min,
-                             double Ecm_over_mref_max, QuantCondType qctype,
-                             AdaptiveBracketConfig P,
-                             std::vector<double>& roots,
-                             std::vector<uint>& fn_calls) {
-  get_deltaE_roots_in_interval_bracketed_by_NIs(
-    mu, Ecm_over_mref_min, Ecm_over_mref_max, true, qctype, P, roots,
-    fn_calls);
+void BoxQuantization::getDeltaERootsInElabInterval(
+    double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
+  get_deltaE_roots_in_interval_bracketed_by_NIs(mu, Ecm_over_mref_min,
+                                                Ecm_over_mref_max, true, qctype,
+                                                P, roots, fn_calls);
 }
-
 
 // assigns a complex value to an element in a complex Hermitian matrix
 // which is either of type "ComplexHermitianMatrix" or "CMatrix"
@@ -1525,10 +1498,9 @@ void BoxQuantization::get_qc_matrix(double E_over_mref, bool Elab,
   }
 }
 
-void BoxQuantization::get_qc_matrix(double E_over_mref, 
-                                    const ComplexHermitianMatrix& B,
-                                    bool Elab, QuantCondType qctype,
-                                    CMatrix& Q) {
+void BoxQuantization::get_qc_matrix(double E_over_mref,
+                                    const ComplexHermitianMatrix& B, bool Elab,
+                                    QuantCondType qctype, CMatrix& Q) {
   if (qctype == QuantCondType::StildeCB) {
     // Compute Cayley transform of B: CB = (1 + i*B) * (1 - i*B)^(-1)
     CMatrix CB;
@@ -1542,7 +1514,7 @@ void BoxQuantization::get_qc_matrix(double E_over_mref,
       getKtildeOrInverseFromEcm(E_over_mref, KtildeOrInverse);
     }
     calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
-    
+
     int N = CB.size(0);
     Q.resize(N, N);
     cmplx one(1.0, 0.0);
@@ -1570,7 +1542,7 @@ void BoxQuantization::get_qc_matrix(double E_over_mref,
       getKtildeOrInverseFromEcm(E_over_mref, KtildeOrInverse);
     }
     calcCayleyTransformMatrix(KtildeOrInverse, Stilde, m_Kmat);
-    
+
     int N = CB.size(0);
     Q.resize(N, N);
     // evaluate Q = Stildeinv + CB
@@ -1590,7 +1562,7 @@ void BoxQuantization::get_qc_matrix(double E_over_mref,
     } else {
       getKtildeFromEcm(E_over_mref, Ktilde);
     }
-    
+
     int N = B.size();
     Q.resize(N, N);
     cmplx one(1.0, 0.0);
@@ -1617,7 +1589,7 @@ void BoxQuantization::get_qc_matrix(double E_over_mref,
     } else {
       getKtildeinvFromEcm(E_over_mref, Ktildeinv);
     }
-    
+
     int N = B.size();
     Q.resize(N, N);
     // evaluate Q = Ktildeinv - B
@@ -1653,9 +1625,8 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref, bool Elab,
 
 // Version that takes an explicit B matrix instead of computing it internally
 cmplx BoxQuantization::get_omega(double mu, double E_over_mref,
-                                  const ComplexHermitianMatrix& B,
-                                  bool Elab,
-                                  QuantCondType qctype) {
+                                 const ComplexHermitianMatrix& B, bool Elab,
+                                 QuantCondType qctype) {
   CMatrix Q;
   get_qc_matrix(E_over_mref, B, Elab, qctype, Q);
   DeterminantCalculator DC;
@@ -1670,102 +1641,94 @@ cmplx BoxQuantization::get_omega(double mu, double E_over_mref,
 //  Predict shifts by matching on raw E_lab/cm values first
 // -----------------------------------------------------------------------------
 void BoxQuantization::get_DeltaE_predictions(
-        double                      mu,
-        double                      E_over_mref_min,
-        double                      E_over_mref_max,
-        bool                        Elab,
-        QuantCondType               qctype,
-        const AdaptiveBracketConfig       P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&        shift_predictions,   // output
-        std::vector<uint>&          fn_calls,            // omega evals per interval
-        double                      guard_tol_frac) {
-  // ---- 1.  NI intervals -------------------------------------------------------
-  std::list<double> NI_energies = Elab
-        ? getFreeTwoParticleEnergiesInElab(E_over_mref_min, E_over_mref_max)
-        : getFreeTwoParticleEnergiesInEcm (E_over_mref_min, E_over_mref_max);
+    double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
+    QuantCondType qctype, const AdaptiveBracketConfig P,
+    const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+    std::vector<double>& shift_predictions, // output
+    std::vector<uint>& fn_calls,            // omega evals per interval
+    double guard_tol_frac) {
+  // ---- 1.  NI intervals
+  // -------------------------------------------------------
+  std::list<double> NI_energies =
+      Elab ? getFreeTwoParticleEnergiesInElab(E_over_mref_min, E_over_mref_max)
+           : getFreeTwoParticleEnergiesInEcm(E_over_mref_min, E_over_mref_max);
   if (NI_energies.empty())
-      throw std::runtime_error("No NI energies in requested interval.");
+    throw std::runtime_error("No NI energies in requested interval.");
   std::vector<double> NI_vec(NI_energies.begin(), NI_energies.end());
 
   // ---- 2.  Observation bookkeeping ---------------------------------------
-  std::vector<double> E_obs;                     // raw energies
-  std::vector<double> E_free_obs;                // matching NI free energies
-  std::unordered_map<uint, std::reference_wrapper<const EcmTransform>> ecm_transforms;    // per channel cache
-  std::vector<uint> NI_interval_ids;             // intervals to search
+  std::vector<double> E_obs;      // raw energies
+  std::vector<double> E_free_obs; // matching NI free energies
+  std::unordered_map<uint, std::reference_wrapper<const EcmTransform>>
+      ecm_transforms;                // per channel cache
+  std::vector<uint> NI_interval_ids; // intervals to search
 
-  for (const auto& obs : shift_obs_w_NIs)
-  {
+  for (const auto& obs : shift_obs_w_NIs) {
     double dE_obs = obs.first;
     const NonInteractingPair& ni = obs.second;
 
     // EcmTransform cache
     auto [it, inserted] = ecm_transforms.try_emplace(
-      ni.decay_channel_idx,
-      std::cref(getDecayChannelEcmTransform(ni.decay_channel_idx)));
+        ni.decay_channel_idx,
+        std::cref(getDecayChannelEcmTransform(ni.decay_channel_idx)));
     const EcmTransform& et = it->second.get();
 
     // free two-particle energy for this datum
-    double E_free = Elab
-          ? et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr)
-          : et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
+    double E_free =
+        Elab ? et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr)
+             : et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
 
     double E = dE_obs + E_free;
     if (E < E_over_mref_min || E > E_over_mref_max)
-        throw std::invalid_argument("Shift observation outside interval.");
+      throw std::invalid_argument("Shift observation outside interval.");
 
     E_obs.push_back(E);
     E_free_obs.push_back(E_free);
 
     // locate NI interval
     uint interval = 0;
-    double left   = E_over_mref_min;
+    double left = E_over_mref_min;
     for (double pole : NI_vec) {
-        if (E <= pole) break;
-        left = pole;
-        ++interval;
+      if (E <= pole)
+        break;
+      left = pole;
+      ++interval;
     }
     NI_interval_ids.push_back(interval);
 
     // guard if near a pole
-    double right  = (interval < NI_vec.size()) ? NI_vec[interval]
-                                               : E_over_mref_max;
-    double width  = right - left;
-    double distL  = E - left;
-    double distR  = right - E;
+    double right =
+        (interval < NI_vec.size()) ? NI_vec[interval] : E_over_mref_max;
+    double width = right - left;
+    double distL = E - left;
+    double distR = right - E;
     if (width > 0) {
-        if (distL / width < guard_tol_frac && interval > 0)
-            NI_interval_ids.push_back(interval - 1);
-        if (distR / width < guard_tol_frac &&
-            interval < NI_vec.size())
-            NI_interval_ids.push_back(interval + 1);
+      if (distL / width < guard_tol_frac && interval > 0)
+        NI_interval_ids.push_back(interval - 1);
+      if (distR / width < guard_tol_frac && interval < NI_vec.size())
+        NI_interval_ids.push_back(interval + 1);
     }
   }
 
   // ---- 3.  Deduplicate interval list -------------------------------------
   std::sort(NI_interval_ids.begin(), NI_interval_ids.end());
-  NI_interval_ids.erase(std::unique(NI_interval_ids.begin(),
-                                    NI_interval_ids.end()),
-                        NI_interval_ids.end());
+  NI_interval_ids.erase(
+      std::unique(NI_interval_ids.begin(), NI_interval_ids.end()),
+      NI_interval_ids.end());
 
   // ---- 4.  Root finding ---------------------------------------------------
-  std::vector<double> E_pred;          // root energies (Ecm or Elab)
+  std::vector<double> E_pred; // root energies (Ecm or Elab)
   fn_calls.clear();
   const double eps = 1e-9;
 
   for (uint interval : NI_interval_ids) {
-    double Emin = (interval == 0) ? E_over_mref_min : NI_vec[interval-1];
-    double Emax = (interval < NI_vec.size()) ? NI_vec[interval]
-                                             : E_over_mref_max;
+    double Emin = (interval == 0) ? E_over_mref_min : NI_vec[interval - 1];
+    double Emax =
+        (interval < NI_vec.size()) ? NI_vec[interval] : E_over_mref_max;
 
     std::vector<double> roots;
-    uint ncall = get_roots_in_interval(mu,
-                                       Emin + eps,
-                                       Emax - eps,
-                                       Elab,
-                                       qctype,
-                                       P,
-                                       roots);
+    uint ncall = get_roots_in_interval(mu, Emin + eps, Emax - eps, Elab, qctype,
+                                       P, roots);
     fn_calls.push_back(ncall);
     E_pred.insert(E_pred.end(), roots.begin(), roots.end());
   }
@@ -1780,14 +1743,16 @@ void BoxQuantization::get_DeltaE_predictions(
   // shift_predictions.resize(E_obs.size(),
   //                          std::numeric_limits<double>::quiet_NaN());
 
-  for (std::size_t k = 0; k < E_obs.size(); ++k)
-  {
+  for (std::size_t k = 0; k < E_obs.size(); ++k) {
     double best_diff = std::numeric_limits<double>::max();
     std::size_t best_j = static_cast<std::size_t>(-1);
 
     for (std::size_t j = 0; j < E_pred.size(); ++j) {
       double diff = std::abs(E_pred[j] - E_obs[k]);
-      if (diff < best_diff) { best_diff = diff; best_j = j; }
+      if (diff < best_diff) {
+        best_diff = diff;
+        best_j = j;
+      }
     }
 
     if (best_j == static_cast<std::size_t>(-1))
@@ -1798,18 +1763,16 @@ void BoxQuantization::get_DeltaE_predictions(
   }
 }
 
-
 void BoxQuantization::get_deltaE_roots_in_interval_bracketed_by_NIs(
-      double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
-      QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
-      std::vector<uint>& fn_calls) {
+    double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
   std::vector<double> intervals;
   list<double> NIs;
   intervals.push_back(E_over_mref_min);
   if (Elab) {
     NIs = getFreeTwoParticleEnergiesInElab(E_over_mref_min, E_over_mref_max);
-  }
-  else {
+  } else {
     NIs = getFreeTwoParticleEnergiesInEcm(E_over_mref_min, E_over_mref_max);
   }
   for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {
@@ -1820,8 +1783,9 @@ void BoxQuantization::get_deltaE_roots_in_interval_bracketed_by_NIs(
   uint num_of_expected_roots = roots.size();
 
   if (NIs.size() != num_of_expected_roots) {
-    throw(std::invalid_argument("Number of expected roots in Omega does not match number of NIs. "
-                                "Consider adjusting the energy interval."));
+    throw(std::invalid_argument(
+        "Number of expected roots in Omega does not match number of NIs. "
+        "Consider adjusting the energy interval."));
   }
 
   std::vector<double> temp_roots;
@@ -1850,8 +1814,6 @@ void BoxQuantization::get_deltaE_roots_in_interval_bracketed_by_NIs(
     }
   }
 
-
-
   // now set roots to energy differences in place
   uint energy_count = 0;
   for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {
@@ -1859,19 +1821,16 @@ void BoxQuantization::get_deltaE_roots_in_interval_bracketed_by_NIs(
   }
 }
 
-void BoxQuantization::get_roots_in_interval_bracketed_by_NIs(double mu, double E_over_mref_min,
-                                            double E_over_mref_max, bool Elab,
-                                            QuantCondType qctype,
-                                            AdaptiveBracketConfig P,
-                                            std::vector<double>& roots,
-                                            std::vector<uint>& fn_calls) {
+void BoxQuantization::get_roots_in_interval_bracketed_by_NIs(
+    double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
+    QuantCondType qctype, AdaptiveBracketConfig P, std::vector<double>& roots,
+    std::vector<uint>& fn_calls) {
   std::vector<double> intervals;
   list<double> NIs;
   intervals.push_back(E_over_mref_min);
   if (Elab) {
     NIs = getFreeTwoParticleEnergiesInElab(E_over_mref_min, E_over_mref_max);
-  }
-  else {
+  } else {
     NIs = getFreeTwoParticleEnergiesInEcm(E_over_mref_min, E_over_mref_max);
   }
   for (list<double>::const_iterator it = NIs.begin(); it != NIs.end(); ++it) {

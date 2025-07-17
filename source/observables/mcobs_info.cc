@@ -20,8 +20,7 @@ MCObsInfo::MCObsInfo(XMLHandler& xml_in) {
     if (rtag == "MCObservable") {
       if (xin.queryTag("Info")) {
         assign_from_string(xin.getString("Info"));
-      }
-      else {
+      } else {
         assign(xin);
       }
     } else if (rtag == "MCObs") {
@@ -102,28 +101,31 @@ vector<string> MCObsInfo::split(const string& astr, char delimiter) const {
   return tokens;
 }
 
-    // Constructor below has dual role. If called with only a string
-    // parameter, then the first character of "obsname" is checked to see
-    // if it is "<".  If yes, this constructor acts as the opposite of
-    // "serialize" which is needed for HDF5 I/O and "obsname" is taken
-    // to have XML content.  If no, then "obsname" is a GI observable
-    // name and default values of the other parameters are used.
-    // If called with all parameters, then no XML content is assumed.
+// Constructor below has dual role. If called with only a string
+// parameter, then the first character of "obsname" is checked to see
+// if it is "<".  If yes, this constructor acts as the opposite of
+// "serialize" which is needed for HDF5 I/O and "obsname" is taken
+// to have XML content.  If no, then "obsname" is a GI observable
+// name and default values of the other parameters are used.
+// If called with all parameters, then no XML content is assumed.
 
 MCObsInfo::MCObsInfo(const string& instring, uint index, bool simple,
-                     ComplexArg arg)
-{
- if ((!instring.empty())&&(instring[0]=='<')){
-      // Assignment from short form XML input (opposite of serialize)
+                     ComplexArg arg) {
+  if ((!instring.empty()) && (instring[0] == '<')) {
+    // Assignment from short form XML input (opposite of serialize)
     string in_string(instring);
-    for (uint k=0;k<in_string.size();++k){
-       if (in_string[k]=='|') in_string[k]='/';}
+    for (uint k = 0; k < in_string.size(); ++k) {
+      if (in_string[k] == '|')
+        in_string[k] = '/';
+    }
     XMLHandler xmlin;
     xmlin.set_from_string(in_string);
     MCObsInfo temp(xmlin);
-    *this=temp; return;}
-      // assignment from instring = obsname
- encode(instring,index,simple,arg);
+    *this = temp;
+    return;
+  }
+  // assignment from instring = obsname
+  encode(instring, index, simple, arg);
 }
 
 void MCObsInfo::setToRealPart() { set_real_part(); }
@@ -223,17 +225,18 @@ bool MCObsInfo::operator<(const MCObsInfo& rhs) const {
 
 //  private routines
 
-void MCObsInfo::encode(const vector<uint>& precode, unsigned int optype, 
-                       bool simple, ComplexArg arg)
-{
- icode.resize(precode.size()+1);
- std::copy(precode.begin(),precode.end(),icode.begin()+1);
- uint tcode=optype; 
- tcode<<=2; 
- if (!simple) tcode|=1u; 
- tcode<<=1;
- if (arg==ImaginaryPart) tcode|=1u;
- icode[0]=tcode;
+void MCObsInfo::encode(const vector<uint>& precode, unsigned int optype,
+                       bool simple, ComplexArg arg) {
+  icode.resize(precode.size() + 1);
+  std::copy(precode.begin(), precode.end(), icode.begin() + 1);
+  uint tcode = optype;
+  tcode <<= 2;
+  if (!simple)
+    tcode |= 1u;
+  tcode <<= 1;
+  if (arg == ImaginaryPart)
+    tcode |= 1u;
+  icode[0] = tcode;
 }
 
 void MCObsInfo::encode(const string& obsname, uint index, bool simple,
@@ -309,13 +312,14 @@ MCObsInfo::MCObsInfo(const unsigned int* buf) {
 
 // HDF5 serialize method
 
-std::string MCObsInfo::serialize() const
-{
+std::string MCObsInfo::serialize() const {
   XMLHandler xmlout;
-  output(xmlout,false);
+  output(xmlout, false);
   std::string result(tidyString(xmlout.str()));
-  for (uint k=0;k<result.size();++k){
-    if (result[k]=='/') result[k]='|';}
+  for (uint k = 0; k < result.size(); ++k) {
+    if (result[k] == '/')
+      result[k] = '|';
+  }
   return result;
 }
 

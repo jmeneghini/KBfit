@@ -151,9 +151,9 @@ typedef std::complex<double> cmplx;
 // Specifies a non-interacting pair of particles in a decay channel.
 
 struct NonInteractingPair {
-  uint decay_channel_idx;      // Index into decay channels
-  uint d1_sqr;             // d^2 value for first particle
-  uint d2_sqr;             // d^2 value for second particle
+  uint decay_channel_idx; // Index into decay channels
+  uint d1_sqr;            // d^2 value for first particle
+  uint d2_sqr;            // d^2 value for second particle
 };
 
 //  Specifies a basis state for the Kinverse-B matrix in the quantization
@@ -319,8 +319,9 @@ public:
   ~BoxQuantization();
 
   // Deep copy/clone method to create an identical object with new pointers
-  std::unique_ptr<BoxQuantization> clone(KtildeMatrixCalculator* new_Kmat = nullptr,
-                                        KtildeInverseCalculator* new_Kinv = nullptr) const;
+  std::unique_ptr<BoxQuantization>
+  clone(KtildeMatrixCalculator* new_Kmat = nullptr,
+        KtildeInverseCalculator* new_Kinv = nullptr) const;
 
   std::optional<QuantCondType>
   getQuantCondTypeFromString(const std::string& qctype) const;
@@ -408,11 +409,13 @@ public:
 
   std::set<KElementInfo> getElementInfos() const;
 
-  std::list<double> getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
-                                               double max_Elab_over_mref) const;
+  std::list<double>
+  getFreeTwoParticleEnergiesInElab(double min_Elab_over_mref,
+                                   double max_Elab_over_mref) const;
 
-  std::list<double> getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
-                                               double max_Ecm_over_mref) const;
+  std::list<double>
+  getFreeTwoParticleEnergiesInEcm(double min_Ecm_over_mref,
+                                  double max_Ecm_over_mref) const;
 
   double getEcmOverMrefFromElab(double Elab_over_mref) const;
 
@@ -472,10 +475,10 @@ public:
   //  specified by the "qctype" enum
 
   void getQCMatrixFromElab(double Elab_over_mref, CMatrix& QC,
-                            QuantCondType qctype);
+                           QuantCondType qctype);
 
   void getQCMatrixFromEcm(double Ecm_over_mref, CMatrix& QC,
-                            QuantCondType qctype);
+                          QuantCondType qctype);
 
   std::vector<cmplx> getQCEigenvaluesFromElab(double Elab_over_mref,
                                               QuantCondType qctype);
@@ -490,71 +493,61 @@ public:
                          QuantCondType qctype);
 
   cmplx getOmegaFromElab(double mu, double Ecm_over_mref,
-                        const ComplexHermitianMatrix& B, QuantCondType qctype);
+                         const ComplexHermitianMatrix& B, QuantCondType qctype);
 
   cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, QuantCondType qctype);
 
-  cmplx getOmegaFromEcm(double mu, double Ecm_over_mref, 
+  cmplx getOmegaFromEcm(double mu, double Ecm_over_mref,
                         const ComplexHermitianMatrix& B, QuantCondType qctype);
 
   void getEcmRootsInEcmInterval(double mu, double Ecm_over_mref_min,
-                             double Ecm_over_mref_max, QuantCondType qctype,
-                             AdaptiveBracketConfig P,
-                             std::vector<double>& roots,
-                             std::vector<uint>& fn_calls);
+                                double Ecm_over_mref_max, QuantCondType qctype,
+                                AdaptiveBracketConfig P,
+                                std::vector<double>& roots,
+                                std::vector<uint>& fn_calls);
 
   void getEcmRootsInElabInterval(double mu, double Elab_over_mref_min,
-                              double Elab_over_mref_max, QuantCondType qctype,
-                              AdaptiveBracketConfig P,
-                              std::vector<double>& roots,
-                              std::vector<uint>& fn_calls);
+                                 double Elab_over_mref_max,
+                                 QuantCondType qctype, AdaptiveBracketConfig P,
+                                 std::vector<double>& roots,
+                                 std::vector<uint>& fn_calls);
 
   void getDeltaEcmPredictionsInEcmInterval(
-        double  mu,
-        double  Ecm_over_mref_min,
-        double  Ecm_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        double                 guard_tol_frac = 0.1);
+      double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+      QuantCondType qctype, const AdaptiveBracketConfig P,
+      const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+      std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+      double guard_tol_frac = 0.1);
 
   void getDeltaEnergyPredictionsOptimized(
-        double  mu,
-        double  Ecm_over_mref_min,
-        double  Ecm_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        bool                   output_in_lab_frame = true,
-        double                 guard_tol_frac = 0.1);
+      double mu, double Ecm_over_mref_min, double Ecm_over_mref_max,
+      QuantCondType qctype, const AdaptiveBracketConfig P,
+      const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+      std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+      bool output_in_lab_frame = true, double guard_tol_frac = 0.1);
 
   void getDeltaElabPredictionsInElabInterval(
-        double  mu,
-        double  Elab_over_mref_min,
-        double  Elab_over_mref_max,
-        QuantCondType          qctype,
-        const AdaptiveBracketConfig  P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&   shift_predictions,
-        std::vector<uint>&     fn_calls,
-        double                 guard_tol_frac = 0.1);
+      double mu, double Elab_over_mref_min, double Elab_over_mref_max,
+      QuantCondType qctype, const AdaptiveBracketConfig P,
+      const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+      std::vector<double>& shift_predictions, std::vector<uint>& fn_calls,
+      double guard_tol_frac = 0.1);
 
   // Delta E in cm frame
   void getDeltaERootsInEcmInterval(double mu, double Ecm_over_mref_min,
-                             double Ecm_over_mref_max, QuantCondType qctype,
-                             AdaptiveBracketConfig P,
-                             std::vector<double>& roots,
-                             std::vector<uint>& fn_calls);
-  // Delta E in lab frame TODO: this is weird and not useful. Have both return Delta E in lab frame
+                                   double Ecm_over_mref_max,
+                                   QuantCondType qctype,
+                                   AdaptiveBracketConfig P,
+                                   std::vector<double>& roots,
+                                   std::vector<uint>& fn_calls);
+  // Delta E in lab frame TODO: this is weird and not useful. Have both return
+  // Delta E in lab frame
   void getDeltaERootsInElabInterval(double mu, double Elab_over_mref_min,
-                             double Elab_over_mref_max, QuantCondType qctype,
-                             AdaptiveBracketConfig P,
-                             std::vector<double>& roots,
-                             std::vector<uint>& fn_calls);
+                                    double Elab_over_mref_max,
+                                    QuantCondType qctype,
+                                    AdaptiveBracketConfig P,
+                                    std::vector<double>& roots,
+                                    std::vector<uint>& fn_calls);
 
 private:
   // case insensitive map from string to QuantCondType
@@ -617,10 +610,8 @@ private:
   void get_qc_matrix(double E_over_mref, bool Elab, QuantCondType qctype,
                      CMatrix& Q);
 
-  void get_qc_matrix(double E_over_mref,
-                     const ComplexHermitianMatrix& B,
-                     bool Elab, QuantCondType qctype,
-                     CMatrix& Q);
+  void get_qc_matrix(double E_over_mref, const ComplexHermitianMatrix& B,
+                     bool Elab, QuantCondType qctype, CMatrix& Q);
 
   template <typename T>
   std::set<BoxQuantBasisState> find_excluded_states_from_ktilde(T* evalptr);
@@ -640,16 +631,12 @@ private:
                   QuantCondType qctype);
 
   void get_DeltaE_predictions(
-        double                      mu,
-        double                      E_over_mref_min,
-        double                      E_over_mref_max,
-        bool                        Elab,
-        QuantCondType               qctype,
-        const AdaptiveBracketConfig       P,
-        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
-        std::vector<double>&        shift_predictions,   // output
-        std::vector<uint>&          fn_calls,            // omega evals per interval
-        double                      guard_tol_frac);
+      double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,
+      QuantCondType qctype, const AdaptiveBracketConfig P,
+      const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+      std::vector<double>& shift_predictions, // output
+      std::vector<uint>& fn_calls,            // omega evals per interval
+      double guard_tol_frac);
 
   void get_deltaE_roots_in_interval_bracketed_by_NIs(
       double mu, double E_over_mref_min, double E_over_mref_max, bool Elab,

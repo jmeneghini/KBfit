@@ -59,9 +59,7 @@ void ParameterNameRegistry::clear() {
   m_name_to_hash.clear();
 }
 
-size_t ParameterNameRegistry::size() const {
-  return m_hash_to_name.size();
-}
+size_t ParameterNameRegistry::size() const { return m_hash_to_name.size(); }
 
 uint ParameterNameRegistry::computeHash(const std::string& name) {
   // Use the same hashing algorithm as in KFitParamInfo for expressions
@@ -73,7 +71,8 @@ uint ParameterNameRegistry::computeHash(const std::string& name) {
   return hash & 0xFFFFFFFu;
 }
 
-std::string ParameterNameRegistry::getParameterNameFromMCObsName(const std::string& obs_name) const {
+std::string ParameterNameRegistry::getParameterNameFromMCObsName(
+    const std::string& obs_name) const {
   uint hash = parseParamHashFromMCObsName(obs_name);
   if (hash == 0) {
     return {}; // Not a string expression parameter
@@ -81,41 +80,46 @@ std::string ParameterNameRegistry::getParameterNameFromMCObsName(const std::stri
   return getParameterName(hash);
 }
 
-uint ParameterNameRegistry::getHashFromMCObsName(const std::string& obs_name) const {
+uint ParameterNameRegistry::getHashFromMCObsName(
+    const std::string& obs_name) const {
   return parseParamHashFromMCObsName(obs_name);
 }
 
-
-uint ParameterNameRegistry::parseParamHashFromMCObsName(std::string_view obs_name) {
+uint ParameterNameRegistry::parseParamHashFromMCObsName(
+    std::string_view obs_name) {
   const std::string kPrefix = "KStrExpr(";
-  
+
   // Convert string_view to string for compatibility
   std::string obs_str(obs_name);
-  
-  if (obs_str.size() < kPrefix.size() || 
+
+  if (obs_str.size() < kPrefix.size() ||
       obs_str.substr(0, kPrefix.size()) != kPrefix) {
     return 0; // Not a valid KStrExpr name
   }
 
   // Position right after the '('
   std::string rest = obs_str.substr(kPrefix.size());
-  
+
   // Find the first comma or closing parenthesis
   size_t end_pos = rest.find_first_of(",)");
-  if (end_pos == std::string::npos) return 0; // Invalid format
+  if (end_pos == std::string::npos)
+    return 0; // Invalid format
 
   // Extract just the hash part
   std::string hash_part = rest.substr(0, end_pos);
-  if (hash_part.empty()) return 0; // Empty hash
+  if (hash_part.empty())
+    return 0; // Empty hash
 
-  // Convert the number up to the first ',' or ')' using more compatible approach
+  // Convert the number up to the first ',' or ')' using more compatible
+  // approach
   try {
     size_t pos = 0;
     uint hash = std::stoul(hash_part, &pos);
-    
+
     // Check if entire string was consumed
-    if (pos != hash_part.size()) return 0;
-    
+    if (pos != hash_part.size())
+      return 0;
+
     return hash;
   } catch (const std::exception&) {
     return 0; // parse failure
