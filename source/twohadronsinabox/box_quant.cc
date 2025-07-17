@@ -1602,7 +1602,6 @@ void BoxQuantization::get_DeltaE_predictions(
   shift_predictions.resize(E_obs.size(), 0.0);
 
   if (E_pred.empty()) {
-    // create 'bad' predictions to jump up the chi^2 if no roots found (make zero)
     cout << "\033[31m\u25A0\033[0m No roots found" << endl;
     return;
   }

@@ -558,6 +558,17 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin,
     // Initialize decay channel masses vector
     decay_channel_masses.resize(n_decay_channels);
     
+    // Pre-allocate temporary vectors for performance (estimate max size)
+    uint max_energies_per_block = 0;
+    for (const auto& ens_data : ensemble_fit_data) {
+      for (uint n_energies : ens_data.n_energies_per_block) {
+        max_energies_per_block = std::max(max_energies_per_block, n_energies);
+      }
+    }
+    energy_shift_predictions.reserve(max_energies_per_block);
+    shift_obs_w_NIs.reserve(max_energies_per_block);
+    fn_calls.reserve(max_energies_per_block);
+    
     // The SpectrumFit is designed to use a fixed covariance matrix calculated once.
     this->initializeInvCovCholesky();
 
@@ -738,14 +749,7 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
 
 // This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
-  // Set K-matrix parameters directly without copying
-  // print out residuals and fitparams for debugging
-  // std::cout << "Params:" << std::endl;
-  // for (const auto& param : fitparams) {
-  //   cout << param << " ";
-  // }
-  // cout << endl;
-
+  // Set K-matrix parameters directly without copying - use subvector constructor
   if (Kmat) {
     Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
   } else {
@@ -757,13 +761,16 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
 
   uint residual_offset = 0;    // Index into residuals array
   uint prior_param_offset = 0; // Index into prior_params array
+  
+  // Cache the resampling index to avoid repeated member access
+  const uint current_resampling_idx = resampling_index;
 
   for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
     const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference
     
     // Get mref parameter (always present)
-    double mref_param = prior_params[prior_param_offset];
-    residuals[residual_offset] = ens_data.mref_samples[resampling_index] - mref_param;
+    const double mref_param = prior_params[prior_param_offset];
+    residuals[residual_offset] = ens_data.mref_samples[current_resampling_idx] - mref_param;
     residual_offset++;
     prior_param_offset++;
     
@@ -773,13 +780,18 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       anisotropy_param = ens_data.fixed_anisotropy_value;
     } else {
       anisotropy_param = prior_params[prior_param_offset];
-      residuals[residual_offset] = ens_data.anisotropy_samples[resampling_index] - anisotropy_param;
+      residuals[residual_offset] = ens_data.anisotropy_samples[current_resampling_idx] - anisotropy_param;
       residual_offset++;
       prior_param_offset++;
     }
     
-    // Calculate length parameter from mref * Llat * anisotropy
-    double length_param = mref_param * double(ens_data.Llat) * anisotropy_param;
+    // Calculate length parameter once and cache it
+    const double length_param = mref_param * double(ens_data.Llat) * anisotropy_param;
+    
+    // First, set length parameter for all blocks in this ensemble
+    for (uint block = 0; block < ens_data.n_blocks; ++block) {
+      ens_data.BQ_blocks[block]->setRefMassL(length_param);
+    }
     
     uint mass_sample_idx = 0;
     for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
@@ -791,7 +803,7 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
         mass1 = ens_data.fixed_mass_values[mass_base_idx];
       } else {
         mass1 = prior_params[prior_param_offset];
-        residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass1;
+        residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][current_resampling_idx] - mass1;
         residual_offset++;
         prior_param_offset++;
         mass_sample_idx++;
@@ -806,7 +818,7 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
           mass2 = ens_data.fixed_mass_values[mass2_idx];
         } else {
           mass2 = prior_params[prior_param_offset];
-          residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][resampling_index] - mass2;
+          residuals[residual_offset] = ens_data.mass_samples[mass_sample_idx][current_resampling_idx] - mass2;
           residual_offset++;
           prior_param_offset++;
           mass_sample_idx++;
@@ -818,9 +830,7 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       
       // Set masses for all blocks in this ensemble
       for (uint block = 0; block < ens_data.n_blocks; ++block) {
-        BoxQuantization* bq = ens_data.BQ_blocks[block]; // Cache pointer
-        bq->setRefMassL(length_param);
-        bq->setMassesOverRef(decay_channel, mass1, mass2);
+        ens_data.BQ_blocks[block]->setMassesOverRef(decay_channel, mass1, mass2);
       }
     }
     
@@ -831,12 +841,13 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       const uint n_energies = ens_data.n_energies_per_block[block]; 
 
       // Get energy bounds for this block
-      const double Ecm_min = ens_data.Ecm_bounds_per_block[block].first;
-      const double Ecm_max = ens_data.Ecm_bounds_per_block[block].second;
+      const auto& bounds = ens_data.Ecm_bounds_per_block[block];
+      const double Ecm_min = bounds.first;
+      const double Ecm_max = bounds.second;
       const double Elab_min = this_block_bq->getElabOverMrefFromEcm(Ecm_min);
       const double Elab_max = this_block_bq->getElabOverMrefFromEcm(Ecm_max);
 
-      // Reuse pre-allocated vectors
+      // Reuse pre-allocated vectors (avoid repeated allocation)
       energy_shift_predictions.clear();
       energy_shift_predictions.reserve(n_energies);
       shift_obs_w_NIs.clear();
@@ -846,20 +857,18 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       // Loop over all energies in this block and form pairs of energy shifts with NI
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
         // Access non-interacting pair information for this energy level
-        shift_obs_w_NIs.emplace_back(ens_data.dElab_samples[energy_offset + energy_index][resampling_index],
-                                            ens_data.non_interacting_pairs[energy_offset + energy_index]);
+        const uint global_energy_idx = energy_offset + energy_index;
+        shift_obs_w_NIs.emplace_back(ens_data.dElab_samples[global_energy_idx][current_resampling_idx],
+                                            ens_data.non_interacting_pairs[global_energy_idx]);
       }
 
       this_block_bq->getDeltaElabPredictionsInElabInterval(omega_mu, Elab_min, Elab_max,
                                                     qctype_enum, root_finder_config, shift_obs_w_NIs,
                                                 energy_shift_predictions, fn_calls);
-      
-      // Calculate residuals for this block
-      // both the energy obs and predictions are sorted by increasing Ecm
 
       // Loop over all energies in this block and form residuals
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
-        residuals[residual_offset++] = ens_data.dElab_samples[energy_offset++][resampling_index]
+        residuals[residual_offset++] = ens_data.dElab_samples[energy_offset++][current_resampling_idx]
                             - energy_shift_predictions[energy_index];
       }
     }

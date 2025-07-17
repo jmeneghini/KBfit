@@ -319,8 +319,6 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   // Track failed fits for logging (local list per rank)
   list<uint> failed_local;
   
-
-  
   // Distribute samples among ranks (round-robin)
   vector<uint> my_samples;
   for (uint sampindex = 1; sampindex <= nsamplings; ++sampindex) {
@@ -370,9 +368,6 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
       local_results[local_pos++] = params_sample[p];
     
     // Show progress (rank 0 only). We extrapolate the work done by rank 0
-    // to the whole set assuming balanced round-robin distribution. This
-    // avoids inter-rank communication while giving a smooth progress bar
-    // identical to the serial version.
     if (rank == 0) {
       ++completed_local; // one more sample finished on rank 0
       std::size_t global_est = std::min<std::size_t>(completed_local * size,
