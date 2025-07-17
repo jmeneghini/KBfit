@@ -16,7 +16,6 @@ jobs:
         with:
           clang-format-version: '15'
           check-path: 'source'
-          fallback-style: 'file'
 
   # Build and deploy documentation
   build-docs:
