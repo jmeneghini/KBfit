@@ -111,11 +111,13 @@ jobs:
       - name: Build Doxygen documentation
         run: |
           cd docs
+          mkdir -p _build/doxygen
           doxygen Doxyfile
       
       - name: Build Sphinx documentation
         run: |
           cd docs
+          mkdir -p _build/html
           sphinx-build -b html . _build/html
       
       - name: Add build timestamp and commit info
