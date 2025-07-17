@@ -6,9 +6,53 @@ on:
     branches: [ main, spectrum_fits ]
 
 jobs:
-  # Code formatting check
+  # Auto-format code on push (ensuring consistent formatting)
+  auto-format:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+      
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+      
+      - name: Run clang-format
+        run: |
+          find source -name "*.h" -o -name "*.cc" -o -name "*.cpp" -o -name "*.c" | xargs clang-format -i
+      
+      - name: Check for formatting changes
+        id: format-check
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Formatting changes detected"
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit formatting changes
+        if: steps.format-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add -A
+          git commit -m "Auto-format code with clang-format
+
+          🤖 Generated with GitHub Actions
+          
+          Co-Authored-By: GitHub Actions <actions@github.com>" || exit 0
+          git push
+
+  # Format check for pull requests (validation only)
   format-check:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - name: Run clang-format style check
@@ -20,7 +64,8 @@ jobs:
   # Build and deploy documentation
   build-docs:
     runs-on: ubuntu-latest
-    needs: format-check  # Only build docs if code is properly formatted
+    needs: auto-format
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,46 +133,3 @@ jobs:
           user_name: 'GitHub Actions'
           user_email: 'actions@github.com'
           commit_message: 'Deploy development documentation for commit ${{ github.sha }}'
-
-  # Auto-format code (only on PRs)
-  auto-format:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.head_ref }}
-      
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-      
-      - name: Run clang-format
-        run: |
-          find source -name "*.h" -o -name "*.cc" -o -name "*.cpp" -o -name "*.c" | xargs clang-format -i
-      
-      - name: Check for formatting changes
-        id: format-check
-        run: |
-          if git diff --quiet; then
-            echo "No formatting changes needed"
-            echo "changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "Formatting changes detected"
-            echo "changes=true" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Commit formatting changes
-        if: steps.format-check.outputs.changes == 'true'
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add -A
-          git commit -m "Auto-format code with clang-format
-
-          🤖 Generated with GitHub Actions
-          
-          Co-Authored-By: GitHub Actions <actions@github.com>" || exit 0
-          git push
