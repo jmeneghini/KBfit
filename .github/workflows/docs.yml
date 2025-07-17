@@ -1,0 +1,33 @@
+name: Docs
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+          pip install sphinx sphinx-rtd-theme breathe myst-parser
+      - name: Build Doxygen
+        run: |
+          cd docs
+          doxygen Doxyfile
+      - name: Build Sphinx
+        run: |
+          cd docs
+          sphinx-build -b html . _build/html
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-html
+          path: docs/_build/html
