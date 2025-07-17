@@ -1,3 +1,23 @@
+/**
+ * @file chisq_detres.h
+ * @brief Determinant residual fitting implementation for K-matrix parameter estimation
+ * 
+ * This file contains the DeterminantResidualFit class which implements the determinant
+ * residual fitting methodology for two-hadron systems in finite volume. This approach
+ * differs from spectrum fitting by directly minimizing the quantization condition 
+ * determinant rather than solving for roots.
+ * 
+ * Key features:
+ * - Direct minimization of quantization condition determinant
+ * - No root finding required (computationally efficient)
+ * - Multiple quantization condition types supported
+ * - Bounded filter function for numerical stability
+ * - Uses observed energies directly in box matrix computation
+ * 
+ * @author KBfit Development Team
+ * @date 2024
+ */
+
 #ifndef CHISQ_DETRES_H
 #define CHISQ_DETRES_H
 
@@ -9,31 +29,34 @@
 #include <memory>
 
 // **************************************************************************
+// *                      DETERMINANT RESIDUAL FITTING                      *
+// **************************************************************************
 // *                                                                        *
 // *    The class "DeterminantResidualFit", derived from the                *
-// *    base class "ChiSquare", is defined here.  It evaluates the          *
-// *    chi^2 value associated with fits using the Determinant              *
-// *    Residual method (see Nucl. Phys. B924, 477 (2017)).  In the         *
-// *    residuals, either of the following quantities is used:              *
+// *    base class "ChiSquare", implements the determinant residual method  *
+// *    for K-matrix parameter estimation (see Nucl. Phys. B924, 477 (2017)). *
+// *                                                                        *
+// *    METHOD: Direct minimization of the quantization condition           *
+// *    determinant using observed energies, avoiding expensive root        *
+// *    finding operations required in spectrum fitting.                    *
+// *                                                                        *
+// *    RESIDUALS: Either of the following filter functions is used:       *
 // *                                                                        *
 // *         Omega(mu, Ktildeinverse-B)   or   Omega(mu, 1-Ktilde*B)        *
 // *                                                                        *
-// *    where                                                               *
+// *    where the filter function is defined as:                           *
 // *                                det(A)                                  *
 // *         Omega(mu, A) = -----------------------                         *
 // *                        det( (mu+A*A^T)^(1/2) )                         *
 // *                                                                        *
-// *    B is the all-important box matrix, and Ktilde is related to the     *
-// *    scattering K-matrix through the effective range expansion           *
+// *    This filter function is bounded between -1 and 1, providing        *
+// *    numerical stability for large matrix eigenvalues.                  *
+// *                                                                        *
+// *    B is the box matrix, and Ktilde is related to the scattering       *
+// *    K-matrix through the effective range expansion:                     *
 // *                                                                        *
 // *     Kinv[aL',bL] = (q_a/mref)^(L'+1/2) Ktildeinv[aL',bL](Ecm/mref)     *
 // *                               * (q_b/mref)^(L+1/2).                    *
-// *                                                                        *
-// *    Note: this definition of Ktilde and Ktildeinv differs from that     *
-// *    used in Nucl. Phys. B924, 477 (2017).  The original definition      *
-// *    caused a dependence on the lattice size of Ktildeinv.  We need      *
-// *    to avoid this here.  The input XML for constructing such an         *
-// *    object is shown below.                                              *
 // *                                                                        *
 // *                                                                        *
 // *    <DeterminantResidualFit>                                            *
@@ -258,44 +281,125 @@
 // *                                                                        *
 // **************************************************************************
 
+/**
+ * @class DeterminantResidualFit
+ * @brief Determinant residual fitting class for K-matrix parameter estimation
+ * 
+ * @author KBfit Development Team
+ * @date 2024
+ * 
+ * This class implements the determinant residual fitting methodology, which differs
+ * from spectrum fitting by directly minimizing the quantization condition determinant
+ * rather than solving for roots. This approach is computationally more efficient
+ * as it avoids the recalculation of box matrices and root finding operation
+ * 
+ * Key features:
+ * - Direct minimization of quantization condition determinant
+ * - Multiple quantization condition types (StildeCB, StildeinvCB, KtildeB, KtildeinvB)
+ * - Bounded filter function Ω(μ, A) for numerical stability
+ * 
+ * @see ChiSquare Base class for correlated χ² fitting
+ * @see BoxQuantization For quantization condition calculations
+ * @see KtildeMatrixCalculator For K-matrix computations
+ */
 class DeterminantResidualFit : public ChiSquare {
-
-  KBObsHandler* KBOH;
-  std::vector<BoxQuantization*> BQ;
-  std::vector<RVector> Ecm_over_mref;
-  std::vector<uint> ensemble_id;
-  std::vector<std::vector<ComplexHermitianMatrix>> Bmat;
-  KtildeMatrixCalculator* Kmat;
-  KtildeInverseCalculator* Kinv;
-  double omega_mu;
-  std::vector<uint> nres_per_block;
+private:
+  /// @name Core Components
+  /// @{
+  KBObsHandler* KBOH;                                    ///< Observable handler for data management
+  std::vector<BoxQuantization*> BQ;                      ///< Box quantization objects for each block
+  std::vector<RVector> Ecm_over_mref;                    ///< Center-of-mass energies over reference mass
+  std::vector<uint> ensemble_id;                         ///< Ensemble identifiers for each block
+  std::vector<std::vector<ComplexHermitianMatrix>> Bmat; ///< Precomputed box matrices
+  KtildeMatrixCalculator* Kmat;                          ///< K-matrix calculator
+  KtildeInverseCalculator* Kinv;                         ///< K-matrix inverse calculator
+  double omega_mu;                                       ///< Filter function parameter μ
+  std::vector<uint> nres_per_block;                      ///< Number of residuals per block
+  /// @}
 
 public:
+  /// @name Construction and Destruction
+  /// @{
+  
+  /**
+   * @brief Constructor for determinant residual fitting from XML configuration
+   * @param xmlin XML handler for input configuration
+   * @param kboh Observable handler for data management
+   * @param xmlout XML handler for output
+   * @param outfile_stub Output file stub for result files
+   */
   DeterminantResidualFit(XMLHandler& xmlin, KBObsHandler* kboh,
                          XMLHandler& xmlout,
                          const std::string& outfile_stub = "");
 
+  /**
+   * @brief Virtual destructor
+   */
   ~DeterminantResidualFit() override;
 
+  /**
+   * @brief Clear all internal data structures
+   */
   void clear();
 
-  // Deep copy/clone method to create an identical object with new pointers
+  /**
+   * @brief Deep copy/clone method to create an identical object with new pointers
+   * @param new_kboh New observable handler (optional, uses existing if nullptr)
+   * @return Unique pointer to cloned DeterminantResidualFit object
+   */
   std::unique_ptr<DeterminantResidualFit> clone(KBObsHandler* new_kboh = nullptr) const;
+  /// @}
 
+  /// @name ChiSquare Interface Implementation
+  /// @{
+  
+  /**
+   * @brief Generate initial guess for fit parameters
+   * @param fitparams Vector to store initial parameter values
+   * @param only_update_priors If true, only update prior-related parameters
+   */
   void guessInitialFitParamValues(std::vector<double>& fitparams, bool only_update_priors) const override;
 
+  /**
+   * @brief Get observable information for all fit parameters
+   * @param fitinfos Vector to store MCObsInfo for each parameter
+   */
   void getFitParamMCObsInfo(std::vector<MCObsInfo>& fitinfos) const override;
 
+  /**
+   * @brief Generate XML output for fit results
+   * @param xmlout XML handler for output
+   */
   void do_output(XMLHandler& xmlout) const override;
 
+  /**
+   * @brief Get fit parameter information
+   * @return Reference to vector of fit parameter information
+   */
   const std::vector<KFitParamInfo>& getFitParamInfos() const;
+  /// @}
 
 private:
-  void
-  evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) override;
+  /// @name Core Fitting Methods
+  /// @{
+  
+  /**
+   * @brief Evaluate residuals using determinant residual method
+   * @param fitparams Current fit parameter values
+   * 
+   * This method computes the filter function Ω(μ, A) for the quantization
+   * condition determinant, where A is either (K̃^(-1) - B) or (1 - K̃B)
+   * (or their Cayley transformed alternatives).
+   * The filter function provides numerical stability by bounding results
+   * between -1 and 1.
+   */
+  void evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) override;
 
-  // Private default constructor for clone method
+  /**
+   * @brief Private default constructor for clone method
+   */
   DeterminantResidualFit();
+  /// @}
 
   friend class TaskHandler;
 };

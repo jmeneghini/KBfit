@@ -1,6 +1,31 @@
+/**
+ * @file chisq_spectrum.cc
+ * @brief Implementation of spectrum fitting methodology for K-matrix parameter estimation
+ * 
+ * This file contains the implementation of the SpectrumFit class, which provides
+ * a comprehensive framework for fitting scattering parameters (via the K-matrix)
+ * by directly comparing to the measured energy spectrum using the Lüscher method.
+ * 
+ * The spectrum fitting approach differs from determinant residual fitting by:
+ * 1. Solving the Omega function Ω(Ecm) = 0 to predict energy shifts from non-interacting levels
+ * 2. Computing χ² residuals between predicted and observed energy shifts
+ * 3. Including prior contributions for non-dElab observables
+ * 
+ * Performance optimizations implemented:
+ * - Pre-allocated temporary vectors to avoid repeated memory allocations
+ * - Cached frequently accessed values to reduce computational overhead
+ * - Cache-friendly memory access patterns in critical loops
+ * - Minimized function call overhead in hot paths
+ * 
+ * @author KBfit Development Team
+ * @date 2024
+ */
+
 #include "chisq_spectrum.h"
 #include "task_utils.h"
 
+// **************************************************************************
+// *                         SPECTRUM FITTING METHODOLOGY                   *
 // **************************************************************************
 // *                                                                        *
 // *    The class "SpectrumFit", derived from the base class "ChiSquare",   *
@@ -17,7 +42,7 @@
 // *    1. Energy Residuals: (E_lab_shift_measured - E_lab_shift_predicted) *
 // *       The predicted energy shifts are found by numerically finding     *
 // *       the roots of the quantization condition (e.g., det(Kinv-B)=0)    *
-// *       within a specified energy range for each kinematic block.        *
+// *       to predict energy shifts from non-interacting energies.         *
 // *                                                                        *
 // *    2. Prior Residuals: (param_prior - param_fit_value)                 *
 // *       For each lattice QCD parameter that is not held fixed, this term *
@@ -747,34 +772,63 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
   // TODO: Add any other SpectrumFit specific outputs if necessary
 }
 
-// This method calculates residuals. Covariance is fixed after initializeInvCovCholesky.
+/**
+ * @brief Performance-critical method for evaluating residuals and inverse covariance
+ * @param fitparams Current fit parameter values
+ * 
+ * This method is the computational bottleneck of the spectrum fitting process,
+ * called for every function evaluation during minimization. It performs the
+ * following operations:
+ * 
+ * 1. Parameter Extraction: Extracts K-matrix parameters, masses, and anisotropy
+ * 2. Box Quantization Update: Updates BoxQuantization objects with current parameters
+ * 3. Root Finding: Solves Omega function Ω(Ecm) = 0 to predict energy shifts from non-interacting energies
+ * 4. Residual Calculation: Computes residuals between predicted and observed energy shifts
+ * 5. Prior Contributions: Adds prior terms for non-dElab observables
+ * 
+ * PERFORMANCE OPTIMIZATIONS IMPLEMENTED:
+ * - Pre-allocated temporary vectors to avoid repeated memory allocations
+ * - Cached frequently accessed values (resampling index, length parameters)
+ * - Cache-friendly memory access patterns in ensemble and block loops
+ * - Minimized function call overhead through direct member access
+ * - Efficient parameter passing using pointer arithmetic
+ * - CENTER-OF-MASS FRAME OPTIMIZATION: Root finding now works directly in CM frame
+ *   to eliminate redundant Ecm ↔ Elab coordinate transformations that were previously
+ *   performed for every single root finding evaluation.
+ * 
+ * The covariance matrix is fixed after initializeInvCovCholesky and not recalculated.
+ * 
+ * @note This method is called thousands of times during fitting - any optimization
+ *       here has significant impact on overall performance.
+ */
 void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitparams) {
-  // Set K-matrix parameters directly without copying - use subvector constructor
+  // OPTIMIZATION: Set K-matrix parameters directly without copying - use subvector constructor
   if (Kmat) {
     Kmat->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
   } else {
     Kinv->setParameterValues(std::vector<double>(fitparams.begin(), fitparams.begin() + n_kmat_params));
   }
   
-  // Use pointer arithmetic to avoid copying prior_params vector
+  // OPTIMIZATION: Use pointer arithmetic to avoid copying prior_params vector
   const double* prior_params = fitparams.data() + n_kmat_params;
 
   uint residual_offset = 0;    // Index into residuals array
   uint prior_param_offset = 0; // Index into prior_params array
   
-  // Cache the resampling index to avoid repeated member access
+  // OPTIMIZATION: Cache the resampling index to avoid repeated member access
   const uint current_resampling_idx = resampling_index;
 
+  // OPTIMIZATION: Process each ensemble in cache-friendly manner
   for (uint ensemble = 0; ensemble < ensemble_fit_data.size(); ++ensemble) {
-    const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // Cache reference
+    const EnsembleFitData& ens_data = ensemble_fit_data[ensemble]; // OPTIMIZATION: Cache reference
     
-    // Get mref parameter (always present)
+    // Extract and process mref parameter (always present)
     const double mref_param = prior_params[prior_param_offset];
     residuals[residual_offset] = ens_data.mref_samples[current_resampling_idx] - mref_param;
     residual_offset++;
     prior_param_offset++;
     
-    // Get anisotropy parameter
+    // Extract and process anisotropy parameter
     double anisotropy_param;
     if (ens_data.is_anisotropy_fixed) {
       anisotropy_param = ens_data.fixed_anisotropy_value;
@@ -785,10 +839,10 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
       prior_param_offset++;
     }
     
-    // Calculate length parameter once and cache it
+    // OPTIMIZATION: Calculate length parameter once and cache it
     const double length_param = mref_param * double(ens_data.Llat) * anisotropy_param;
     
-    // First, set length parameter for all blocks in this ensemble
+    // OPTIMIZATION: Set length parameter for all blocks in a single pass
     for (uint block = 0; block < ens_data.n_blocks; ++block) {
       ens_data.BQ_blocks[block]->setRefMassL(length_param);
     }
@@ -825,36 +879,36 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
         }
       }
       
-      // Store masses for efficient access in energy loop
+      // OPTIMIZATION: Store masses for efficient access in energy loop
       decay_channel_masses[decay_channel] = std::make_pair(mass1, mass2);
       
-      // Set masses for all blocks in this ensemble
+      // OPTIMIZATION: Set masses for all blocks in a single pass
       for (uint block = 0; block < ens_data.n_blocks; ++block) {
         ens_data.BQ_blocks[block]->setMassesOverRef(decay_channel, mass1, mass2);
       }
     }
     
-    // Calculate energy residuals
+    // CRITICAL PERFORMANCE SECTION: Calculate energy residuals
     uint energy_offset = 0;
     for (uint block = 0; block < ens_data.n_blocks; ++block) {
       BoxQuantization* this_block_bq = ens_data.BQ_blocks[block];
       const uint n_energies = ens_data.n_energies_per_block[block]; 
 
-      // Get energy bounds for this block
+      // OPTIMIZATION: Cache energy bounds for this block - work directly in CM frame
+      // Energy bounds are stored in CM frame to avoid repeated transformations
       const auto& bounds = ens_data.Ecm_bounds_per_block[block];
       const double Ecm_min = bounds.first;
       const double Ecm_max = bounds.second;
-      const double Elab_min = this_block_bq->getElabOverMrefFromEcm(Ecm_min);
-      const double Elab_max = this_block_bq->getElabOverMrefFromEcm(Ecm_max);
 
-      // Reuse pre-allocated vectors (avoid repeated allocation)
+      // OPTIMIZATION: Reuse pre-allocated vectors (avoid repeated allocation)
       energy_shift_predictions.clear();
       energy_shift_predictions.reserve(n_energies);
       shift_obs_w_NIs.clear();
       shift_obs_w_NIs.reserve(n_energies);
       fn_calls.clear();
 
-      // Loop over all energies in this block and form pairs of energy shifts with NI
+      // OPTIMIZATION: Cache-friendly loop over energies in this block
+      // Build vector of observed energy shifts paired with non-interacting pairs
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
         // Access non-interacting pair information for this energy level
         const uint global_energy_idx = energy_offset + energy_index;
@@ -862,11 +916,12 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
                                             ens_data.non_interacting_pairs[global_energy_idx]);
       }
 
-      this_block_bq->getDeltaElabPredictionsInElabInterval(omega_mu, Elab_min, Elab_max,
+      this_block_bq->getDeltaEnergyPredictionsOptimized(omega_mu, Ecm_min, Ecm_max,
                                                     qctype_enum, root_finder_config, shift_obs_w_NIs,
-                                                energy_shift_predictions, fn_calls);
+                                                    energy_shift_predictions, fn_calls, 
+                                                    /* output_in_lab_frame = */ true);
 
-      // Loop over all energies in this block and form residuals
+      // Residuals are computed as: observed_shift - predicted_shift
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
         residuals[residual_offset++] = ens_data.dElab_samples[energy_offset++][current_resampling_idx]
                             - energy_shift_predictions[energy_index];
@@ -878,9 +933,25 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(const std::vector<double>& fitp
 
 
 
-// By introducing the priors for our MC observables,
-// cov(r_i, r_j) simplifies to cov(R_i, R_j), where
-// R is the observable
+/**
+ * @brief Initialize inverse covariance matrix Cholesky decomposition
+ * 
+ * This method calculates the inverse covariance matrix and its Cholesky decomposition
+ * once at the beginning of the fitting process. The decomposition is used by the
+ * base ChiSquare class to efficiently compute χ² values during minimization.
+ * 
+ * The covariance matrix structure is simplified by introducing priors for MC observables:
+ * cov(r_i, r_j) = cov(R_i, R_j), where R is the observable and r is the residual.
+ * 
+ * The method processes observables in the following order:
+ * 1. Reference mass (mref) - always present
+ * 2. Anisotropy - only if not fixed
+ * 3. Masses - only non-fixed ones
+ * 4. Energy levels - for all ensembles and blocks
+ * 
+ * @note This method is called once during initialization, unlike evalResidualsAndInvCovCholesky
+ *       which is called repeatedly during fitting.
+ */
 void SpectrumFit::initializeInvCovCholesky() {
   std::vector<const RVector*> obs_samples;
   std::vector<MCEnsembleInfo> obs_ensemble_infos;

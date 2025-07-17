@@ -1,3 +1,22 @@
+/**
+ * @file chisq_fit.cc
+ * @brief Implementation of chi-square fitting workflow with MPI support
+ * 
+ * This file implements the complete chi-square fitting workflow for KBfit,
+ * including both serial and MPI parallel execution modes. The fitting process
+ * uses bootstrap/jackknife resampling to estimate parameter uncertainties.
+ * 
+ * Key features:
+ * - Automatic detection of MPI environment
+ * - Load-balanced parallel resampling fitting across MPI ranks
+ * - Progress tracking with visual progress bars
+ * - Comprehensive error handling and logging
+ * - Efficient result aggregation and output generation
+ * 
+ * @author KBfit Development Team
+ * @date 2024
+ */
+
 #include "chisq_fit.h"
 #include <mpi.h>
 #include <sstream>
@@ -6,7 +25,73 @@
 #include <cstdio>
 using namespace std;
 
-// Runs the chi-square fitting procedure, either in serial or MPI mode.
+/**
+ * @brief Display progress bar for fitting operations
+ * @param i Current iteration number
+ * @param total Total number of iterations
+ * 
+ * Implementation of visual progress bar with elapsed time and estimated time remaining.
+ * Uses static state to persist across calls for the same fitting session.
+ */
+void show_progress(std::size_t i, std::size_t total)
+{
+  // Use a static pointer to persist the bar across calls.
+  static std::unique_ptr<indicators::ProgressBar> bar_ptr;
+  // Use a static total to detect when a new fit with a different number of samples starts.
+  static std::size_t bar_total = 0;
+
+  // (Re)initialize if this is the first call, or if the total number of samples has changed.
+  if (!bar_ptr || bar_total != total) {
+    bar_total = total;
+    bar_ptr = std::make_unique<indicators::ProgressBar>(
+        indicators::option::BarWidth{50},
+        indicators::option::Start{"["},
+        indicators::option::Fill{"="},
+        indicators::option::Lead{">"},
+        indicators::option::Remainder{" "},
+        indicators::option::End{"]"},
+        indicators::option::ShowElapsedTime{true},
+        indicators::option::ShowRemainingTime{true},
+        indicators::option::MaxProgress{total},
+        indicators::option::ForegroundColor{indicators::Color::cyan}
+    );
+  }
+
+  if (bar_ptr) {
+    // Update the prefix to show the current sample count.
+    bar_ptr->set_option(indicators::option::PrefixText{
+        "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "
+    });
+
+    bar_ptr->set_progress(i);
+
+    // When the loop is finished, mark as complete and clean up.
+    if (i >= total) {
+      bar_ptr->set_option(indicators::option::ForegroundColor{indicators::Color::green});
+      bar_ptr->mark_as_completed();
+      // Reset the pointer to ensure a new bar is created for any subsequent fits.
+      // The ProgressBar destructor handles the final newline.
+      bar_ptr.reset();
+    }
+  }
+}
+
+/**
+ * @brief Main entry point for chi-square fitting procedure
+ * @param chisq_ref Reference to ChiSquare object (e.g., SpectrumFit)
+ * @param csm_info Minimizer configuration information
+ * @param chisq_dof Output chi-square per degree of freedom
+ * @param fitqual Output fit quality (p-value)
+ * @param bestfit_params Output best-fit parameter estimates
+ * @param param_covariance Output parameter covariance matrix
+ * @param out_sampling_file Output file for sampling results
+ * @param xmlout XML handler for output
+ * @param kobs Observable handler for data management
+ * 
+ * Automatically detects MPI environment and chooses appropriate execution mode:
+ * - Single process: Serial execution
+ * - Multiple processes: MPI parallel execution
+ */
 void doChiSquareFitting(ChiSquare& chisq_ref,
                         const ChiSquareMinimizerInfo& csm_info,
                         double& chisq_dof, double& fitqual,
@@ -38,7 +123,25 @@ void doChiSquareFitting(ChiSquare& chisq_ref,
                           xmlout, kobs);
 }
 
-// Serial version
+/**
+ * @brief Serial implementation of chi-square fitting
+ * @param chisq_ref Reference to ChiSquare object
+ * @param csm_info Minimizer configuration
+ * @param chisq_dof Output chi-square per degree of freedom
+ * @param fitqual Output fit quality
+ * @param bestfit_params Output best-fit parameters
+ * @param param_covariance Output parameter covariance matrix
+ * @param out_sampling_file Output file for sampling results
+ * @param xmlout XML handler for output
+ * @param kobs Observable handler
+ * 
+ * Performs the complete fitting workflow in serial mode:
+ * 1. Full sample fit to get initial best-fit parameters
+ * 2. Bootstrap/jackknife resampling fits for uncertainty estimation
+ * 3. Result aggregation and output generation
+ * 
+ * The progress is tracked with a visual progress bar.
+ */
 void doChiSquareFittingSerial(ChiSquare& chisq_ref,
                               const ChiSquareMinimizerInfo& csm_info,
                               double& chisq_dof, double& fitqual,
@@ -207,7 +310,32 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
 
 
 
-// MPI Parallel version
+/**
+ * @brief MPI parallel implementation of chi-square fitting
+ * @param chisq_ref Reference to ChiSquare object
+ * @param csm_info Minimizer configuration
+ * @param chisq_dof Output chi-square per degree of freedom
+ * @param fitqual Output fit quality
+ * @param bestfit_params Output best-fit parameters
+ * @param param_covariance Output parameter covariance matrix
+ * @param out_sampling_file Output file for sampling results
+ * @param xmlout XML handler for output
+ * @param kobs Observable handler
+ * @param comm MPI communicator
+ * 
+ * Performs chi-square fitting with MPI parallelization:
+ * 1. Rank 0 performs full sample fit
+ * 2. Results are broadcast to all ranks
+ * 3. Resampling fits are distributed across ranks in round-robin fashion
+ * 4. Results are gathered back to rank 0
+ * 5. Rank 0 aggregates results and generates output
+ * 
+ * Features:
+ * - Load-balanced work distribution
+ * - Efficient result aggregation with MPI_Gatherv
+ * - Progress tracking on rank 0
+ * - Comprehensive error handling and logging
+ */
 void doChiSquareFittingMPI(ChiSquare& chisq_ref,
                                      const ChiSquareMinimizerInfo& csm_info,
                                      double& chisq_dof, double& fitqual,
@@ -467,11 +595,6 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
     std::cerr << "\nAll ranks completed resampling fits. Finalizing results..." << std::endl;
   }
   
-  // ─────────────────────────────────────────────────────────────
-  // (Removed per-rank sample count exchange – it was only used
-  //   for debugging and generated unnecessary MPI traffic.)
-  // ─────────────────────────────────────────────────────────────
-  
   // Collect logger strings from all ranks for combined output
   if (rank == 0) {
     // Start with rank 0's logger
@@ -563,19 +686,32 @@ void doChiSquareFittingMPI(ChiSquare& chisq_ref,
   MPI_Barrier(comm);
 }
 
-// *************************************************
-//
-// The ratios of incomplete gamma function are defined below:
-//
-//       double Qgamma(double s, double x);    s>0, x>=0
-//       double Pgamma(double s, double x);
-//
-// If an error occurs, an exception is thrown.
-//
-// *************************************************
+/**
+ * @name Gamma Function Utilities
+ * @brief Incomplete gamma function implementations for chi-square statistics
+ * 
+ * These functions provide implementations of the incomplete gamma function
+ * and related utilities needed for computing chi-square fit quality (p-values).
+ * 
+ * Functions provided:
+ * - gammln(xx): Natural logarithm of gamma function
+ * - Qgamma(s, x): Upper incomplete gamma function ratio
+ * - Pgamma(s, x): Lower incomplete gamma function ratio
+ * - getChiSquareFitQuality(dof, chisq): Chi-square p-value calculation
+ * 
+ * The implementation uses series expansion for small x and continued fraction
+ * for large x to ensure numerical stability across the full domain.
+ *
+ * @{
+ */
 
-// Returns the value of ln(Gamma(xx)) for xx>0
-
+/**
+ * @brief Natural logarithm of the gamma function
+ * @param xx Input value (must be > 0)
+ * @return ln(Gamma(xx))
+ * 
+ * Uses Lanczos approximation for numerical stability.
+ */
 double gammln(double xx) {
   double x, y, tmp, ser;
   static double cof[6] = {76.18009172947146,     -86.50532032941677,
@@ -680,13 +816,28 @@ double Pgamma(double a, double x) {
   }
 }
 
-//  Returns the chi-square quality of fit, given by
-//
-//       Qgamma( dof/2,  chisquare/2 )
-
+/**
+ * @brief Calculate chi-square fit quality (p-value)
+ * @param dof Degrees of freedom
+ * @param chisquare Chi-square value
+ * @return Fit quality (p-value)
+ * 
+ * Returns the chi-square quality of fit, given by:
+ *     Q = Qgamma(dof/2, chisquare/2)
+ * 
+ * This is the probability that a chi-square random variable with
+ * 'dof' degrees of freedom would exceed the observed value.
+ * 
+ * Interpretation:
+ * - Values near 1: Very good fit
+ * - Values near 0: Very poor fit
+ * - Values < 0.05: Typically considered poor fit
+ */
 double getChiSquareFitQuality(unsigned int dof, double chisquare) {
   return Qgamma(0.5 * double(dof), 0.5 * chisquare);
 }
+
+/** @} */ // End of Gamma Function Utilities
 
 
 

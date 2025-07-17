@@ -1,11 +1,29 @@
+/**
+ * @file chisq_detres.cc
+ * @brief Implementation of determinant residual fitting methodology
+ * 
+ * This file implements the DeterminantResidualFit class, which provides
+ * an efficient alternative to spectrum fitting by directly minimizing
+ * the quantization condition determinant rather than solving for roots.
+ * 
+ * Key advantages over spectrum fitting:
+ * - Box matrix is constructed at startup, not during each evaluation
+ * - No expensive root finding operations required
+ * 
+ * The method uses the filter function Ω(μ, A) = det(A)/det[(μ² + AA†)^(1/2)]
+ * to ensure residuals remain bounded between -1 and 1, providing excellent
+ * numerical stability even for large matrix eigenvalues.
+ * 
+ * @author KBfit Development Team
+ * @date 2024
+ */
+
 #include "chisq_detres.h"
 #include "task_utils.h"
 #include <filesystem>
 #include <map>
 #include <string>
 using namespace std;
-
-// *************************************************************
 
 DeterminantResidualFit::DeterminantResidualFit()
     : ChiSquare(), KBOH(nullptr), Kmat(nullptr), Kinv(nullptr), omega_mu(-1.0) {

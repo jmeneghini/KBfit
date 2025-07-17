@@ -520,6 +520,18 @@ public:
         std::vector<uint>&     fn_calls,
         double                 guard_tol_frac = 0.1);
 
+  void getDeltaEnergyPredictionsOptimized(
+        double  mu,
+        double  Ecm_over_mref_min,
+        double  Ecm_over_mref_max,
+        QuantCondType          qctype,
+        const AdaptiveBracketConfig  P,
+        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+        std::vector<double>&   shift_predictions,
+        std::vector<uint>&     fn_calls,
+        bool                   output_in_lab_frame = true,
+        double                 guard_tol_frac = 0.1);
+
   void getDeltaElabPredictionsInElabInterval(
         double  mu,
         double  Elab_over_mref_min,

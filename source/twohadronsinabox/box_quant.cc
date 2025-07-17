@@ -993,6 +993,176 @@ void BoxQuantization::getDeltaElabPredictionsInElabInterval(
       guard_tol_frac);
 }
 
+/**
+ * @brief Optimized energy shift prediction working directly in Ecm coordinates
+ * 
+ * This function performs root finding directly in the center-of-mass frame to avoid 
+ * redundant coordinate transformations. The quantization condition Ω(Ecm) = 0 is 
+ * solved in CM frame, then energy shifts are computed in the requested output frame.
+ * 
+ * @param mu Filter parameter for Omega function
+ * @param Ecm_over_mref_min Minimum CM energy for root finding
+ * @param Ecm_over_mref_max Maximum CM energy for root finding
+ * @param qctype Quantization condition type (StildeCB, KtildeB, etc.)
+ * @param P Adaptive bracket configuration for root finding
+ * @param shift_obs_w_NIs Vector of observed energy shifts with non-interacting pairs
+ * @param shift_predictions Output vector of predicted energy shifts
+ * @param fn_calls Output vector of function evaluation counts per interval
+ * @param output_in_lab_frame If true, output shifts in lab frame; if false, in CM frame
+ * @param guard_tol_frac Tolerance fraction to check other side of NI interval
+ * 
+ * @performance Optimizations implemented:
+ * - Root finding performed directly in CM frame to avoid coordinate transformations
+ */
+void BoxQuantization::getDeltaEnergyPredictionsOptimized(
+        double  mu,
+        double  Ecm_over_mref_min,
+        double  Ecm_over_mref_max,
+        QuantCondType          qctype,
+        const AdaptiveBracketConfig  P,
+        const std::vector<std::pair<double, NonInteractingPair>>& shift_obs_w_NIs,
+        std::vector<double>&   shift_predictions,
+        std::vector<uint>&     fn_calls,
+        bool                   output_in_lab_frame,
+        double                 guard_tol_frac) {
+  
+  // ---- 1. Get non-interacting energies in CM frame -------------------------
+  std::list<double> NI_energies_cm = getFreeTwoParticleEnergiesInEcm(
+      Ecm_over_mref_min, Ecm_over_mref_max);
+  
+  if (NI_energies_cm.empty())
+    throw std::runtime_error("No NI energies in requested CM interval.");
+  
+  std::vector<double> NI_vec_cm(NI_energies_cm.begin(), NI_energies_cm.end());
+  
+  // ---- 2. Process observations and convert to CM frame ------------------
+  std::vector<double> Ecm_obs;                    // observed energies in CM frame
+  std::vector<double> Ecm_free_obs;               // matching NI free energies in CM frame
+  std::vector<NonInteractingPair> ni_pairs;       // store NI pairs for deferred lab frame calculations
+  std::unordered_map<uint, std::reference_wrapper<const EcmTransform>> ecm_transforms;
+  std::vector<uint> NI_interval_ids;              // intervals to search
+  
+  for (const auto& obs : shift_obs_w_NIs) {
+    double dE_obs = obs.first;
+    const NonInteractingPair& ni = obs.second;
+    
+    // Cache EcmTransform for this decay channel
+    auto [it, inserted] = ecm_transforms.try_emplace(
+        ni.decay_channel_idx,
+        std::cref(getDecayChannelEcmTransform(ni.decay_channel_idx)));
+    const EcmTransform& et = it->second.get();
+    
+    // Get free two-particle energies - only CM frame for now
+    double Ecm_free = et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
+    
+    // Convert observed energy to CM frame
+    // Assumption: dE_obs is in lab frame initially. TODO: generalize
+    // We need lab frame free energy for this conversion
+    double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
+    double Elab_obs = dE_obs + Elab_free;
+    double Ecm_obs_val = getEcmOverMrefFromElab(Elab_obs);
+    
+    // Check if CM energy is within bounds
+    if (Ecm_obs_val < Ecm_over_mref_min || Ecm_obs_val > Ecm_over_mref_max)
+      throw std::invalid_argument("Observation outside CM energy interval.");
+    
+    Ecm_obs.push_back(Ecm_obs_val);
+    Ecm_free_obs.push_back(Ecm_free);
+    ni_pairs.push_back(ni);  // Store for deferred lab frame calculations
+    
+    // Locate NI interval in CM frame
+    uint interval = 0;
+    double left = Ecm_over_mref_min;
+    for (double pole : NI_vec_cm) {
+      if (Ecm_obs_val <= pole) break;
+      left = pole;
+      ++interval;
+    }
+    NI_interval_ids.push_back(interval);
+    
+    // Apply guard tolerance for roots that cross the interval boundaries
+    double right = (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
+    double width = right - left;
+    double distL = Ecm_obs_val - left;
+    double distR = right - Ecm_obs_val;
+    
+    if (width > 0) {
+      if (distL / width < guard_tol_frac && interval > 0)
+        NI_interval_ids.push_back(interval - 1);
+      if (distR / width < guard_tol_frac && interval < NI_vec_cm.size())
+        NI_interval_ids.push_back(interval + 1);
+    }
+  }
+  
+  // ---- 3. Deduplicate interval list -------------------------------------
+  std::sort(NI_interval_ids.begin(), NI_interval_ids.end());
+  NI_interval_ids.erase(std::unique(NI_interval_ids.begin(), NI_interval_ids.end()), 
+                        NI_interval_ids.end());
+  
+  // ---- 4. Root finding in CM frame ----------------------------------
+  std::vector<double> Ecm_pred;          // predicted root energies in CM frame
+  fn_calls.clear();
+  const double eps = 1e-9;
+  
+  for (uint interval : NI_interval_ids) {
+    double Ecm_min = (interval == 0) ? Ecm_over_mref_min : NI_vec_cm[interval-1];
+    double Ecm_max = (interval < NI_vec_cm.size()) ? NI_vec_cm[interval] : Ecm_over_mref_max;
+    
+    std::vector<double> roots;
+    uint ncall = get_roots_in_interval(mu,
+                                       Ecm_min + eps,
+                                       Ecm_max - eps,
+                                       /* Elab = */ false,  // Work in CM frame
+                                       qctype,
+                                       P,
+                                       roots);
+    fn_calls.push_back(ncall);
+    Ecm_pred.insert(Ecm_pred.end(), roots.begin(), roots.end());
+  }
+  
+  shift_predictions.resize(Ecm_obs.size(), 0.0);
+  
+  if (Ecm_pred.empty()) {
+    std::cout << "\033[31m\u25A0\033[0m No roots found in CM frame" << std::endl;
+    return;
+  }
+  
+  // ---- 5. Match roots to observations and compute energy shifts -------
+  for (std::size_t k = 0; k < Ecm_obs.size(); ++k) {
+    double best_diff = std::numeric_limits<double>::max();
+    std::size_t best_j = static_cast<std::size_t>(-1);
+    
+    // Find closest predicted root to observed energy (both in CM frame)
+    for (std::size_t j = 0; j < Ecm_pred.size(); ++j) {
+      double diff = std::abs(Ecm_pred[j] - Ecm_obs[k]);
+      if (diff < best_diff) {
+        best_diff = diff;
+        best_j = j;
+      }
+    }
+    
+    if (best_j == static_cast<std::size_t>(-1))
+      throw std::runtime_error("No root energy close to observation.");
+    
+    // Compute energy shift in requested output frame
+    if (output_in_lab_frame) {
+      // Convert predicted CM root to lab frame
+      double Elab_pred = getElabOverMrefFromEcm(Ecm_pred[best_j]);
+      
+      // Get lab frame free energy for this observation (computed on demand)
+      const NonInteractingPair& ni = ni_pairs[k];
+      const EcmTransform& et = ecm_transforms.at(ni.decay_channel_idx);
+      double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
+      
+      // Energy shift in lab frame = predicted lab energy - free lab energy
+      shift_predictions[k] = Elab_pred - Elab_free;
+    } else {
+      // Energy shift in CM frame = predicted CM energy - free CM energy
+      shift_predictions[k] = Ecm_pred[best_j] - Ecm_free_obs[k];
+    }
+  }
+}
+
 
 void BoxQuantization::getDeltaERootsInEcmInterval(double mu, double Ecm_over_mref_min,
                              double Ecm_over_mref_max, QuantCondType qctype,
