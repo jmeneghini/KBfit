@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+**CRITICAL: ALWAYS ACTIVATE CONDA ENVIRONMENT FIRST!**
+```bash
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate spectrum
+```
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

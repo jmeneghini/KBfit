@@ -65,7 +65,11 @@ struct EnsembleFitData {
   std::vector<uint> n_energies_per_block =
       {}; ///< Number of energy levels per momentum block
   std::vector<std::pair<double, double>> Ecm_bounds_per_block =
-      {};            ///< Energy bounds for each block
+      {};            ///< Energy bounds for each block (global, used for initialization)
+  std::vector<std::vector<std::pair<double, double>>> Ecm_bounds_per_block_per_sample =
+      {};            ///< Sample-specific energy bounds for each block [block][sample]
+  std::vector<double> auto_margin_per_block =
+      {};            ///< Auto margin applied for each block (0.0 if bounds were manually set)
   uint n_blocks = 0; ///< Total number of momentum blocks
   /// @}
 
