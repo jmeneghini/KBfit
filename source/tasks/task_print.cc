@@ -8,37 +8,44 @@
 using namespace std;
 
 /**
- * @brief Prints the Omega function for Elab between minimum and maximum values at fixed increments
- * 
- * This function evaluates and outputs the Omega function (or determinant) for lab-frame energies
- * between user-specified minimum and maximum values. Output for each KBBlock is sent to a separate 
- * file with a common stub and different integer suffixes.
- * 
+ * @brief Prints the Omega function for Elab between minimum and maximum values
+ * at fixed increments
+ *
+ * This function evaluates and outputs the Omega function (or determinant) for
+ * lab-frame energies between user-specified minimum and maximum values. Output
+ * for each KBBlock is sent to a separate file with a common stub and different
+ * integer suffixes.
+ *
  * @param xmltask XML task handler containing input parameters
  * @param xmlout XML output handler for results
  * @param taskcount Task counter for file naming
- * 
+ *
  * @details
- * 
+ *
  * **Output Formats:**
  * - `OutputMode = "full"`: Format is `Elab/mref  value_from_full_sample`
- * - `OutputMode = "resampled"`: Format is `Elab/mref  value_from_full_sample upper_error down_error`
- * 
+ * - `OutputMode = "resampled"`: Format is `Elab/mref  value_from_full_sample
+ * upper_error down_error`
+ *
  * **Requirements:**
  * - An L³ spatial lattice is required
- * - Reference scale times temporal lattice spacing must be specified in `<ReferenceMassTimeSpacingProduct>`
+ * - Reference scale times temporal lattice spacing must be specified in
+ * `<ReferenceMassTimeSpacingProduct>`
  * - Either `<KtildeMatrixInverse>` or `<KtildeMatrix>` must be provided
- * 
+ *
  * **Configuration Options:**
- * - If `<OmegaMu>` is specified, the Omega function is used; otherwise, the determinant itself is used
- * - For anisotropic lattices, specify `<LatticeAnisotropy>` (spatial/temporal spacing ratio)
- * - Lab-frame energies and masses can be input as reference mass ratios or time spacing products
- * 
- * @note Energy format should be specified in `<DefaultEnergyFormat>` as either 
+ * - If `<OmegaMu>` is specified, the Omega function is used; otherwise, the
+ * determinant itself is used
+ * - For anisotropic lattices, specify `<LatticeAnisotropy>` (spatial/temporal
+ * spacing ratio)
+ * - Lab-frame energies and masses can be input as reference mass ratios or time
+ * spacing products
+ *
+ * @note Energy format should be specified in `<DefaultEnergyFormat>` as either
  *       "reference_ratio" or "time_spacing_product"
- * 
+ *
  * **XML Input Format:**
- * 
+ *
  * @code{.xml}
  * <Task>
  *   <Action>DoPrint</Action>
@@ -46,11 +53,11 @@ using namespace std;
  *   <OmegaMu>8.0</OmegaMu> <!-- optional -->
  *   <QuantizationCondition>StildeCB</QuantizationCondition>
  *   <!-- Options: StildeCB, StildeinvCB, KtildeB, KtildeinvB -->
- *   
+ *
  *   <RootFinder>
  *     <LabFrameEnergyMin>1.10</LabFrameEnergyMin>
  *     <LabFrameEnergyMax>2.30</LabFrameEnergyMax>
- *     
+ *
  *     <AdaptiveBracket>
  *       <!-- All tags below are OPTIONAL -->
  *       <InitialStepSize>1e-2</InitialStepSize>
@@ -63,20 +70,20 @@ using namespace std;
  *       <PlateauCountBeforeJump>4</PlateauCountBeforeJump>
  *     </AdaptiveBracket>
  *   </RootFinder>
- *   
+ *
  *   <KtildeMatrixInverse> <!-- or <KtildeMatrix> -->
  *     <!-- K-matrix specification... -->
  *   </KtildeMatrixInverse>
- *   
+ *
  *   <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
  *   <!-- or time_spacing_product -->
- *   
+ *
  *   <MCEnsembleParameters>...</MCEnsembleParameters>
  *   <!-- One for each Monte Carlo ensemble -->
- *   
+ *
  *   <KBBlock>...</KBBlock>
  *   <!-- One for each KB quantization block -->
- *   
+ *
  *   <KBObservables>
  *     <MCSamplingInfo>...</MCSamplingInfo>
  *     <SamplingData>
@@ -85,7 +92,7 @@ using namespace std;
  *   </KBObservables>
  * </Task>
  * @endcode
- * 
+ *
  * **AdaptiveBracket Parameter Mapping:**
  * | XML Tag                      | AdaptiveBracketConfig Field |
  * |------------------------------|----------------------------|
@@ -97,7 +104,7 @@ using namespace std;
  * | `<StepScaleLimit>`           | `step_scale_limit`         |
  * | `<PlateauMod2Threshold>`     | `plateau_mod2_threshold`   |
  * | `<PlateauCountBeforeJump>`   | `plateau_count_before_jump`|
- * 
+ *
  * **Monte Carlo Ensemble Configuration:**
  * @code{.xml}
  * <MCEnsembleParameters>
@@ -115,7 +122,7 @@ using namespace std;
  *   <!-- Additional particle masses... -->
  * </MCEnsembleParameters>
  * @endcode
- * 
+ *
  * **MCObsInfo Specification:**
  * Can use either short or long form (must be nonsimple and real):
  * @code{.xml}
@@ -124,11 +131,11 @@ using namespace std;
  *   <ObsName>T1up_Energy</ObsName> <!-- 32 chars max, no blanks -->
  *   <Index>3</Index> <!-- optional nonneg integer, default 0 -->
  * </MCObservable>
- * 
+ *
  * <!-- Short form -->
  * <MCObs>T1up_Energy 3</MCObs>
  * @endcode
- * 
+ *
  * **KB Quantization Block Configuration:**
  * @code{.xml}
  * <KBBlock>
@@ -144,7 +151,7 @@ using namespace std;
  *   <LabFrameEnergyInc>...</LabFrameEnergyInc>
  * </KBBlock>
  * @endcode
- * 
+ *
  * **K-Matrix Specification:**
  * @code{.xml}
  * <KtildeMatrixInverse> <!-- or <KtildeMatrix> -->
@@ -159,7 +166,7 @@ using namespace std;
  *     </DecayChannelInfo>
  *     <!-- Additional decay channels... -->
  *   </DecayChannels>
- *   
+ *
  *   <Element>
  *     <KElementInfo>
  *       <JTimesTwo>2</JTimesTwo>
@@ -171,7 +178,7 @@ using namespace std;
  *     </FitForm>
  *   </Element>
  *   <!-- Additional elements... -->
- *   
+ *
  *   <StartingValues>
  *     <KFitParamInfo>
  *       <PolynomialTerm>
@@ -184,16 +191,19 @@ using namespace std;
  *   </StartingValues>
  * </KtildeMatrixInverse>
  * @endcode
- * 
- * @warning The reference mass, particle masses, and anisotropy for each ensemble can be set 
- *          to fixed values by replacing `<MCObs>`/`<MCObservable>` tags with 
- *          `<FixedValue>1.1123</FixedValue>` tags. However, this practice can lead to 
- *          erroneous error estimates and should be used with caution.
- * 
- * @note Order matters in decay channel specification: first `<DecayChannelInfo>` is channel 0,
- *       second is channel 1, etc. In the K-matrix, channels are referenced by index 0, 1, ...
- * 
- * @note Fixed values for particle masses always refer to energy ratios over the reference mass.
+ *
+ * @warning The reference mass, particle masses, and anisotropy for each
+ * ensemble can be set to fixed values by replacing `<MCObs>`/`<MCObservable>`
+ * tags with
+ *          `<FixedValue>1.1123</FixedValue>` tags. However, this practice can
+ * lead to erroneous error estimates and should be used with caution.
+ *
+ * @note Order matters in decay channel specification: first
+ * `<DecayChannelInfo>` is channel 0, second is channel 1, etc. In the K-matrix,
+ * channels are referenced by index 0, 1, ...
+ *
+ * @note Fixed values for particle masses always refer to energy ratios over the
+ * reference mass.
  */
 
 void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
