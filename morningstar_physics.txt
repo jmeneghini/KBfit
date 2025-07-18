@@ -1,0 +1,1202 @@
+which shows that det(1 − B (P ) K) = det(1 − KB (P ) ) must be real.
+e and B (P ) do not commute. We can write
+Before continuing, let us show that K
+(J)
+
+hJ 0 mJ 0 L0 S 0 a0 | K |JmJ LSai = δJ 0 J δmJ 0 mJ KL0 S 0 a0 ;LSa ,
+(P Sa)
+
+hJ 0 mJ 0 L0 S 0 a0 | B (P ) |JmJ LSai = δS 0 S δa0 a BJ 0 mJ 0 L0 ;JmJ L ,
+
+(337)
+
+where the reduced matrix of K is real and symmetric, and the reduced matrix of B (P ) is
+Hermitian. The reduced matrix of B (P ) depends on a since it depends on ua as shown in
+Eq. (334). Given these equations, we see that
+(J 0 )
+
+(P Sa)
+
+(J)
+
+(P S 0 a0 )
+
+hJ 0 mJ 0 L0 S 0 a0 | KB (P ) |JmJ LSai = KL0 S 0 a0 ;L00 Sa BJ 0 mJ 0 L00 ;JmJ L ,
+hJ 0 mJ 0 L0 S 0 a0 | B (P ) K |JmJ LSai = KL00 S 0 a0 ;LSa BJ 0 mJ 0 L0 ;JmJ L00 .
+
+(338)
+
+From these results, one sees that these matrices do not commute:
+[K, B (P ) ] 6= 0.
+
+(339)
+
+If these matrices did commute, then we could find common eigenvectors of the two matrices,
+and the quantization determinant would become a product of terms, each term involving the
+eigenvalues of the two matrices for a particular common eigenvector. However, this is not
+e that
+to be. Also, from the above equations, it is also not possible to even find a form of K
+would commute with the box matrix.
+
+11
+
+Summary so far
+
+The derivation of the relationship between the finite-volume two-particle energies and the
+infinite-volume scattering amplitudes presented in the preceding sections was rather lengthy
+and complicated, so it is useful to summarize the situation so far.
+We work in an L3V spatial volume with periodic boundary conditions. For a given total
+momentum P = (2π/LV )d, where d is a vector of integers, we determine the total energy E
+in the lab frame for a particular two-particle interacting state in our lattice QCD simulations.
+We boost to the center-of-momentum frame and calculate
+Ecm =
+
+√
+E 2 − P 2,
+
+γ=
+
+E
+.
+Ecm
+
+(340)
+
+Let Nd denote the number of two-particle channels that are open, and denote the masses and
+spins of the two scattering particles in channel a by mja and sja , respectively, for j = 1, 2.
+2
+If |Ecm
+| ≥ |m21a − m22a |, then we can calculate the following quantities in each channel:
+1 2
+1
+(m21a − m22a )2
+Ecm − (m21a + m22a ) +
+,
+2
+4
+2
+4Ecm
+
+
+2
+L2V qcm,a
+(m21a − m22a )
+=
+,
+sa = 1 +
+d.
+2
+(2π)2
+Ecm
+
+2
+qcm,a
+=
+
+(341)
+
+u2a
+
+(342)
+
+67
+
+The total energy E is then related to the dimensionless unitary scattering S-matrix through
+the quantization condition:
+det[1 + F (P ) (S − 1)] = 0.
+(343)
+We use an orthonormal basis of states, each labelled |JmJ LSai, where J is the total angular
+momentum of the two particles in the cm frame, mJ is the projection of the total angular
+momentum onto the z-axis, L is the orbital angular momentum of the two particles in the
+cm frame, S in the basis vector is the total spin of the two particles (not the action nor the
+scattering matrix). The index a refers to particle species, the spins s1 , s2 , intrinsic parities
+η1P , η2P , isospins I1 , I2 , isospin projections Iz1 , Iz2 , and possibly G-parities η1G , η2G of particle
+1 and 2. Other quantum numbers, such as strangeness and charm, could also be included.
+The F (P ) matrix in this basis is given by
+1n
+δJ 0 J δmJ 0 mJ δL0 L
+hJ 0 mJ 0 , L0 S 0 a0 |F (P ) |JmJ , LSai = δa0 a δS 0 S
+2
+o
+(P a)
+0
+0
+(344)
++hJ mJ 0 |L mL0 SmS ihLmL SmS |JmJ iWL0 mL0 ; LmL ,
+where W (P a) is defined below.
+Since it is easier to parametrize a real symmetric matrix than a unitary matrix, we then
+employ the dimensionless, real, and symmetric K-matrix. Defining the transition operator
+T via S = 1 + iT , then the K-matrix is given by
+K = (2T −1 + i)−1 ,
+
+K −1 = 2T −1 + i,
+
+(345)
+
+and hence,
+S = (1 + iK)(1 − iK)−1 = (1 − iK)−1 (1 + iK).
+
+(346)
+
+The effective range expansion suggests that we write
+e −1 U −1 .
+K −1 = U −1 K
+
+(347)
+
+where we have introduced the diagonal matrix
+L+ 1
+
+hJ 0 mJ 0 , L0 S 0 a0 |U|JmJ , LSai = qcm,a2 δJ 0 J δmJ 0 mJ δL0 L δS 0 S δa0 a .
+
+(348)
+
+e
+In terms of the well-behaved K-matrix,
+the quantization condition is given in Eq. (324) by
+e = 0,
+det[1 − B (P ) K]
+
+e (P ) ] = 0,
+det[1 − KB
+
+(349)
+
+or
+e −1 − B (P ) ] = 0.
+det[K
+
+(350)
+
+e matrix depends only on Ecm , which does not involve the decay particle masses and
+The K
+2
+is the same for all decay channels. The B matrix involves qcm,a
+, which differs for each decay
+channel. From Eq. (325), the box matrix is given in the above basis by
+L0 +L+1
+
+2πua
+(P a)
+0
+0 0 0
+(P a)
+WL0 mL0 ; LmL
+hJ mJ 0 L S a | B
+|JmJ LSai = −iδa0 a δS 0 S
+LV
+×hJ 0 mJ 0 |L0 mL0 , SmS ihLmL , SmS |JmJ i.
+(351)
+68
+
+S is a total intrinsic spin in the above equation. Notice that B (P ) is diagonal in channel
+space, but mixes different total angular momentum sectors, whereas the scattering S-matrix
+and K-matrix are diagonal in angular momentum, but have off-diagonal elements in channel
+space. Also, the matrix elements of B (P ) depend on the total momentum P , whereas the
+matrix elements of S do not. The box matrix depends on L, L0 , but is independent of a, a0 .
+B (P ) is Hermitian if u2a is real. The F and B matrices are related by
+F (P ) = 21 (1 + iB (P ) ),
+
+(352)
+
+B (P ) = U B (P ) U.
+
+(353)
+
+where
+In the above expressions, the W -matrix elements are given by
+s
+0 +L
+L
+l
+2
+X
+X
+)
+Z
+(s
+,
+γ,
+u
+(2L0 + 1)(2l + 1)
+lm a
+(P a)
+a
+−iWL0 mL0 ; LmL =
+π 3/2 γul+1
+(2L + 1)
+a
+0
+m=−l
+l=|L −L|
+
+×hL0 0, l0|L0ihL0 mL0 , lm|LmL i,
+
+(354)
+
+and the Rummukainen-Gottlieb-Lüscher (RGL) shifted zeta functions Zlm are evaluated
+using
+X Ylm (z)
+γπ
+−Λ(z 2 −u2 )
+√
+e
++
+δ
+F0 (Λu2 )
+Zlm (s, γ, u2 ) =
+l0
+2
+2
+(z − u )
+Λ
+n∈Z3
+Z
+1  l+3/2
+X
+il γ
+π
+2 2
+Λtu2
++
+dt
+e
+eπin·s Ylm (w) e−π w /(tΛ) ,
+(355)
+l+1/2
+Λ
+t
+0
+3
+n∈Z
+n6=0
+
+with Ylm (x) = |x|l Ylm (b
+x) and
+
+
+z = n − γ −1 21 + (γ − 1)s−2 n · s s,
+
+(356)
+
+w = n − (1 − γ)s−2 s · ns,
+Ylm (x) = |x|l Ylm (b
+x),
+Z 1
+tx
+1
+e −1
+F0 (x) = −1 +
+dt 3/2 .
+2 0
+t
+
+(357)
+(358)
+
+We choose Λ ≈ 1 for fast convergence of the summation, and the integral in Eq. (355) is
+efficiently done using Gauss-Legendre quadrature. The function F0 (x) is given in terms of
+the Dawson or erf function:
+
+ ex (2√xD(√x) − 1) ,
+(x ≥ 0),
+F0 (x) =
+(359)
+√
+√
+ −ex − −xπ erf( −x), (x < 0).
+
+12
+
+Block diagonalization
+
+So far we have determined both the matrix F and the scattering matrix S in terms of
+the orthonormal cm-frame basis states labelled |JmJ LSai. In this basis, the quantization
+condition
+det[1 + F (P ) (S − 1)] = 0,
+(360)
+69
+
+Defining
+V = (1 + iM (d) )(1 − iM (d) )−1 ,
+
+(441)
+
+and factoring, the above matrix becomes
+1
+D = ρ1/2 (1 + SV ) (1 − iM (d) )ρ−1/2 .
+2
+
+(442)
+
+The matrix V is now well behaved. The eigenvectors of M (d) are also the eigenvectors
+of 1 ± iM (d) , so when a divergence in an eigenvalue of M (d) occurs, the eigenvalue of V
+corresponding to the diverging eigenvalue of M (d) tends to unity. The divergences at noninteracting energies have been factorized off into the (1 − iM (d) ) factor. The zeros of det D
+are also the zeros of det(1 + SV ).
+We can repeat these same manipulations using our matrices. From Eq. (323), we find
+that
+
+1
+1 + iB (P ) .
+(443)
+F (P ) =
+2
+Using the quantization condition in Eq. (211) and using det(1 + AB) = det(1 + BA) for any
+invertible matrices A, B, we begin with the matrix
+
+1
+(444)
+1 + (S − 1)F (P ) = 1 + (S − 1) 1 + iB (P ) ,
+2
+ 1
+
+1
+1 + iB (P ) ,
+(445)
+= 1 + S 1 + iB (P ) −
+2
+2
+ 1
+
+1
+=
+S 1 + iB (P ) +
+1 − iB (P ) ,
+(446)
+2
+2
+
+−1
+
+ 1
+1
+S 1 + iB (P ) 1 − iB (P )
+1 − iB (P ) , (447)
+=
+1 − iB (P ) +
+2
+2
+
+
+
+
+1
+−1
+1 + S 1 + iB (P ) 1 − iB (P )
+=
+1 − iB (P ) .
+(448)
+2
+The divergences at the noninteracting energies have been factorized into the (1 − iB (P ) )
+factor on the right. So our tamed quantization condition becomes
+
+det 1 + S(1 + iB (P ) )(1 − iB (P ) )−1 = 0.
+(449)
+As a reminder, we have (see Eq. (79))
+S = (1 + iK)(1 − iK)−1 = (1 − iK)−1 (1 + iK).
+
+(450)
+
+However, the above expression is not ideal for us. First, we prefer to work directly with
+e = U −1 KU −1 or K
+e −1 = UK −1 U, where the
+the box matrix B (P ) = UB (P ) U and the matrix K
+diagonal matrix U of threshold factors is defined in Eq. (329). But the basic idea is to use
+e and B (P ) matrices directly,
+a Cayley transformation, so this can be carried out using the K
+instead of K and B (P ) .
+A Cayley transformation is a mapping between a skew-Hermitian matrix A and a unitary
+matrix Q which does not have −1 as an eigenvalue given by
+Q = (1 − A)(1 + A)−1 = (1 + A)−1 (1 − A),
+84
+
+A = (1 − Q)(1 + Q)−1 .
+
+(451)
+
+Properties of this mapping include: 1 + A and 1 + Q are always invertible; the matrix A
+commutes with (µ + A)−1 , where µ is a non-zero real scalar number.
+(a) First, we show that µ ± A is invertible, where µ is a non-zero real scalar number. If
+A is skew-Hermitian, then A = iB, where B is Hermitian so that A† = −iB † = −iB = −A.
+This means that A can be diagonalized by a unitary matrix UA and all of its eigenvalues
+must be pure imaginary. It follows that µ ± A is diagonalized by the same unitary matrix
+UA , but now all of its eigenvalues have the form µ ± iα, where α is real. Since µ is real
+and nonzero, none of the eigenvalues of µ ± A can be zero, so det(µ ± A) 6= 0, which means
+it must be invertible. (b) Next, we show that A commutes with (µ ± A)−1 , where µ is a
+nonzero real scalar. To start, we have (µ + A)(µ − A) = µ2 − µA + µA − A2 = (µ − A)(µ + A).
+Since µ ± A is invertible, we multiply this equation on the left by (µ + A)−1 and on the
+right by (µ + A)−1 to obtain (µ − A)(µ + A)−1 = (µ + A)−1 (µ − A). This shows that µ − A
+commutes with (µ + A)−1 . But µ is a diagonal matrix, so it commutes with (µ + A)−1 . This
+means A itself must commute with (µ + A)−1 . By a similar argument, it is also easy to
+show that A must also commute with (µ − A)−1 . (c) Using the previous two properties, we
+next show that Q must be unitary and that it cannot have −1 as one of its eigenvalues. To
+start, we see that Q† = ((1 − A)(1 + A)−1 )† . Using (B −1 )† = (B † )−1 and (AB)† = B † A† ,
+we then get Q† = ((1 + A)† )−1 (1 − A)† = (1 − A)−1 (1 + A). Lastly, we previously showed
+that 1 + A and (1 − A)−1 commute, so Q† = (1 + A)(1 − A)−1 . Using this, we then have
+Q† Q = (1 + A)(1 − A)−1 (1 − A)(1 + A)−1 = 1. Similarly, QQ† = (Q† Q)† = 1† = 1. This
+shows that Q Q
+is unitary. Let
+Q iαj denote the
+Qeigenvalues of A, where
+Qthe αj must be real.
+Then det Q = j (1 − iαj ) k (1 + iαk )−1 = j (1 − iαj )2 /(1 + αj2 ) = j qj . This shows that
+the eigenvalues of Q are given in terms of the eigenvalues iαj of A by
+(1 − αj2 ) − 2iαj
+,
+qj =
+(1 + αj2 )
+
+|qj | = 1.
+
+(452)
+
+Notice that each eigenvalue of Q has unit modulus, so qj = exp(iθj ) for real θj . As αj → 0,
+then qj → 1. As αj → ∞, then qj → −1. Given the above expression, the value −1 is
+excluded from being an eigenvalue unless αj → ∞. (d) Given the definition of Q in terms of
+A above, we now show how to derive the inverse relationship for A in terms of Q. Starting
+with the definition of Q, we have
+1+Q =
+=
+1−Q =
+=
+
+1 + (1 − A)(1 + A)−1 = (1 + A)(1 + A)−1 + (1 − A)(1 + A)−1 ,
+(1 + A + 1 − A)(1 + A)−1 = 2(1 + A)−1 ,
+(1 + A)(1 + A)−1 − (1 − A)(1 + A)−1
+(1 + A − 1 + A)(1 + A)−1 = 2A(1 + A)−1
+
+(453)
+(454)
+
+Thus,
+(1 − Q)(1 + Q)−1 = 2A(1 + A)−1 21 (1 + A) = A,
+(1 + Q)(1 − Q)−1 = 2(1 + A)−1 12 (1 + A)A−1 = A−1 .
+
+(455)
+(456)
+
+(e) To get an expression for Q in terms of A−1 , assuming it exists, let B = A−1 and use the
+
+85
+
+last relationship above:
+1 + B = 1 + (1 + Q)(1 − Q)−1 = (1 − Q)(1 − Q)−1 + (1 + Q)(1 − Q)−1
+= (1 − Q + 1 + Q)(1 − Q)−1 = 2(1 − Q)−1 ,
+1 − B = 1 − (1 + Q)(1 − Q)−1 = −2Q(1 − Q)−1 .
+
+(457)
+(458)
+
+This gives us
+(1 − B)(1 + B)−1 = −2Q(1 − Q)−1 21 (1 − Q) = −Q.
+
+(459)
+
+Q = −(1 − A−1 )(1 + A−1 )−1 .
+
+(460)
+
+Hence,
+e (P ) ) = 0, we wish to formulate this
+Starting with the quantization condition det(1 − KB
+e and B (P ) are
+condition in terms of the Cayley transformed matrices. Note that since K
+block diagonal, their Cayley transformed matrices will similarly be block diagonal. Noting
+e and −iB (P ) are skew-Hermitian, we define the Cayley transformed box matrix
+that −iK
+and scattering matrix by
+(P )
+
+CB
+
+= (1 + iB (P ) )(1 − iB (P ) )−1 = (1 − iB (P ) )−1 (1 + iB (P ) ),
+e
+e −1 = (1 − iK)
+e −1 (1 + iK),
+e
+Se = (1 + iK)(1
+− iK)
+e −1 )(1 + iK
+e −1 )−1 ,
+= −(1 − iK
+
+(461)
+(462)
+(463)
+
+then the inverse Cayley transformation is
+(P )
+
+(P )
+
+−iB (P ) = (1 − CB )(1 + CB )−1 ,
+e = (1 − S)(1
+e + S)
+e −1 ,
+−iK
+
+(464)
+(465)
+
+which gives us
+(P )
+e (P ) = 1 + (−iK)(−iB
+e
+e + S)
+e −1 (1 − C (P ) )(1 + C (P ) )−1
+1 − KB
+) = 1 + (1 − S)(1
+B
+B
+(P )
+(P ) −1
+−1
+e
+e
+= 1 + (1 + S) (1 − S)(1 − C )(1 + C )
+
+=
+=
+
+B
+B
+(P
+)
+(P
+)
+−1
+e + C )(1 + C )
+(1 + S) (1 + S)(1
+B
+B
+(P )
+(P )
+−1
+e
+e
++(1 + S) (1 − S)(1 − CB )(1 + CB )−1
+h
+i
+e −1 (1 + S)(1
+e + C (P ) ) + (1 − S)(1
+e − C (P ) ) (1 + C (P ) )−1
+(1 + S)
+B
+B
+B
+
+e −1
+
+(P )
+
+(P )
+
+−1
+e −1 (1 + SC
+e
+= 2(1 + S)
+B ) (1 + CB ) .
+
+(466)
+
+The box matrix divergences at the noninteracting energies, causing the left-hand side of
+the above equation to diverge. These divergences at the noninteracting energies have now
+(P )
+been all factorized into the (1 + CB )−1 term on the right in the last line above. These
+(P )
+divergences occur when an eigenvalue of CB becomes −1. These divergences do not occur
+e −1 (1 + SC
+e (P ) ) terms. At energies away from the noninteracting energies, the
+in the (1 + S)
+B
+e and (1 + C (P ) ) have nonzero determinants,
+box matrix is finite and the matrices (1 + S)
+B
+making them invertible. To eliminate the divergences at the noninteracting energies of the
+(P )
+box matrix, we simply factorize away the (1 + CB )−1 term. The zeros of the quantization
+86
+
+e −1 , so they must occur in the central
+condition we are after do not reside in the (1 + S)
+matrix. Hence, our “tamed” quantization condition becomes
+e (P ) ) = 0.
+det(1 + SC
+B
+
+(467)
+
+Again, Se is unitary so its determinant cannot be zero and it is invertible, so an alternative
+quantization condition is
+(P )
+det(Se−1 + CB ) = 0.
+(468)
+(P )
+Given the unitary natures of Se and CB , it is also possible that the determinants in Eqs. (467)
+and (468) might not be large, eliminating the need of using the Ω function.
+The matrices inside the determinants in these equations are not Hermitian. However,
+
+e (P ) ) = det(SeSe−1 + SC
+e (P ) ) = det(S)
+e det(Se−1 + C (P ) )
+det(1 + SC
+B
+B
+B
+(P )
+(P ) e
+−1
+−1
+e
+e
+e
+= det(S + C ) det(S) = det((S + C )S)
+=
+
+B
+(P ) e
+det(1 + CB S).
+
+B
+
+(469)
+
+e (P ) = 1. The eigene (P ) is unitary: (SC
+e (P ) )† (SC
+e (P ) ) = (C (P ) )† Se† SC
+Also, we know that SC
+B
+B
+B
+B
+B
+values of a unitary matrix must be unimodular, so they can be written as eiθ for some real
+θ. A unitary matrix is always unitarily diagonalizable. Let USC denote the unitary matrix
+e (P ) , then clearly USC also diagonalizes 1 + SC
+e (P ) . Hence,
+that diagonalizes SC
+B
+B
+Y
+e (P ) ) =
+(470)
+det(1 + SC
+(1 + eiθj ),
+B
+j
+
+e (P ) . The product of two nonzero complex
+where θj are real and eiθj are the eigenvalues of SC
+B
+numbers cannot be zero. For example, we know that for two complex number z1 and z2 ,
+the modulus of the product is |z1 z2 | = |z1 ||z2 | the product of the individual moduli. For the
+product z1 z2 to be zero, its modulus must be zero, which means that either |z1 | or |z2 | must
+e (P ) ) must come from at least one individual
+be zero. This shows that every zero of det(1+ SC
+B
+eigenvalue becoming zero. The product of any two nonzero eigenvalues cannot yield a zero.
+e (P ) ) comes from at least one eiθj = −1.
+In other words, every zero of det(1 + SC
+B
+e (P ) ) becomes
+Note that this does not mean that whenever the real part of det(1 + SC
+B
+e (P ) ) can be zero with
+zero, the imaginary part must also be zero. The real part of det(1 + SC
+B
+the imaginary part being nonzero, and vice versa. We need both the real and the imaginary
+parts to become zero to satisfy the quantization condition.
+In Sec. IIb of Ref. [30], the effect of at least one channel being closed is discussed.
+These authors mention that the finite-volume spectrum is sensitive to a closed channel in
+a very small energy region below a threshold, with the effect of the channel diminishing
+exponentially as e−κL , where κ is the magnitude of the imaginary scattering momentum.
+In the way the authors of Ref. [30] define their box matrix and scattering matrix, a loss of
+unitarity occurs below a threshold due to qcm becoming imaginary. However, we have taken
+e to remain Hermitian
+great pains to define our box matrix B (P ) and scattering matrix K
+2
+e and
+for negative qcm . This was done by removing the threshold factors in K to produce K
+(P )
+absorbing them into B . See Eqs. (329), (330), and (333).
+87
+
+In summary, to tame the quantization condition, we should use
+e (P ) ) = 0
+det(1 + SC
+B
+
+(P )
+
+det(Se−1 + CB ) = 0,
+
+or
+
+(471)
+
+defining the Cayley transformed box and K-matrices by
+(P )
+
+CB
+
+15
+
+= (1 + iB (P ) )(1 − iB (P ) )−1 = (1 − iB (P ) )−1 (1 + iB (P ) ),
+e
+e −1 = (1 − iK)
+e −1 (1 + iK),
+e
+Se = (1 + iK)(1
+− iK)
+e −1 )(1 + iK
+e −1 )−1 = −(1 + iK
+e −1 )−1 (1 − iK
+e −1 ).
+= −(1 − iK
+
+(472)
+(473)
+(474)
+
+Fitting
+
+Let κj , for j = 1, . . . , NK , denote the parameters that appear in the matrix elements of either
+e matrix or its inverse K
+e −1 . Once a set of energies for a variety of two-particle interacting
+the K
+states is determined, the primary goal is then to determine the best-fit estimates of the κj
+parameters using the quantization determinant, as well as to determine the uncertainties in
+these estimates. In this section, we describe three methods to achieve this.
+To set the stage, we first summarize the fitting procedure commonly used in lattice QCD.
+Observables which can be estimated directly with the Monte Carlo method as an average over
+an ensemble of gauge field configurations, such as temporal correlations of field operators,
+we refer to as primary observables. Secondary observables, such as energies and the lattice
+anisotropy, cannot be estimated directly with the Monte Carlo method but must be obtained
+indirectly from other observables. For an observable O that is either primary or secondary,
+let E(O) denote a Monte Carlo estimate of the observable obtained using the entire Markov(r)
+Chain ensemble of gauge configurations, and let Ek (O) denote an estimate of O from the
+k-th resampling of a resampling scheme r. The two most common resampling schemes are
+the jackknife r = J and the bootstrap r = B. For a primary observable O, let O[Ui ] denote
+the value of the observable as calculated on the i-th configuration in the ensemble, and let
+Ne denote the number of gauge configurations in the Markov-chain ensemble, then the above
+quantities are given by
+N
+
+e
+1 X
+E(O) =
+O[Ui ],
+Ne i=1
+
+(J)
+Ek (O)
+
+Ne
+X
+1
+=
+O[Ui ],
+(Ne − 1) i=1, i6=k
+
+(475)
+
+(476)
+
+N
+
+(B)
+
+Ek (O) =
+
+e
+1 X
+O[UB(ki) ],
+Ne i=1
+
+(477)
+
+where B(ki) is the i-th random draw in the k-th bootstrap resampling. The covariance of
+the estimates of two observables Oi and Oj can be estimated from their resampling estimates
+
+88
+
+using
+cov(Oi , Oj ) ≈ N
+
+(r)
+
+Nr 
+
+
+X
+(r)
+(r)
+(r)
+(r)
+Ek (Oi ) − hE (Oi )i Ek (Oj ) − hE (Oj )i ,
+
+k=1
+N
+r
+X
+
+1
+(r)
+Ek (Oi ),
+Nr k=1
+
+hE (r) (Oi )i =
+
+(478)
+
+(479)
+
+where Nr is the number of resamplings and the factor N (r) depends on the resampling
+scheme. For the jackknife and bootstrap methods, it is given by
+N (J) =
+
+(NJ − 1)
+,
+NJ
+
+N (B) =
+
+1
+.
+NB − 1
+
+(480)
+
+For primary observables, these covariances can also be estimated by
+cov(Oi , Oj ) ≈
+
+Ne 
+
+
+X
+1
+Oi [Uk ] − E(Oi ) Oj [Uk ] − E(Oj ) ,
+Ne (Ne − 1) k=1
+
+(481)
+
+as long as autocorrelations are small. (sample size effects [31])
+It often occurs that a set of observables is believed to be reasonably well described by a
+set of model functions containing unknown parameters. In such cases, the goal is usually to
+find best fit estimates of these parameters. Arrange the observables into the components of
+a vector R and the fit parameters into a vector α. Denote the set of model functions by the
+vector M (α, R) which depend on the parameters and which might depend on the observables
+themselves. The i-th component of M (α, R) gives the model prediction for the observable
+corresponding to the i-th component of R. In lattice QCD, we generally determine the best
+fit estimates of the α parameters as the values which minimize a correlated−χ2 of residuals
+given by
+χ2 = E(ri ) σij−1 E(rj ),
+(482)
+where the vector of residuals is defined by r(R, α) = R − M (α, R) and σij = cov(ri , rj )
+is the covariance matrix of the residuals. Since the observables are usually obtained using
+the same ensemble of gauge field configurations, the residuals in Eq. (482) are not statistically independent so the presence of the covariance matrix in the likelihood function is very
+important.
+Usually, the minimization of χ2 with respect to the parameters α is accomplished using
+computer software, such as Minuit2. The covariance matrix should be positive definite, so
+its inverse can be obtained by a Cholesky decomposition. If the model estimates of any of
+the observables depend on any of the other observables, then the covariance matrix must be
+recomputed using Eq. (478) and inverted each time the parameters α are changed during
+the minimization process, making for a rather laborious minimization.
+A significant simplification occurs if the model estimates are completely independent of
+the observables. In this case, cov(ri , rj ) = cov(Ri , Rj ), which needs to be computed and
+
+89
+
+inverted only once at the start of the minimization. This is easy to see using
+hri rj i − hri ihrj i = h(Ri − Mi )(Rj − Mj )i − hRi − Mi ihRj − Mj i
+= hRi Rj − Mi Rj − Mj Ri + Mi Mj i − (hRi i − Mi )(hRj i − Mj )
+= hRi Rj i − Mi hRj i − Mj hRi i + Mi Mj
+−(hRi ihRj i − Mj hRi i − Mi hRj i + Mi Mj )
+= hRi Rj i − hRi ihRj i,
+(M indep of R).
+(483)
+Hence, one sees that cov(ri , rj ) = cov(Ri , Rj ) when M is independent of R.
+The minimization software usually provides not only the best fit estimates of the parameters, but also the statistical uncertainties in these estimates, including the covariances
+between the different fit parameter estimates. The formulas used to obtain these estimates
+generally assume Gaussian probability distributions. The law of large numbers makes such
+assumptions reasonable for a large number of gauge configurations in the Monte Carlo
+Markov-chain. An alternative approach is to perform the minimization of
+(r)
+
+(r)
+
+χ2k = Ek (ri ) σij−1 Ek (rj ),
+
+(484)
+
+for each resampling k and obtain the covariance of the fit parameter estimates cov(αk , αl )
+using Eq. (478). A third approach is to carry out a bootstrap resampling of the original
+bootstrap estimates, recomputing estimates of σij−1 , but in practice, the results of such a
+procedure are usually indistinguishable from those obtained using Eq. (484).
+e matrix parameters can be improved by utilizing results from
+Best fit estimates of the K
+multiple Markov-chain ensembles and lattices. One approach to performing such fits is to
+minimize the χ2 of Eq. (482) taking the elements of σij to be zero between the estimates
+from different ensembles, then obtain the covariances of the best fit parameter estimates
+from the minimization software. An alternative approach is to ensure that Nr is the same
+for all ensembles, then use the resamplings of all ensembles in the χ2 of Eq. (482) with
+the covariance matrix estimated using Eq. (478). Given the statistical independence of the
+different ensembles, Eq. (478) naturally yields covariances between observable estimates from
+different ensembles which are very nearly zero.
+Again, the primary goal is to determine the best-fit estimates of the κj parameters appeare or K
+e −1 from the quantization condition, as well as to determine the uncertainties
+ing in K
+in these estimates. Having made the above introductory comments, we now describe three
+methods to achieve this.
+
+15.1
+
+Spectrum method
+
+For each P and irrep Λ, one obtains as many lab frame two-interacting-particle energies Ek
+as possible, staying below three-particle thresholds. For the observations Ri in the fit, an
+obvious choice would be to include the lab-frame energies Ek or the center-of-momentum
+energies Ecm,k . Here, we choose the Ecm,k energies. The quantization condition with the
+e or K
+e −1 then provides the model predictions of the observations.
+chosen functional forms of K
+This involves scanning the quantization determinant in Ecm to find the values that result
+in the determinant having zero value. Evaluating the determinant requires evaluating the
+90
+
+box matrix elements, which requires knowing sa , u2a for each channel a. To determine sa , u2a ,
+one needs to know the masses m1a , m2a in each decay channel, the spatial lattice volume L3 ,
+and the lattice aspect ratio ξ = as /at if an anisotropic lattice is used. Unfortunately, these
+quantities must be obtained from the Monte Carlo simulations, and hence, are observations.
+This poses the problem that the predictions cannot be obtained solely from the parameters
+of the model, independent of the observations.
+A simple way around this problem is to include the masses m1a , m2a in each decay channel,
+the spatial lattice volume L3 , and the lattice aspect ratio ξ = as /at as both observations
+(obs)
+and model parameters. In addition to the energy observations Ecm,k , one also includes
+(obs)
+
+mj , L(obs) , ξ (obs) , to the set of observations Ri , where j = 1, . . . , Np and Np is the
+number of different particle species in all of the decay channels. At the same time, one
+(model)
+introduces model parameters mj
+, L(model) , ξ (model) . Now, in scanning for the zeros of the
+determinant, one varies Ecm , evaluating sa , u2a , and hence the box matrix elements, using the
+(model)
+model parameters mj
+, L(model) , ξ (model) . In doing this simple trick, the model predictions
+are independent of the observations. This procedure is somewhat in the spirit of introducing
+Lagrange multipliers in a minimization.
+In summary, the observations in the χ2 minimization in this first method are
+(obs)
+
+(obs)
+
+Observations Ri : {Ecm,k , mj
+
+, L(obs) , ξ (obs) },
+
+(485)
+
+for k = 1, . . . , NE and j = 1, . . . , Np . If there are Np particle species in all of the decay
+channels and NE energies found, then there are Nobs = 2 + Np + NE observations. Improved
+results can be obtained by increasing NE by using several different P , Λ blocks. The model
+parameters are
+(model)
+
+Model fit parameters αk : { κi , mj
+
+, L(model) , ξ (model) },
+
+(486)
+
+for i = 1, . . . , NK and j = 1, . . . , Np , where NK is the total number of parameters in the
+e
+K-matrix
+elements. The total number of fit parameters is Nparam = 2 + Np + NK .
+Evaluating the predictions Mi (α) of the model for the Nobs observations is done as fol(model)
+, L(model) , ξ (model) themselves give the predictions for the
+lows. The parameters mj
+(obs)
+(obs)
+observations mj , L(obs) , ξ (obs) . The model predictions corresponding to the Ecm,k observations are not so easily done. One needs to scan the quantization determinant in Ecm to
+find which values yield a zero value. For a given Ecm , one uses the parameters κj to evaluate
+e matrix or its inverse, and determines the box matrix elements in terms of the RGL
+the K
+(model)
+zeta functions using the parameters mj
+, L(model) , ξ (model) to determine sa , u2a . This is
+a rather onerous task. Computing the determinant for a given Ecm is quite complicated,
+and this must be done many times in order to bracket and then numerically find all of the
+needed zeros of the determinant using bisection or a Newton-Raphson type algorithm. One
+(model)
+must then match each root found with the appropriate observed Ecm . Let Ecm,k denote
+
+91
+
+each energy root found. In summary, the residuals in this method are
+
+(obs)
+(model)
+
+Ecm,k − Ecm,k , (k = 1, . . . , NE ),
+
+
+
+
+(model)
+ m(obs)
+− mk0
+, (k = k 0 + NE , k 0 = 1, . . . , Np ),
+k0
+rk =
+
+L(obs) − L(model) , (k = NE + Np + 1),
+
+
+
+
+ ξ (obs) − ξ (model) ,
+(k = NE + Np + 2).
+
+(487)
+
+(model)
+
+We emphasize that, in this method, the Ecm,k are very difficult quantities to compute
+using the model parameters in Eq. (486). The difficulty in carrying out this method leads
+us to seek simpler methods.
+
+15.2
+
+Determinant residual method
+
+The difficulty in calculating the model predictions in the first method leads us to seek other
+simpler methods. In this second method, we introduce the quantization determinant itself as
+a residual. In the determinant, we use the observed box matrix elements, which requires the
+observed energies and the observed values for the particle masses, lattice size, and anisotropy.
+Expressing the quantization condition in terms of a vanishing determinant is just a convenient way of stating that one eigenvalue becomes zero. The determinant itself is not a good
+quantity to use as an observable since it can become very large in magnitude for larger matrices. Instead of the determinant, we express the quantization condition using the following
+filter function of matrix A, having real determinant, and scalar µ 6= 0:
+Ω(µ, A) ≡
+
+det(A)
+.
+det[(µ2 + AA† )1/2 ]
+
+(488)
+
+When one of the eigenvalues of A is zero, this function is also zero. This function can be
+evaluated as a product of terms, one for each eigenvalue of A. For eigenvalues of A which
+are much smaller than |µ|, the associated term in the product tends towards the eigenvalue
+itself, divided by |µ|. However, the key feature of this function is that for eigenvalues which
+are much larger than |µ|, the associated term in the product goes to eiθ for real θ. This
+function replaces the large unimportant eigenvalues with unimodular quantities so that the
+function does not grow with increasing matrix size. This is a much better behaved function,
+bounded between -1 and 1, which still reproduces the quantization condition. The constant
+µ can be chosen to optimize ease of numerical root finding or χ2 minimization.
+In this method, the model fit parameters are just the κi parameters, and the residuals
+are chosen to be
+
+
+(obs) e
+(obs)
+rk = Ω µ, 1 − B (P ) (Ecm,k ) K(E
+)
+,
+(k = 1, . . . , NE ),
+(489)
+cm,k
+e (obs) )−1 − B (P ) (E (obs) ) could be used in the Ω function.
+or the matrix K(E
+cm,k
+cm,k
+Clearly, the model predictions in this method are dependent on the observations themselves, so the covariance of the residual estimates must be recomputed and inverted by
+Cholesky decomposition throughout the minimization as the κj parameters are adjusted.
+92
+
+However, this is still much simpler than the root finding required in the spectrum method.
+One advantage of this method is that the complicated RGL zeta functions only need to be
+computed for the box matrix elements as observables; they do not need to be recomputed as
+model parameters are changed. Since we cannot completely remove the dependence of the
+model predictions on the observables in this method, there is no advantage in introducing
+model parameters for the energies, particle masses, and the lattice anisotropy. Hence, we do
+not need to recompute the box matrix elements as the model parameters are adjusted in the
+χ2 minimization. The model predictions involve only the κj parameters and the observed
+energies, particle masses, and anistropy.
+If the number of basis states in the determinant computation is small enough such that the
+determinant can be explicitly expressed as a sum of a small number of terms, the computation
+of the covariance can be substantially simplified. In such cases, the center-of-momentum
+energies, particle masses, lattice size, and anisotropy can be introduced as both observables
+and model parameters, then the covariance can be expressed as a sum of terms, each being
+a product of a complicated quantity depending only on the observations and a very simple
+quantity depending only on the model parameters. Although the covariance matrix must be
+evaluated and inverted each time the model parameters are changed, the computation and
+inversion of this matrix can be done with minimal effort.
+Treating the box matrix elements as observables enables a natural interface between the
+lattice calculation and phenomenology. If the box matrix elements and center-of-momentum
+energies are calculated, then together with the covariances, they contain all the information
+required to extract the scattering amplitudes. Non-lattice practitioners can use them without, for example, implementing the RGL zeta functions. These quantities can act as a bridge
+between lattice QCD computations and phenomenological applications.
+
+16
+
+Parametrization of the K-matrix
+
+We now turn to the task of parametrizing the K matrix in terms of resonance parameters.
+We begin by examining the single channel case.
+For a single channel, the S-matrix is S = e2iδ , so that the transition amplitude is
+1
+1
+1
+(S − 1) = (e2iδ − 1) = eiδ (eiδ − e−iδ ) = eiδ sin δ,
+2i
+2i
+2i
+
+T =
+
+(490)
+
+and the K-matrix is
+K = (T
+
+−1
+
+−1
+
++ i)
+
+ −iδ
+−1 
+−1
+e
+cos δ − i sin δ + i sin δ
+=
++i
+=
+= tan δ.
+sin δ
+sin δ
+
+(491)
+
+The pole in K at δ = π/2 is the signature of a resonance in this case.
+For the multi-channel, multi-wave case, one common possibility is to parametrize the
+e
+inverse of the K-matrix
+as a symmetric matrix of polynomials in Ecm :
+(J)−1
+Kαβ (Ecm ) =
+
+Nαβ
+X
+(Jk) k
+cαβ Ecm
+k=0
+
+93
+
+(492)
+
+

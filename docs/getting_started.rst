@@ -81,7 +81,7 @@ Spectrum Fitting
 .. code-block:: xml
 
    <SpectrumFit>
-     <OmegaMu>8.0</OmegaMu>
+     <OmegaMu>0.8</OmegaMu>
      <QuantizationCondition>StildeCB</QuantizationCondition>
      
      <RootFinder>
@@ -105,6 +105,8 @@ Spectrum Fitting
        </LabFrameEnergyShift>
        <CMFrameEnergyMin>2.0</CMFrameEnergyMin>
        <CMFrameEnergyMax>4.0</CMFrameEnergyMax>
+       <!-- OR -->
+       <CMFrameEnergyAutoRangeMargin>0.1<CMFrameEnergyAutoRangeMargin>
      </KBBlock>
    </SpectrumFit>
 

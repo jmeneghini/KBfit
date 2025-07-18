@@ -26,6 +26,7 @@
 
 #include "chisq_spectrum.h"
 #include "task_utils.h"
+#include <limits>
 
 // **************************************************************************
 // *                         SPECTRUM FITTING METHODOLOGY                   *
@@ -88,6 +89,8 @@
 // *        </LabFrameEnergyShift>                                          *
 // *        <LabFrameEnergyMin>_val_</LabFrameEnergyMin> (Mandatory)         *
 // *        <LabFrameEnergyMax>_val_</LabFrameEnergyMax> (Mandatory)         *
+// *                         OR                                               *
+// *        <CMFrameEnergyAutoRangeMargin>_val_</CMFrameEnergyAutoRangeMargin> (optional) *
 // *        ...                                                             *
 // *                                                                        *
 // *      <KBObservables> ... </KBObservables>                               *
@@ -338,15 +341,37 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
             "No energies available in at least one block"));
 
       // set the energy bounds for this block
-      double Ecm_min, Ecm_max;
+      double Ecm_min = 0.0, Ecm_max = 0.0;
       bool cm_frame_min_given =
           xmlreadifchild(*it, "CMFrameEnergyMin", Ecm_min);
       bool cm_frame_max_given =
           xmlreadifchild(*it, "CMFrameEnergyMax", Ecm_max);
+
       if (!(cm_frame_min_given && cm_frame_max_given)) {
-        throw(std::invalid_argument(
-            "Both CMFrameEnergyMin and CMFrameEnergyMax must be specified"
-            " for each KBBlock"));
+        double auto_margin = 0.0;
+        bool auto_bounds =
+            xmlreadifchild(*it, "AutoEcmBoundsMargin", auto_margin);
+        if (!auto_bounds)
+          throw(std::invalid_argument("CMFrameEnergyMin/Max missing and "
+                                      "AutoEcmBoundsMargin not provided"));
+
+        size_t start_idx = ensemble_fit_data[ensemble_idmap[mcens]]
+                               .non_interacting_pairs.size() -
+                           nres;
+        const auto& pairs =
+            ensemble_fit_data[ensemble_idmap[mcens]].non_interacting_pairs;
+        double emin = std::numeric_limits<double>::infinity();
+        double emax = 0.0;
+        for (uint jj = 0; jj < nres; ++jj) {
+          const NonInteractingPair& ni = pairs[start_idx + jj];
+          const EcmTransform& et =
+              bqptr->getDecayChannelEcmTransform(ni.decay_channel_idx);
+          double efree = et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
+          emin = std::min(emin, efree);
+          emax = std::max(emax, efree);
+        }
+        Ecm_min = emin - auto_margin;
+        Ecm_max = emax + auto_margin;
       }
       ensemble_fit_data[ensemble_idmap[mcens]]
           .Ecm_bounds_per_block.emplace_back(Ecm_min, Ecm_max);

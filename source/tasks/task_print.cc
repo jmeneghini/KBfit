@@ -7,257 +7,194 @@
 
 using namespace std;
 
-// **************************************************************************
-// *                                                                        *
-// *    Prints out the Omega function for Elab between a minimum and        *
-// *    maximum specified by user at fixed increment, specified by user.    *
-// *    Output for each KBBlock is sent to a separate file with a common    *
-// *    stub and different integer suffices.                                *
-// *    Format of output files:                                             *
-// *     -- if OutputMode = "full", format is                               *
-// *                     Elab/mref  value_from_full_sample                  *
-// *     -- if OutputMode = "resampled", format is                          *
-// *              Elab/mref  value_from_full_sample upper_error down_error  *
-// *                                                                        *
-// *    Notes:                                                              *
-// *                                                                        *
-// *    -- An L^3 spatial lattice is required.  Eventually, the length      *
-// *       times the reference scale is needed.  To determine this,         *
-// *       the reference scale times the temporal lattice spacing must      *
-// *       be specified in <ReferenceMassTimeSpacingProduct>.               *
-// *                                                                        *
-// *    -- If <OmegaMu> is specified, then the Omega function is used       *
-// *       in the residual.  If absent, the determinant itself is used.     *
-// *                                                                        *
-// *    -- Either <KtildeMatrixInverse> or <KtildeMatrix> must be given.    *
-// *       Depending on which is input, det(1-K*B) or det(K^(-1)-B)         *
-// *       is used.                                                         *
-// *                                                                        *
-// *    -- If using an anisotropic lattice, a tag <LatticeAnisotropy>,      *
-// *       which is the spatial over the temporal spacing, must be given.   *
-// *       If this tag is absent, an isotropic lattice is assumed.          *
-// *                                                                        *
-// *    -- All lab-frame energies and particle masses can be input either   *
-// *       as ratios of a reference mass or as a product with the time      *
-// *       spacing of the lattice.  The default format should be specified  *
-// *       in the tag <DefaultEnergyFormat> whose value can be either       *
-// *       "reference_ratio" or "time_spacing_product".                     *
-// *                                                                        *
-// *    Format of input XML:                                                *
-// *                                                                        *
-// *                                                                        *
-// *    <Task>                                                              *
-// *                                                                        *
-// *     <Action>DoPrint</Action>                                           *
-// *                                                                        *
-// *      <OutputMode>full</OutputMode> or "resampled"                      *
-// *                                                                        *
-// *      <OmegaMu>8.0</OmegaMu>  (optional)                                *
-// *                                                                        *
-// *      <QuantizationCondition>...</QuantizationCondition>                *
-// *       (StildeCB, StildeinvCB, KtildeB, KtildeinvB)                     *
-// *                                                                        *
-// *  <RootFinder>                                                          *
-// *    <LabFrameEnergyMin>1.10</LabFrameEnergyMin>                         *
-// *    <LabFrameEnergyMax>2.30</LabFrameEnergyMax>                         *
-// *                                                                        *
-// *    <AdaptiveBracket>                                                   *
-// *                                                                        *
-// *      <!--‑‑‑‑‑ All tags below are OPTIONAL ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑>*
-// *                                                                        *
-// *      <InitialStepSize>         1e-2  </InitialStepSize>                *
-// *      <AbsXTolerance>           1e-6  </AbsXTolerance>                  *
-// *      <AbsResidualTolerance>    1e-10 </AbsResidualTolerance>           *
-// *      <MinStepSize>             1e-4  </MinStepSize>                    *
-// *      <MaxStepSize>             5e-2  </MaxStepSize>                    *
-// *      <StepScaleLimit>          3.0   </StepScaleLimit>                 *
-// *      <PlateauMod2Threshold>    1e-4  </PlateauMod2Threshold>           *
-// *      <PlateauCountBeforeJump>  4     </PlateauCountBeforeJump>         *
-// *                                                                        *
-// *    </AdaptiveBracket>                                                  *
-// *  </RootFinder>                                                         *
-// *                                                                        *
-// *----------------------------------------------------------------------  *
-// *            TAG  →  AdaptiveBracketConfig FIELD MAPPING                 *
-// *----------------------------------------------------------------------  *
-// *      <InitialStepSize>          →  initial_step_size                   *
-// *      <AbsXTolerance>            →  x_tol                               *
-// *      <AbsResidualTolerance>     →  zero_tol                            *
-// *      <MinStepSize>              →  min_step_size                       *
-// *      <MaxStepSize>              →  max_step_size                       *
-// *      <StepScaleLimit>           →  step_scale_limit                    *
-// *      <PlateauMod2Threshold>     →  plateau_mod2_threshold              *
-// *      <PlateauCountBeforeJump>   →  plateau_count_before_jump           *
-// *------------------------------------------------------------------------*
-// *                                                                        *
-// *      <KtildeMatrixInverse>  (or <KtildeMatrix> - match quant cond)     *
-// *          .....                                                         *
-// *      </KtildeMatrixInverse>                                            *
-// *                                                                        *
-// *      <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>        *
-// *                   (or time_spacing_product)                            *
-// *                                                                        *
-// *      <MCEnsembleParameters>...</MCEnsembleParameters>                  *
-// *        ... one for each Monte Carlo ensemble                           *
-// *                                                                        *
-// *      <KBBlock>...</KBBlock>                                            *
-// *        ... one for each KB quantization block                          *
-// *                                                                        *
-// *      <KBObservables>                                                   *
-// *       <MCSamplingInfo>...</MCSamplingInfo>                             *
-// *       <SamplingData>                                                   *
-// *          <FileName>...</FileName>  (all sampling files needed to       *
-// *             ....                    obtain all above MCObsInfo's)      *
-// *       </SamplingData>                                                  *
-// *      </KBObservables>                                                  *
-// *                                                                        *
-// *    </Task>                                                             *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *    For each Monte Carlo ensemble involved, there should be a tag       *
-// *    with the format:                                                    *
-// *                                                                        *
-// *      <MCEnsembleParameters>                                            *
-// *        <MCEnsembleInfo>...</MCEnsembleInfo>                            *
-// *        <ReferenceMassTimeSpacingProduct>                               *
-// *            <MCObs>...</MCObs>                                          *
-// *        </ReferenceMassTimeSpacingProduct>                              *
-// *        <LatticeAnisotropy>        (optional a_s/a_t) (unity if absent) *
-// *            <MCObs>...</MCObs>                                          *
-// *        </LatticeAnisotropy>                                            *
-// *        <ParticleMass>                                                  *
-// *           <Name>pion</Name> (should match names used in K-matrix)      *
-// *           <MCObs>...</MCObs>                                           *
-// *        </ParticleMass>                                                 *
-// *           ... other particle masses                                    *
-// *      </MCEnsembleParameters>                                           *
-// *                                                                        *
-// *    When specifying an MCObsInfo, either a short form or a long form    *
-// *    can be used (must be nonsimple and real):                           *
-// *                                                                        *
-// *     <MCObservable>                                                     *
-// *       <ObsName>T1up_Energy</ObsName> (32 char or less, no blanks)      *
-// *       <Index>3</Index>        (opt nonneg integer: default 0)          *
-// *     </MCObservable>                                                    *
-// *                                                                        *
-// *     <MCObs>T1up_Energy 3</MCObs>                                       *
-// *                                                                        *
-// *                                                                        *
-// *    For each KB quantization block, a tag of the form is needed:        *
-// *                                                                        *
-// *      <KBBlock>                                                         *
-// *        <MCEnsembleInfo>...</MCEnsembleInfo>                            *
-// *        <BoxQuantization>                                               *
-// *          <TotalMomentumRay>ar</TotalMomentumRay>                       *
-// *          <TotalMomentumIntSquared>0</TotalMomentumIntSquared>          *
-// *          <LGIrrep>T1u</LGIrrep>                                        *
-// *          <LmaxValues>5 3</LmaxValues>  (one for each decay channel)    *
-// *        </BoxQuantization>                                              *
-// *        <LabFrameEnergyMin>...</LabFrameEnergyMin>                      *
-// *        <LabFrameEnergyMax>...</LabFrameEnergyMax>                      *
-// *        <LabFrameEnergyInc>...</LabFrameEnergyInc>                      *
-// *      </KBBlock>                                                        *
-// *                                                                        *
-// *                                                                        *
-// *                                                                        *
-// *    Specification of the K-matrix or the inverse of the K-matrix is     *
-// *    done using XML of the format:                                       *
-// *                                                                        *
-// *      <KtildeMatrixInverse>  (or <KtildeMatrix>)                        *
-// *                                                                        *
-// *        <DecayChannels>                                                 *
-// *           <DecayChannelInfo>                                           *
-// *              <Particle1Name>pion</Particle1Name>                       *
-// *              <Spin1TimesTwo>0</Spin1TimesTwo>                          *
-// *              <Identical/> (if identical, do not include tags below)    *
-// *              <Particle2Name>eta</Particle2Name>                        *
-// *              <Spin2TimesTwo>2</Spin2TimesTwo>                          *
-// *             <IntrinsicParities>same</IntrinsicParities> (or "opposite")*
-// *           </DecayChannelInfo>                                          *
-// *                                                                        *
-// *            ... other channels infos ...                                *
-// *                                                                        *
-// *          (Order matters: first <DecayChannelInfo> tag is channel 0,    *
-// *           second <DecayChannelInfo> is channel 1, and so on.  In the   *
-// *           K-matrix, channels are referred to using the index 0, 1,...) *
-// *                                                                        *
-// *        </DecayChannels>                                                *
-// *                                                                        *
-// *        <Element>                                                       *
-// *          <KElementInfo>                                                *
-// *            <JTimesTwo>2</JTimesTwo>                                    *
-// *            <KIndex>L(1) 2S(0) chan(0)</KIndex>                         *
-// *            <KIndex>L(1) 2S(0) chan(0)</KIndex>                         *
-// *          </KElementInfo>                                               *
-// *          <FitForm>                                                     *
-// *             <Polynomial><Powers>1 3</Powers></Polynomial>              *
-// *          </FitForm>                                                    *
-// *        </Element>                                                      *
-// *        <Element>                                                       *
-// *          <KElementInfo>                                                *
-// *            <JTimesTwo>6</JTimesTwo>                                    *
-// *            <KIndex>L(3) 2S(0) chan(0)</KIndex>                         *
-// *            <KIndex>L(3) 2S(0) chan(0)</KIndex>                         *
-// *          </KElementInfo>                                               *
-// *          <FitForm>                                                     *
-// *             <Polynomial><Degree>0 </Degree></Polynomial>               *
-// *          </FitForm>                                                    *
-// *        </Element>                                                      *
-// *        <Element>                                                       *
-// *          <KElementInfo>                                                *
-// *            <JTimesTwo>10</JTimesTwo>                                   *
-// *            <KIndex>L(5) 2S(0) chan(0)</KIndex>                         *
-// *            <KIndex>L(5) 2S(0) chan(0)</KIndex>                         *
-// *          </KElementInfo>                                               *
-// *          <FitForm>                                                     *
-// *            <Polynomial><Degree>0</Degree></Polynomial>                 *
-// *          </FitForm>                                                    *
-// *        </Element>                                                      *
-// *                                                                        *
-// *        <StartingValues>                                                *
-// *                                                                        *
-// *          <KFitParamInfo>                                               *
-// *            <PolynomialTerm>                                            *
-// *               <Power>3</Power>                                         *
-// *               <KElementInfo>...</KElementInfo>                         *
-// *            </PolynomialTerm>                                           *
-// *            <StartingValue>0.4534</StartingValue>                       *
-// *          </KFitParamInfo>                                              *
-// *          <KFitParamInfo>                                               *
-// *            <PoleEnergy>                                                *
-// *               <Index>3</Index>                                         *
-// *               <JTimesTwo>2</JTimesTwo>                                 *
-// *            </PoleEnergy>                                               *
-// *            <StartingValue>2.2</StartingValue>                          *
-// *          </KFitParamInfo>                                              *
-// *          <KFitParamInfo>                                               *
-// *            <PoleCoupling>                                              *
-// *               <Index>3</Index>                                         *
-// *               <JTimesTwo>2</JTimesTwo>                                 *
-// *               <KIndex>...</KIndex>                                     *
-// *            </PoleCoupling>                                             *
-// *            <StartingValue>3.3</StartingValue>                          *
-// *          </KFitParamInfo>                                              *
-// *                                                                        *
-// *               ....                                                     *
-// *        </StartingValues>                                               *
-// *                                                                        *
-// *      </KtildeMatrixInverse>                                            *
-// *                                                                        *
-// *                                                                        *
-// *    Final note: The reference mass, the particle masses, and the        *
-// *    anisotropy for each ensemble can be set to a fixed value by         *
-// *    replacing the <MCObs>/<MCObservable> tag by a                       *
-// *      <FixedValue>1.1123</FixedValue> tag.                              *
-// *    Some groups, such as JLab, erroneously use such fixed values.       *
-// *    The above feature is useful for determining how such an erroneous   *
-// *    procedure effects the final error estimates on the K-matrix fix     *
-// *    parameters. (NOTE: the fixed values for particle masses always      *
-// *    refer to energy ratios over the reference mass.)                    *
-// *                                                                        *
-// *                                                                        *
-// **************************************************************************
+/**
+ * @brief Prints the Omega function for Elab between minimum and maximum values at fixed increments
+ * 
+ * This function evaluates and outputs the Omega function (or determinant) for lab-frame energies
+ * between user-specified minimum and maximum values. Output for each KBBlock is sent to a separate 
+ * file with a common stub and different integer suffixes.
+ * 
+ * @param xmltask XML task handler containing input parameters
+ * @param xmlout XML output handler for results
+ * @param taskcount Task counter for file naming
+ * 
+ * @details
+ * 
+ * **Output Formats:**
+ * - `OutputMode = "full"`: Format is `Elab/mref  value_from_full_sample`
+ * - `OutputMode = "resampled"`: Format is `Elab/mref  value_from_full_sample upper_error down_error`
+ * 
+ * **Requirements:**
+ * - An L³ spatial lattice is required
+ * - Reference scale times temporal lattice spacing must be specified in `<ReferenceMassTimeSpacingProduct>`
+ * - Either `<KtildeMatrixInverse>` or `<KtildeMatrix>` must be provided
+ * 
+ * **Configuration Options:**
+ * - If `<OmegaMu>` is specified, the Omega function is used; otherwise, the determinant itself is used
+ * - For anisotropic lattices, specify `<LatticeAnisotropy>` (spatial/temporal spacing ratio)
+ * - Lab-frame energies and masses can be input as reference mass ratios or time spacing products
+ * 
+ * @note Energy format should be specified in `<DefaultEnergyFormat>` as either 
+ *       "reference_ratio" or "time_spacing_product"
+ * 
+ * **XML Input Format:**
+ * 
+ * @code{.xml}
+ * <Task>
+ *   <Action>DoPrint</Action>
+ *   <OutputMode>full</OutputMode> <!-- or "resampled" -->
+ *   <OmegaMu>8.0</OmegaMu> <!-- optional -->
+ *   <QuantizationCondition>StildeCB</QuantizationCondition>
+ *   <!-- Options: StildeCB, StildeinvCB, KtildeB, KtildeinvB -->
+ *   
+ *   <RootFinder>
+ *     <LabFrameEnergyMin>1.10</LabFrameEnergyMin>
+ *     <LabFrameEnergyMax>2.30</LabFrameEnergyMax>
+ *     
+ *     <AdaptiveBracket>
+ *       <!-- All tags below are OPTIONAL -->
+ *       <InitialStepSize>1e-2</InitialStepSize>
+ *       <AbsXTolerance>1e-6</AbsXTolerance>
+ *       <AbsResidualTolerance>1e-10</AbsResidualTolerance>
+ *       <MinStepSize>1e-4</MinStepSize>
+ *       <MaxStepSize>5e-2</MaxStepSize>
+ *       <StepScaleLimit>3.0</StepScaleLimit>
+ *       <PlateauMod2Threshold>1e-4</PlateauMod2Threshold>
+ *       <PlateauCountBeforeJump>4</PlateauCountBeforeJump>
+ *     </AdaptiveBracket>
+ *   </RootFinder>
+ *   
+ *   <KtildeMatrixInverse> <!-- or <KtildeMatrix> -->
+ *     <!-- K-matrix specification... -->
+ *   </KtildeMatrixInverse>
+ *   
+ *   <DefaultEnergyFormat>reference_ratio</DefaultEnergyFormat>
+ *   <!-- or time_spacing_product -->
+ *   
+ *   <MCEnsembleParameters>...</MCEnsembleParameters>
+ *   <!-- One for each Monte Carlo ensemble -->
+ *   
+ *   <KBBlock>...</KBBlock>
+ *   <!-- One for each KB quantization block -->
+ *   
+ *   <KBObservables>
+ *     <MCSamplingInfo>...</MCSamplingInfo>
+ *     <SamplingData>
+ *       <FileName>...</FileName>
+ *     </SamplingData>
+ *   </KBObservables>
+ * </Task>
+ * @endcode
+ * 
+ * **AdaptiveBracket Parameter Mapping:**
+ * | XML Tag                      | AdaptiveBracketConfig Field |
+ * |------------------------------|----------------------------|
+ * | `<InitialStepSize>`          | `initial_step_size`        |
+ * | `<AbsXTolerance>`            | `x_tol`                    |
+ * | `<AbsResidualTolerance>`     | `zero_tol`                 |
+ * | `<MinStepSize>`              | `min_step_size`            |
+ * | `<MaxStepSize>`              | `max_step_size`            |
+ * | `<StepScaleLimit>`           | `step_scale_limit`         |
+ * | `<PlateauMod2Threshold>`     | `plateau_mod2_threshold`   |
+ * | `<PlateauCountBeforeJump>`   | `plateau_count_before_jump`|
+ * 
+ * **Monte Carlo Ensemble Configuration:**
+ * @code{.xml}
+ * <MCEnsembleParameters>
+ *   <MCEnsembleInfo>...</MCEnsembleInfo>
+ *   <ReferenceMassTimeSpacingProduct>
+ *     <MCObs>...</MCObs>
+ *   </ReferenceMassTimeSpacingProduct>
+ *   <LatticeAnisotropy> <!-- optional: a_s/a_t, unity if absent -->
+ *     <MCObs>...</MCObs>
+ *   </LatticeAnisotropy>
+ *   <ParticleMass>
+ *     <Name>pion</Name> <!-- should match names used in K-matrix -->
+ *     <MCObs>...</MCObs>
+ *   </ParticleMass>
+ *   <!-- Additional particle masses... -->
+ * </MCEnsembleParameters>
+ * @endcode
+ * 
+ * **MCObsInfo Specification:**
+ * Can use either short or long form (must be nonsimple and real):
+ * @code{.xml}
+ * <!-- Long form -->
+ * <MCObservable>
+ *   <ObsName>T1up_Energy</ObsName> <!-- 32 chars max, no blanks -->
+ *   <Index>3</Index> <!-- optional nonneg integer, default 0 -->
+ * </MCObservable>
+ * 
+ * <!-- Short form -->
+ * <MCObs>T1up_Energy 3</MCObs>
+ * @endcode
+ * 
+ * **KB Quantization Block Configuration:**
+ * @code{.xml}
+ * <KBBlock>
+ *   <MCEnsembleInfo>...</MCEnsembleInfo>
+ *   <BoxQuantization>
+ *     <TotalMomentumRay>ar</TotalMomentumRay>
+ *     <TotalMomentumIntSquared>0</TotalMomentumIntSquared>
+ *     <LGIrrep>T1u</LGIrrep>
+ *     <LmaxValues>5 3</LmaxValues> <!-- one for each decay channel -->
+ *   </BoxQuantization>
+ *   <LabFrameEnergyMin>...</LabFrameEnergyMin>
+ *   <LabFrameEnergyMax>...</LabFrameEnergyMax>
+ *   <LabFrameEnergyInc>...</LabFrameEnergyInc>
+ * </KBBlock>
+ * @endcode
+ * 
+ * **K-Matrix Specification:**
+ * @code{.xml}
+ * <KtildeMatrixInverse> <!-- or <KtildeMatrix> -->
+ *   <DecayChannels>
+ *     <DecayChannelInfo>
+ *       <Particle1Name>pion</Particle1Name>
+ *       <Spin1TimesTwo>0</Spin1TimesTwo>
+ *       <Identical/> <!-- if identical, omit tags below -->
+ *       <Particle2Name>eta</Particle2Name>
+ *       <Spin2TimesTwo>2</Spin2TimesTwo>
+ *       <IntrinsicParities>same</IntrinsicParities> <!-- or "opposite" -->
+ *     </DecayChannelInfo>
+ *     <!-- Additional decay channels... -->
+ *   </DecayChannels>
+ *   
+ *   <Element>
+ *     <KElementInfo>
+ *       <JTimesTwo>2</JTimesTwo>
+ *       <KIndex>L(1) 2S(0) chan(0)</KIndex>
+ *       <KIndex>L(1) 2S(0) chan(0)</KIndex>
+ *     </KElementInfo>
+ *     <FitForm>
+ *       <Polynomial><Powers>1 3</Powers></Polynomial>
+ *     </FitForm>
+ *   </Element>
+ *   <!-- Additional elements... -->
+ *   
+ *   <StartingValues>
+ *     <KFitParamInfo>
+ *       <PolynomialTerm>
+ *         <Power>3</Power>
+ *         <KElementInfo>...</KElementInfo>
+ *       </PolynomialTerm>
+ *       <StartingValue>0.4534</StartingValue>
+ *     </KFitParamInfo>
+ *     <!-- Additional starting values... -->
+ *   </StartingValues>
+ * </KtildeMatrixInverse>
+ * @endcode
+ * 
+ * @warning The reference mass, particle masses, and anisotropy for each ensemble can be set 
+ *          to fixed values by replacing `<MCObs>`/`<MCObservable>` tags with 
+ *          `<FixedValue>1.1123</FixedValue>` tags. However, this practice can lead to 
+ *          erroneous error estimates and should be used with caution.
+ * 
+ * @note Order matters in decay channel specification: first `<DecayChannelInfo>` is channel 0,
+ *       second is channel 1, etc. In the K-matrix, channels are referenced by index 0, 1, ...
+ * 
+ * @note Fixed values for particle masses always refer to energy ratios over the reference mass.
+ */
 
 void TaskHandler::doPrint(XMLHandler& xmltask, XMLHandler& xmlout,
                           int taskcount) {

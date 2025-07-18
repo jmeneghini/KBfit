@@ -2,153 +2,143 @@
 #define KB_OBS_HANDLER_H
 #include "obs_get_handler.h"
 
-// ************************************************************************************
-// * *
-// *   The class "KBObsHandler", a container class for Monte Carlo non-simple *
-// *   observables, is defined in this file.  This is one of the most important
-// *
-// *   and central classes in "KBfit".  An object of this class is used to get
-// the    *
-// *   Monte Carlo resamplings, store them in memory, and perform statistical *
-// *   analysis on the data.  When calculations are carried out on the data or *
-// *   fits are performed, objects of this class store them so that bootstrap
-// and     *
-// *   jackknife errors can be subsequently computed.  Objects of this class
-// also     *
-// *   carry out reading and writing of bootstrap/jackknife results to and from
-// *
-// *   files. *
-// * *
-// *   An important member of a "KBObsHandler" object include: a ppointer to *
-// *   an object of the "MCObsGetHandler" class in the member "m_in_handler" *
-// *   which is used for getting the data from files.  A "KBObsHandler" object *
-// *   contains the Monte Carlo data in the map: *
-// * *
-// *     map<KBObsInfo,pair<RVector,uint> > m_samples; *
-// * *
-// *   Resampling values of non-simple observables are stored in "m_samples". *
-// *   In these maps, the keys are of class "KBObsInfo" and the *
-// *   values are pairs of RVectors and unsigned integers. The RVectors contain
-// *
-// *   the resampling values: the 0th element is always the value for the full *
-// *   sampling.  For "Jackknife" mode, the index "k" varies from 0 to Nbins,
-// the     *
-// *   number of bins, where k=0 is the full sample, k=1 is the first jackknife
-// *
-// *   sampling (bin "k" removed), and so on.  The full sample, stored in the
-// k=0     *
-// *   element, is used to simplify the computation of each jackknife sample. *
-// *   For "Bootstrap" mode, the index "k" ranges from 0 to Nboot, the number of
-// *
-// *   bootstrap resamplings, where k=0 is the full sample, k=1 is the first *
-// *   bootstrap sampling, and so on.  The unsigned integer in each pair
-// indicates    *
-// *   how many resamplings have already been calculated and stored in memory: *
-// *   uncalculated values are stored as quiet NaNs; once this unsigned integer
-// *
-// *   equals the size of associated RValue, then all samplings are available. *
-// * *
-// *   The Monte Carlo resamplings are stored in memory, so beware of memory *
-// *   exhaustion for a large number of observables.  No routines are provided *
-// *   for explicitly reading data, but computing means and covariances causes *
-// *   data to be read from file if not already in memory.  A "clearSamplings" *
-// *   member is provided to release memory. *
-// * *
-// *   Data analysis and reading/writing may be accomplished using only a *
-// *   **single** "MCSamplingInfo".  Multiple ensembles are allowed, but the *
-// *   bootstrap resampling must be the same for all ensembles.  If the sampling
-// *
-// *   information is of Jackknife mode, then all data must be jackknife *
-// *   resamplings, and the jackknife resampling must be the same for all *
-// *   observables related to the same ensemble, and the number of bins must be
-// *
-// *   the same for all ensembles.  The member "setSamplingInfo" can be called
-// to     *
-// *   change the sampling information, but this clears all memory and
-// essentially    *
-// *   completely resets the handler. *
-// * *
-// *   For observables, such as fit parameters, that are not associated with *
-// *   any particle Monte Carlo ensemble, a special "MCEnsembleInfo" with *
-// *   id string "indep" should be used to indicate an observable that is *
-// *   independent of the ensemble. *
-// * *
-// *   Usage: *
-// * *
-// *   (1) The constructor requires an "MCSamplingInfo" object.  The constructor
-// *
-// *       allocates an internal "MCObsGetHandler" object. *
-// * *
-// *   (2) Information about current parameters can be obtained as below. *
-// * *
-// *       KH.getNumberOfMeasurements(); *
-// *       KH.getNumberOfBins(); *
-// *       KH.getNumberOfBootstrapResamplings(); *
-// *       KH.getBootstrapper();  // returns const reference *
-// * *
-// *   (3) Erasing all data corresponding to a particular "KBObsInfo" *
-// *   or all data can be accomplished as shown below. *
-// * *
-// *       KBObsInfo obskey; *
-// *       KH.eraseSamplings(obskey);  // erases resamplings for one observable
-// *
-// *       KH.clearSamplings();        // clears all resamplings *
-// * *
-// *   (4) Iterating over the resamplings is often needed, either for getting *
-// *   the values or putting the values into memory.  Use an integer index. *
-// *   Value 0 is for the full sampling. Index 1 is the first resampling, and *
-// *   so on. *
-// * *
-// *   (5) Input/output of all samplings (including full estimates): *
-// *   To write samplings (the **default** mode only) that are already in memory
-// *
-// *   (all samplings include **full* esimates must be available) to file, use *
-// * *
-// *      set<KBObsInfo> obskeys; .... *
-// *      string filename; *
-// *      SamplingMode mode=Bootstrap; *
-// *      XMLHandler xmlout;   (for output) *
-// *      bool overwrite=false;  (file overwriting) *
-// *      KH.writeSamplingValuesToFile(obskeys,filename,mode,xmlout,overwrite);
-// *
-// * *
-// *   If "filename" does not exist, it will be created.  Existing files are
-// never    *
-// *   erased.  New records are added to the files.  If the key of a record to
-// be put *
-// *   already exists in a file, the put will only occur if "overwrite" is
-// specified  *
-// *   AND the size of the data to be put does not exceed the size of the data *
-// *   already in the file for that key. *
-// * *
-// *   The format of the files is that for an IOMap.  The header for the *
-// *   file contains the information *
-// * *
-// *       <SigmondSamplingsFile> *
-// *          <MCEnsembleInfo>clover_s24_t128_ud840_s743</MCEnsembleInfo> *
-// *          <NumberOfMeasurements>551</NumberOfMeasurements> *
-// *          <NumberOfBins>274</NumberOfBins> *
-// *          <TweakEnsemble>    (optional) *
-// *             <Rebin>2</Rebin> *
-// *             <OmitConfig>0</OmitConfig> *
-// *             <OmitConfig>1</OmitConfig> *
-// *             <OmitConfig>78</OmitConfig> *
-// *          </TweakEnsemble> *
-// *          <JackKnifeMode/>  or  <Bootstrapper> *
-// *                            <NumberResamplings>2048</NumberResamplings> *
-// *                                  <Seed>6754</Seed> *
-// *                                  <BootSkip>127</BootSkip> *
-// *                                </Bootstrapper> *
-// *       </SigmondSamplingsFile> *
-// * *
-// *   The record keys are unsigned integers, and the values contain *
-// *   the MCObservable XML string, followed by the vector of samplings. *
-// *   An IOMap requires the keys to all have the same size in bytes, so *
-// *   an KBObsInfo cannot be used as a key since its encoding can be *
-// *   different sizes. *
-// * *
-// * *
-// ************************************************************************************
+/**
+ * @brief Container class for Monte Carlo non-simple observables in KBfit
+ * 
+ * The KBObsHandler class is one of the most important and central classes in KBfit.
+ * It is used to get Monte Carlo resamplings, store them in memory, and perform 
+ * statistical analysis on the data. When calculations are carried out on the data 
+ * or fits are performed, objects of this class store them so that bootstrap and 
+ * jackknife errors can be subsequently computed. Objects of this class also carry 
+ * out reading and writing of bootstrap/jackknife results to and from files.
+ * 
+ * @details
+ * 
+ * **Core Data Storage:**
+ * 
+ * The main data storage is in the member:
+ * ```cpp
+ * map<KBObsInfo, pair<RVector, uint>> m_samples;
+ * ```
+ * 
+ * Resampling values of non-simple observables are stored in `m_samples`, where:
+ * - **Keys**: KBObsInfo objects identifying the observable
+ * - **Values**: Pairs of RVectors and unsigned integers
+ *   - **RVector**: Contains resampling values (0th element is full sampling)
+ *   - **uint**: Number of resamplings calculated and stored in memory
+ * 
+ * **Resampling Index Structure:**
+ * 
+ * - **Jackknife mode**: Index k varies from 0 to Nbins
+ *   - k=0: Full sample
+ *   - k=1: First jackknife sampling (bin 1 removed)
+ *   - k=2: Second jackknife sampling (bin 2 removed), etc.
+ * 
+ * - **Bootstrap mode**: Index k ranges from 0 to Nboot
+ *   - k=0: Full sample  
+ *   - k=1: First bootstrap sampling
+ *   - k=2: Second bootstrap sampling, etc.
+ * 
+ * **Memory Management:**
+ * - Uncalculated values are stored as quiet NaNs
+ * - Once the unsigned integer equals the RVector size, all samplings are available
+ * - Monte Carlo resamplings are stored in memory - beware of memory exhaustion for large numbers of observables
+ * - Use clearSamplings() to release memory when needed
+ * 
+ * **Important Members:**
+ * - `m_in_handler`: Pointer to MCObsGetHandler object for getting data from files
+ * - `m_samples`: Map storing the resampling data
+ * 
+ * **Sampling Requirements:**
+ * - Data analysis uses only a **single** MCSamplingInfo
+ * - Multiple ensembles allowed, but bootstrap resampling must be the same for all
+ * - For Jackknife mode: all data must be jackknife resamplings with same parameters
+ * - Number of bins must be the same for all ensembles
+ * - Use setSamplingInfo() to change sampling (clears all memory)
+ * 
+ * **Independent Observables:**
+ * For observables like fit parameters not associated with any Monte Carlo ensemble,
+ * use a special MCEnsembleInfo with id string "indep".
+ * 
+ * @section usage_examples Usage Examples
+ * 
+ * **1. Constructor Usage:**
+ * ```cpp
+ * MCSamplingInfo sampling_info;
+ * KBObsHandler KH(sampling_info);  // Allocates internal MCObsGetHandler
+ * ```
+ * 
+ * **2. Getting Current Parameters:**
+ * ```cpp
+ * uint num_measurements = KH.getNumberOfMeasurements();
+ * uint num_bins = KH.getNumberOfBins();
+ * uint num_bootstrap = KH.getNumberOfBootstrapResamplings();
+ * const Bootstrapper& bs = KH.getBootstrapper();  // returns const reference
+ * ```
+ * 
+ * **3. Memory Management:**
+ * ```cpp
+ * KBObsInfo obskey;
+ * KH.eraseSamplings(obskey);  // erases resamplings for one observable
+ * KH.clearSamplings();        // clears all resamplings
+ * ```
+ * 
+ * **4. Resampling Iteration:**
+ * Use integer index where:
+ * - Value 0: Full sampling
+ * - Index 1: First resampling
+ * - Index 2: Second resampling, etc.
+ * 
+ * **5. File I/O Operations:**
+ * ```cpp
+ * set<KBObsInfo> obskeys;
+ * string filename;
+ * SamplingMode mode = Bootstrap;
+ * XMLHandler xmlout;
+ * bool overwrite = false;
+ * KH.writeSamplingValuesToFile(obskeys, filename, mode, xmlout, overwrite);
+ * ```
+ * 
+ * **File Behavior:**
+ * - Non-existent files are created
+ * - Existing files are never erased
+ * - New records are added to files
+ * - Existing records are only overwritten if `overwrite=true` AND new data size ≤ existing data size
+ * 
+ * @section file_format File Format
+ * 
+ * Files use IOMap format with header containing:
+ * 
+ * @code{.xml}
+ * <SigmondSamplingsFile>
+ *   <MCEnsembleInfo>clover_s24_t128_ud840_s743</MCEnsembleInfo>
+ *   <NumberOfMeasurements>551</NumberOfMeasurements>
+ *   <NumberOfBins>274</NumberOfBins>
+ *   <TweakEnsemble>    <!-- optional -->
+ *     <Rebin>2</Rebin>
+ *     <OmitConfig>0</OmitConfig>
+ *     <OmitConfig>1</OmitConfig>
+ *     <OmitConfig>78</OmitConfig>
+ *   </TweakEnsemble>
+ *   <JackKnifeMode/>  <!-- or -->
+ *   <Bootstrapper>
+ *     <NumberResamplings>2048</NumberResamplings>
+ *     <Seed>6754</Seed>
+ *     <BootSkip>127</BootSkip>
+ *   </Bootstrapper>
+ * </SigmondSamplingsFile>
+ * @endcode
+ * 
+ * **Record Structure:**
+ * - **Keys**: Unsigned integers (IOMap requires same-size keys)
+ * - **Values**: MCObservable XML string + vector of samplings
+ * 
+ * @note KBObsInfo cannot be used directly as keys since its encoding can vary in size
+ * 
+ * @warning Computing means and covariances causes data to be read from file if not already in memory
+ * 
+ * @warning Be careful of memory exhaustion when handling large numbers of observables
+ */
 
 class KBObsHandler {
 
