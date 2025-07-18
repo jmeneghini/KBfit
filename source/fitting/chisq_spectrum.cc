@@ -90,7 +90,8 @@
 // *        <LabFrameEnergyMin>_val_</LabFrameEnergyMin> (Mandatory)         *
 // *        <LabFrameEnergyMax>_val_</LabFrameEnergyMax> (Mandatory)         *
 // *                         OR                                               *
-// *        <CMFrameEnergyAutoRangeMargin>_val_</CMFrameEnergyAutoRangeMargin> (optional) *
+// *        <CMFrameEnergyAutoRangeMargin>_val_</CMFrameEnergyAutoRangeMargin>
+// (optional) *
 // *        ...                                                             *
 // *                                                                        *
 // *      <KBObservables> ... </KBObservables>                               *
