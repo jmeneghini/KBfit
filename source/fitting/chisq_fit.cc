@@ -20,11 +20,11 @@
 #include "chisq_fit.h"
 #include <algorithm>
 #include <cstdio>
+#include <iomanip>
+#include <iostream>
 #include <mpi.h>
 #include <sstream>
 #include <thread>
-#include <iostream>
-#include <iomanip>
 using namespace std;
 
 /**
@@ -53,34 +53,37 @@ void show_progress(std::size_t i, std::size_t total, bool is_slurm) {
       bar_total = total;
       last_update = 0;
     }
-    
+
     // Print progress every 5 percent, at start, and when complete.
     bool should_print = (i == 0) || (i >= total) ||
-                            ((i - last_update) >= (total / 20)) ||
-                            ((i % (total / 20)) == 0);
-    
+                        ((i - last_update) >= (total / 20)) ||
+                        ((i % (total / 20)) == 0);
+
     if (should_print) {
       if (i >= total) {
-        std::cerr << "Sample " << total << "/" << total << " - Fit completed successfully!" << std::endl;
+        std::cerr << "Sample " << total << "/" << total
+                  << " - Fit completed successfully!" << std::endl;
       } else {
         double percent = (100.0 * i) / total;
-        std::cerr << "Sample " << i << "/" << total << " (" << std::fixed << std::setprecision(1) << percent << "%)" << std::endl;
+        std::cerr << "Sample " << i << "/" << total << " (" << std::fixed
+                  << std::setprecision(1) << percent << "%)" << std::endl;
       }
       std::cerr.flush();
       last_update = i;
     }
     return;
   }
-  
+
   // Non-SLURM mode: Use visual progress bar
-  // (Re)initialize if this is the first call, or if the total number of samples has changed.
+  // (Re)initialize if this is the first call, or if the total number of samples
+  // has changed.
   if (!bar_ptr || bar_total != total) {
     bar_total = total;
     last_update = 0;
-    
+
     std::cerr << "Starting fit with " << total << " samples..." << std::endl;
     std::cerr.flush();
-    
+
     bar_ptr = std::make_unique<indicators::ProgressBar>(
         indicators::option::BarWidth{50}, indicators::option::Start{"["},
         indicators::option::Fill{"="}, indicators::option::Lead{">"},
@@ -89,7 +92,7 @@ void show_progress(std::size_t i, std::size_t total, bool is_slurm) {
         indicators::option::ShowRemainingTime{true},
         indicators::option::MaxProgress{total},
         indicators::option::ForegroundColor{indicators::Color::cyan});
-        
+
     // Force initial display
     bar_ptr->set_option(indicators::option::PrefixText{
         "Sample 0/" + std::to_string(total) + " "});
@@ -101,11 +104,11 @@ void show_progress(std::size_t i, std::size_t total, bool is_slurm) {
     // Update every 5% or every 10 samples, whichever is smaller
     std::size_t update_interval = std::min<std::size_t>(total / 20, 10);
     update_interval = std::max<std::size_t>(update_interval, 1);
-    
-    bool should_update = (i == 0) || (i >= total) || 
-                        ((i - last_update) >= update_interval) ||
-                        ((i % update_interval) == 0);
-    
+
+    bool should_update = (i == 0) || (i >= total) ||
+                         ((i - last_update) >= update_interval) ||
+                         ((i % update_interval) == 0);
+
     if (should_update) {
       // Update the prefix to show the current sample count.
       bar_ptr->set_option(indicators::option::PrefixText{
@@ -121,8 +124,9 @@ void show_progress(std::size_t i, std::size_t total, bool is_slurm) {
       // Clear cyan bar first, then show completion message
       bar_ptr->mark_as_completed();
       std::cerr.flush();
-      
-      // Reset the pointer to ensure a new bar is created for any subsequent fits
+
+      // Reset the pointer to ensure a new bar is created for any subsequent
+      // fits
       bar_ptr.reset();
     }
   }
@@ -401,7 +405,7 @@ void doChiSquareFittingMPI(
     if (slurm_job_id != nullptr) {
       is_slurm = true;
       std::cerr << "Running in SLURM environment with job ID: " << slurm_job_id
-                    << std::endl;
+                << std::endl;
     }
   }
 
@@ -427,7 +431,7 @@ void doChiSquareFittingMPI(
        it != fitparaminfos.end(); ++it) {
     kbfitparaminfos.push_back(KBObsInfo(mcindep, *it));
     kbfitparaminfoset.insert(KBObsInfo(mcindep, *it));
-       }
+  }
 
   stringstream logger;
   vector<double> params_fullsample;
@@ -494,8 +498,8 @@ void doChiSquareFittingMPI(
   MPI_Barrier(comm);
 
   if (rank == 0) {
-    std::cerr << "Starting parallel minimization with " << nsamplings << " resamplings across "
-              << size << " MPI ranks" << std::endl;
+    std::cerr << "Starting parallel minimization with " << nsamplings
+              << " resamplings across " << size << " MPI ranks" << std::endl;
   }
 
   // Each rank processes its assigned resamplings
@@ -661,8 +665,7 @@ void doChiSquareFittingMPI(
 
   // Collect logger strings from all ranks for combined output
   if (rank == 0) {
-    std::cerr << "Aggregating logs from all ranks..."
-              << std::endl;
+    std::cerr << "Aggregating logs from all ranks..." << std::endl;
     // Start with rank 0's logger
     std::ostringstream combined_logger;
     combined_logger << logger.str();
@@ -749,7 +752,7 @@ void doChiSquareFittingMPI(
       for (list<uint>::const_iterator it = failed_local.begin();
            it != failed_local.end(); ++it) {
         xmlf.put_child("FailedIndex", make_string(*it));
-           }
+      }
       xmlout.put_child(xmlf);
     }
   }
