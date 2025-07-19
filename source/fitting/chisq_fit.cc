@@ -23,6 +23,7 @@
 #include <mpi.h>
 #include <sstream>
 #include <thread>
+#include <iostream>
 using namespace std;
 
 /**
@@ -42,6 +43,8 @@ void show_progress(std::size_t i, std::size_t total) {
   static std::size_t bar_total = 0;
   // Track last update for SLURM buffering
   static std::size_t last_update = 0;
+  // Detect SLURM environment
+  static bool is_slurm = (getenv("SLURM_JOB_ID") != nullptr);
 
   // (Re)initialize if this is the first call, or if the total number of samples
   // has changed.
@@ -52,6 +55,10 @@ void show_progress(std::size_t i, std::size_t total) {
     // SLURM FIX: Force immediate flush on initialization
     std::cerr << "Starting fit with " << total << " samples..." << std::endl;
     std::cerr.flush();
+    
+    // SLURM FIX: Disable output buffering for progress bars
+    std::cerr << std::unitbuf;  // Force unbuffered output
+    setvbuf(stderr, nullptr, _IONBF, 0);  // Disable buffering completely
     
     bar_ptr = std::make_unique<indicators::ProgressBar>(
         indicators::option::BarWidth{50}, indicators::option::Start{"["},
@@ -71,9 +78,14 @@ void show_progress(std::size_t i, std::size_t total) {
 
   if (bar_ptr) {
     // SLURM FIX: Update more frequently and force flush
-    // Update every 5% or every 10 samples, whichever is smaller
-    std::size_t update_interval = std::min<std::size_t>(total / 20, 10);
-    update_interval = std::max<std::size_t>(update_interval, 1);
+    // For SLURM, update every sample. For others, update every 5% or 10 samples
+    std::size_t update_interval;
+    if (is_slurm) {
+      update_interval = 1;  // Update every sample in SLURM
+    } else {
+      update_interval = std::min<std::size_t>(total / 20, 10);
+      update_interval = std::max<std::size_t>(update_interval, 1);
+    }
     
     bool should_update = (i == 0) || (i >= total) || 
                         ((i - last_update) >= update_interval) ||
@@ -88,6 +100,9 @@ void show_progress(std::size_t i, std::size_t total) {
       
       // SLURM FIX: Force flush after each update
       std::cerr.flush();
+      if (is_slurm) {
+        fflush(stderr);  // Additional C-style flush for SLURM
+      }
       last_update = i;
     }
 
