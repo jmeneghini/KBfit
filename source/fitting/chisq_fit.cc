@@ -20,11 +20,11 @@
 #include "chisq_fit.h"
 #include <algorithm>
 #include <cstdio>
+#include <iomanip>
+#include <iostream>
 #include <mpi.h>
 #include <sstream>
 #include <thread>
-#include <iostream>
-#include <iomanip>
 using namespace std;
 
 /**
@@ -56,33 +56,36 @@ void show_progress(std::size_t i, std::size_t total) {
       std::cerr << "Starting fit with " << total << " samples..." << std::endl;
       std::cerr.flush();
     }
-    
+
     // Print progress every 5 samples, at start, and at completion
-    bool should_print = (i == 0) || (i >= total) || 
-                       ((i % 5 == 0) && (i != last_update));
-    
+    bool should_print =
+        (i == 0) || (i >= total) || ((i % 5 == 0) && (i != last_update));
+
     if (should_print) {
       if (i >= total) {
-        std::cerr << "Sample " << total << "/" << total << " - Fit completed successfully!" << std::endl;
+        std::cerr << "Sample " << total << "/" << total
+                  << " - Fit completed successfully!" << std::endl;
       } else {
         double percent = (100.0 * i) / total;
-        std::cerr << "Sample " << i << "/" << total << " (" << std::fixed << std::setprecision(1) << percent << "%)" << std::endl;
+        std::cerr << "Sample " << i << "/" << total << " (" << std::fixed
+                  << std::setprecision(1) << percent << "%)" << std::endl;
       }
       std::cerr.flush();
       last_update = i;
     }
     return;
   }
-  
+
   // Non-SLURM mode: Use visual progress bar
-  // (Re)initialize if this is the first call, or if the total number of samples has changed.
+  // (Re)initialize if this is the first call, or if the total number of samples
+  // has changed.
   if (!bar_ptr || bar_total != total) {
     bar_total = total;
     last_update = 0;
-    
+
     std::cerr << "Starting fit with " << total << " samples..." << std::endl;
     std::cerr.flush();
-    
+
     bar_ptr = std::make_unique<indicators::ProgressBar>(
         indicators::option::BarWidth{50}, indicators::option::Start{"["},
         indicators::option::Fill{"="}, indicators::option::Lead{">"},
@@ -91,7 +94,7 @@ void show_progress(std::size_t i, std::size_t total) {
         indicators::option::ShowRemainingTime{true},
         indicators::option::MaxProgress{total},
         indicators::option::ForegroundColor{indicators::Color::cyan});
-        
+
     // Force initial display
     bar_ptr->set_option(indicators::option::PrefixText{
         "Sample 0/" + std::to_string(total) + " "});
@@ -103,11 +106,11 @@ void show_progress(std::size_t i, std::size_t total) {
     // Update every 5% or every 10 samples, whichever is smaller
     std::size_t update_interval = std::min<std::size_t>(total / 20, 10);
     update_interval = std::max<std::size_t>(update_interval, 1);
-    
-    bool should_update = (i == 0) || (i >= total) || 
-                        ((i - last_update) >= update_interval) ||
-                        ((i % update_interval) == 0);
-    
+
+    bool should_update = (i == 0) || (i >= total) ||
+                         ((i - last_update) >= update_interval) ||
+                         ((i % update_interval) == 0);
+
     if (should_update) {
       // Update the prefix to show the current sample count.
       bar_ptr->set_option(indicators::option::PrefixText{
@@ -128,7 +131,7 @@ void show_progress(std::size_t i, std::size_t total) {
       // Print finished message before green bar
       std::cerr << "Fit completed successfully!" << std::endl;
       std::cerr.flush();
-      
+
       // Create a brief green completion bar
       auto completion_bar = std::make_unique<indicators::ProgressBar>(
           indicators::option::BarWidth{50}, indicators::option::Start{"["},
@@ -143,8 +146,9 @@ void show_progress(std::size_t i, std::size_t total) {
       completion_bar->set_progress(100);
       completion_bar->mark_as_completed();
       std::cerr.flush();
-      
-      // Reset the pointer to ensure a new bar is created for any subsequent fits
+
+      // Reset the pointer to ensure a new bar is created for any subsequent
+      // fits
       bar_ptr.reset();
     }
   }
@@ -576,7 +580,7 @@ void doChiSquareFittingMPI(
       std::size_t global_est =
           std::min<std::size_t>(completed_local * size, nsamplings);
       show_progress(global_est, nsamplings);
-      
+
       // SLURM FIX: Additional flush and periodic sync check
       if (completed_local % 5 == 0) {
         std::cerr.flush();
