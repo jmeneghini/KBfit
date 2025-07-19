@@ -353,11 +353,12 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
         bool auto_bounds =
             xmlreadifchild(*it, "CMFrameEnergyAutoRangeMargin", auto_margin);
         if (!auto_bounds)
-          throw(std::invalid_argument("CMFrameEnergyMin/Max missing and "
-                                      "CMFrameEnergyAutoRangeMargin not provided"));
+          throw(std::invalid_argument(
+              "CMFrameEnergyMin/Max missing and "
+              "CMFrameEnergyAutoRangeMargin not provided"));
       }
-      ensemble_fit_data[ensemble_idmap[mcens]]
-          .auto_margin_per_block.push_back(auto_margin);
+      ensemble_fit_data[ensemble_idmap[mcens]].auto_margin_per_block.push_back(
+          auto_margin);
       ensemble_fit_data[ensemble_idmap[mcens]].n_energies_per_block.push_back(
           nres);
       ensemble_fit_data[ensemble_idmap[mcens]].BQ_blocks.push_back(bqptr);
@@ -632,16 +633,16 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
     for (uint ens = 0; ens < ensemble_fit_data.size(); ++ens) {
       EnsembleFitData& ens_data = ensemble_fit_data[ens];
       ens_data.Ecm_bounds_per_block_per_sample.resize(ens_data.n_blocks);
-      
+
       uint energy_offset = 0;
       for (uint block = 0; block < ens_data.n_blocks; ++block) {
         const uint n_energies = ens_data.n_energies_per_block[block];
         const double auto_margin = ens_data.auto_margin_per_block[block];
         BoxQuantization* bq_block = ens_data.BQ_blocks[block];
-        
+
         // Resize for all samples (nsamplings + 1 for mean)
         ens_data.Ecm_bounds_per_block_per_sample[block].resize(nsamplings + 1);
-        
+
         // Precompute bounds for each sample
         for (uint sample = 0; sample <= nsamplings; ++sample) {
           double emin = std::numeric_limits<double>::infinity();
@@ -649,14 +650,17 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
 
           // Set sample-specific mref and anisotropy for this block
           double mref_sample = ens_data.mref_samples[sample];
-          double anisotropy_sample = ens_data.is_anisotropy_fixed ? 
-              ens_data.fixed_anisotropy_value : ens_data.anisotropy_samples[sample];
-          double length_sample = mref_sample * double(ens_data.Llat) * anisotropy_sample;
+          double anisotropy_sample = ens_data.is_anisotropy_fixed
+                                         ? ens_data.fixed_anisotropy_value
+                                         : ens_data.anisotropy_samples[sample];
+          double length_sample =
+              mref_sample * double(ens_data.Llat) * anisotropy_sample;
           bq_block->setRefMassL(length_sample);
-          
+
           // Set sample-specific masses for all decay channels
           uint mass_sample_idx = 0;
-          for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
+          for (uint decay_channel = 0; decay_channel < n_decay_channels;
+               ++decay_channel) {
             const uint mass_base_idx = decay_channel * 2;
             double mass1, mass2;
 
@@ -680,36 +684,40 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
                 mass_sample_idx++;
               }
             }
-            
+
             // Set the masses for this decay channel
             bq_block->setMassesOverRef(decay_channel, mass1, mass2);
           }
-          
+
           // Calculate bounds from interacting energies for this sample
-          for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
+          for (uint energy_index = 0; energy_index < n_energies;
+               ++energy_index) {
             const uint global_energy_idx = energy_offset + energy_index;
-            const NonInteractingPair& ni = ens_data.non_interacting_pairs[global_energy_idx];
-            const EcmTransform& et = bq_block->getDecayChannelEcmTransform(ni.decay_channel_idx);
-            
+            const NonInteractingPair& ni =
+                ens_data.non_interacting_pairs[global_energy_idx];
+            const EcmTransform& et =
+                bq_block->getDecayChannelEcmTransform(ni.decay_channel_idx);
+
             // Get the observed energy shift for this sample
             double dElab = ens_data.dElab_samples[global_energy_idx][sample];
-            
+
             // Calculate non-interacting energy with current sample masses
-            double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
-            
+            double Elab_free =
+                et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
+
             // Calculate interacting energy and convert to CM frame
             double Elab_int = Elab_free + dElab;
             double Ecm_int = et.getEcmOverMref(Elab_int);
-            
+
             emin = std::min(emin, Ecm_int);
             emax = std::max(emax, Ecm_int);
           }
-          
+
           // Apply margin
-          ens_data.Ecm_bounds_per_block_per_sample[block][sample] = 
+          ens_data.Ecm_bounds_per_block_per_sample[block][sample] =
               std::make_pair(emin - auto_margin, emax + auto_margin);
         }
-        
+
         energy_offset += n_energies;
       }
     }
@@ -1049,10 +1057,13 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(
       BoxQuantization* this_block_bq = ens_data.BQ_blocks[block];
       const uint n_energies = ens_data.n_energies_per_block[block];
 
-      // OPTIMIZATION: Use precomputed sample-specific energy bounds for this block
-      // Work directly in CM frame to avoid repeated transformations
-      // Bounds are sample-specific: min/max of non-interacting energies for current sample
-      const auto& bounds = ens_data.Ecm_bounds_per_block_per_sample[block][current_resampling_idx];
+      // OPTIMIZATION: Use precomputed sample-specific energy bounds for this
+      // block Work directly in CM frame to avoid repeated transformations
+      // Bounds are sample-specific: min/max of non-interacting energies for
+      // current sample
+      const auto& bounds =
+          ens_data
+              .Ecm_bounds_per_block_per_sample[block][current_resampling_idx];
       const double Ecm_min = bounds.first;
       const double Ecm_max = bounds.second;
 
