@@ -526,7 +526,6 @@ void doChiSquareFittingMPI(
   // Initialize counters for the rank-0 progress bar
   std::size_t completed_local = 0; // only for estimating global progress
   // progress bar handled inside show_progress; no extra bookkeeping needed
-  const std::size_t N = nsamplings; // total samples
   only_update_prior_initial_guesses = true;
 
   // Process assigned resamplings
