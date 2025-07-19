@@ -282,7 +282,8 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
   const std::size_t N = nsamplings; // total samples
   only_update_prior_initial_guesses = true;
 
-  std::cerr << "Starting minimization with " << N << " resamplings" << std::endl;
+  std::cerr << "Starting minimization with " << N << " resamplings"
+            << std::endl;
   for (sampindex = 1; sampindex <= N; ++sampindex) {
     vector<double> start(params_fullsample);
     double chisq_samp;
@@ -301,7 +302,7 @@ void doChiSquareFittingSerial(ChiSquare& chisq_ref,
     if (auto* spectrum_fit = dynamic_cast<SpectrumFit*>(&chisq_ref)) {
       omega_evals = spectrum_fit->getTotalOmegaEvaluations();
     }
-    
+
     logger << "Resamplings index = " << sampindex << " chisq = " << chisq_samp
            << " omega_evals = " << omega_evals << '\n';
     for (uint p = 0; p < nparams; ++p)
@@ -559,9 +560,10 @@ void doChiSquareFittingMPI(
     if (auto* spectrum_fit = dynamic_cast<SpectrumFit*>(&chisq_ref)) {
       omega_evals = spectrum_fit->getTotalOmegaEvaluations();
     }
-    
+
     logger << "Rank " << rank << " Resamplings index = " << sampindex
-           << " chisq = " << chisq_samp << " omega_evals = " << omega_evals << '\n';
+           << " chisq = " << chisq_samp << " omega_evals = " << omega_evals
+           << '\n';
     for (uint p = 0; p < nparams; ++p)
       logger << "params_sample[" << p << "] = " << params_sample[p] << '\n';
 

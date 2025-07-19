@@ -26,8 +26,8 @@
 
 #include "chisq_spectrum.h"
 #include "task_utils.h"
-#include <limits>
 #include <climits>
+#include <limits>
 
 // **************************************************************************
 // *                         SPECTRUM FITTING METHODOLOGY                   *
@@ -105,7 +105,8 @@ using namespace std;
 
 SpectrumFit::SpectrumFit()
     : ChiSquare(), KBOH(nullptr), Kmat(nullptr), Kinv(nullptr),
-      n_kmat_params(0), n_decay_channels(0), omega_mu(-1.0), total_omega_evaluations(0), current_resampling_idx(UINT_MAX) {
+      n_kmat_params(0), n_decay_channels(0), omega_mu(-1.0),
+      total_omega_evaluations(0), current_resampling_idx(UINT_MAX) {
   // Initialize to default/empty state - will be populated by clone method
 }
 
@@ -729,7 +730,7 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
 
     // Initialize decay channel masses vector
     decay_channel_masses.resize(n_decay_channels);
-    
+
     // Initialize omega evaluation counter
     total_omega_evaluations = 0;
 
@@ -933,7 +934,7 @@ void SpectrumFit::setResamplingIndex(uint sampindex) {
     total_omega_evaluations = 0;
     current_resampling_idx = sampindex;
   }
-  
+
   // Call base class implementation
   ChiSquare::setResamplingIndex(sampindex);
 }
