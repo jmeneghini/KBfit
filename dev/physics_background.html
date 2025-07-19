@@ -76,41 +76,39 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Physics Background</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#quantum-mechanics-context">Quantum Mechanics Context</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#primary-reference">Primary Reference</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fundamental-quantization-condition">Fundamental Quantization Condition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#energy-shifts-and-non-interacting-energies">Energy Shifts and Non-Interacting Energies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fundamental-quantization-condition">Fundamental Quantization Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#energy-shifts-and-non-interacting-energies">Energy Shifts and Non-Interacting Energies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#two-fitting-methodologies">Two Fitting Methodologies</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#two-fitting-methodologies">Two Fitting Methodologies</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#spectrum-fitting-spectrumfit-class">Spectrum Fitting (SpectrumFit class)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#determinant-residual-fitting-detresfit-class">Determinant Residual Fitting (DetresFit class)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#momentum-classes">Momentum Classes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#angular-momentum-basis">Angular Momentum Basis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spectrum-fitting-spectrumfit-class">Spectrum Fitting (SpectrumFit class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#determinant-residual-fitting-detresfit-class">Determinant Residual Fitting (DetresFit class)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#momentum-classes">Momentum Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#angular-momentum-basis">Angular Momentum Basis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-details">Implementation Details</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#implementation-details">Implementation Details</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#root-finding-process-in-spectrum-fits">Root Finding Process in Spectrum Fits</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#key-implementation-components">Key Implementation Components</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#optimization-details">Optimization Details</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#root-finding-chain">Root Finding Chain</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#performance-impact">Performance Impact</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#physics-consistency">Physics Consistency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#root-finding-process-in-spectrum-fits">Root Finding Process in Spectrum Fits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#key-implementation-components">Key Implementation Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimization-details">Optimization Details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#root-finding-chain">Root Finding Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-impact">Performance Impact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physics-consistency">Physics Consistency</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mathematical-framework">Mathematical Framework</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#mathematical-framework">Mathematical Framework</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#box-matrix-definition">Box Matrix Definition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#k-matrix-relationship">K-matrix Relationship</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#cayley-transformed-matrices">Cayley Transformed Matrices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#box-matrix-definition">Box Matrix Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#k-matrix-relationship">K-matrix Relationship</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cayley-transformed-matrices">Cayley Transformed Matrices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#computational-considerations">Computational Considerations</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#computational-considerations">Computational Considerations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#performance-hotspots">Performance Hotspots</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#memory-access-optimization">Memory Access Optimization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#numerical-stability">Numerical Stability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-hotspots">Performance Hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#memory-access-optimization">Memory Access Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#numerical-stability">Numerical Stability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a></li>
 </ul>
 </li>
 </ul>
@@ -3303,16 +3301,9 @@
              
   <section id="physics-background">
 <h1>Physics Background<a class="headerlink" href="#physics-background" title="Link to this heading"></a></h1>
-<section id="quantum-mechanics-context">
-<h2>Quantum Mechanics Context<a class="headerlink" href="#quantum-mechanics-context" title="Link to this heading"></a></h2>
-<p>KBfit implements finite-volume scattering theory for lattice QCD using the Lüscher method.</p>
-<section id="primary-reference">
-<h3>Primary Reference<a class="headerlink" href="#primary-reference" title="Link to this heading"></a></h3>
-<p><strong>Comprehensive physics background</strong>: <code class="docutils literal notranslate"><span class="pre">morningstar_physics.md</span></code> - Detailed physics reference from Morningstar et al.</p>
-<p><strong>Original Source</strong>: <code class="docutils literal notranslate"><span class="pre">Morningstar-Two-particle_multi-channel_systems_in_finite_volume_with_arbitrary_spin_key_points.pdf</span></code></p>
-</section>
+<p>KBfit implements the finite-volume quantization condition for two-particle systems with arbitrary spin using the</p>
 <section id="fundamental-quantization-condition">
-<h3>Fundamental Quantization Condition<a class="headerlink" href="#fundamental-quantization-condition" title="Link to this heading"></a></h3>
+<h2>Fundamental Quantization Condition<a class="headerlink" href="#fundamental-quantization-condition" title="Link to this heading"></a></h2>
 <p>The core physics relationship: <strong>det[1 - B^(P)(E_cm) K̃] = 0</strong></p>
 <p>Where:</p>
 <ul class="simple">
@@ -3322,19 +3313,19 @@
 </ul>
 </section>
 <section id="energy-shifts-and-non-interacting-energies">
-<h3>Energy Shifts and Non-Interacting Energies<a class="headerlink" href="#energy-shifts-and-non-interacting-energies" title="Link to this heading"></a></h3>
+<h2>Energy Shifts and Non-Interacting Energies<a class="headerlink" href="#energy-shifts-and-non-interacting-energies" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>Non-interacting energies</strong>: Theoretical energies if particles didn’t interact in finite volume</p></li>
 <li><p><strong>Energy shifts (dE_lab)</strong>: Difference between observed interacting energies and non-interacting energies</p></li>
 <li><p><strong>Lattice observations</strong>: Actual energy levels measured in Monte Carlo simulations</p></li>
 <li><p><strong>Model predictions</strong>: Energy shifts predicted by solving the quantization condition</p></li>
 </ul>
-</section>
-</section>
 <section id="two-fitting-methodologies">
-<h2>Two Fitting Methodologies<a class="headerlink" href="#two-fitting-methodologies" title="Link to this heading"></a></h2>
+<h3>Two Fitting Methodologies<a class="headerlink" href="#two-fitting-methodologies" title="Link to this heading"></a></h3>
+</section>
+</section>
 <section id="spectrum-fitting-spectrumfit-class">
-<h3>Spectrum Fitting (SpectrumFit class)<a class="headerlink" href="#spectrum-fitting-spectrumfit-class" title="Link to this heading"></a></h3>
+<h2>Spectrum Fitting (SpectrumFit class)<a class="headerlink" href="#spectrum-fitting-spectrumfit-class" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>Observations</strong>: Center-of-mass energies E_cm,k plus lattice parameters (masses, volume, anisotropy)</p></li>
 <li><p><strong>Method</strong>: Root finding to solve Omega function Ω(E_cm) = 0, yielding energy shift predictions</p></li>
@@ -3345,7 +3336,7 @@
 </ul>
 </section>
 <section id="determinant-residual-fitting-detresfit-class">
-<h3>Determinant Residual Fitting (DetresFit class)<a class="headerlink" href="#determinant-residual-fitting-detresfit-class" title="Link to this heading"></a></h3>
+<h2>Determinant Residual Fitting (DetresFit class)<a class="headerlink" href="#determinant-residual-fitting-detresfit-class" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>Observations</strong>: Quantization determinant values themselves</p></li>
 <li><p><strong>Method</strong>: Minimize det(QC(E_cm)) directly using observed energies</p></li>
@@ -3355,7 +3346,7 @@
 </ul>
 </section>
 <section id="momentum-classes">
-<h3>Momentum Classes<a class="headerlink" href="#momentum-classes" title="Link to this heading"></a></h3>
+<h2>Momentum Classes<a class="headerlink" href="#momentum-classes" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>AR</strong>: At-rest (P = 0)</p></li>
 <li><p><strong>OA</strong>: On-axis (P along coordinate axis)</p></li>
@@ -3364,7 +3355,7 @@
 </ul>
 </section>
 <section id="angular-momentum-basis">
-<h3>Angular Momentum Basis<a class="headerlink" href="#angular-momentum-basis" title="Link to this heading"></a></h3>
+<h2>Angular Momentum Basis<a class="headerlink" href="#angular-momentum-basis" title="Link to this heading"></a></h2>
 <p>States labeled <a href="#id1"><span class="problematic" id="id2">|</span></a>J m_J L S a⟩:</p>
 <ul class="simple">
 <li><p><strong>J</strong>: Total angular momentum</p></li>
@@ -3373,16 +3364,16 @@
 <li><p><strong>S</strong>: Total spin</p></li>
 <li><p><strong>a</strong>: Channel (particle species, spins, parities, isospins)</p></li>
 </ul>
-</section>
-</section>
 <section id="implementation-details">
-<h2>Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading"></a></h2>
+<h3>Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading"></a></h3>
+</section>
+</section>
 <section id="root-finding-process-in-spectrum-fits">
-<h3>Root Finding Process in Spectrum Fits<a class="headerlink" href="#root-finding-process-in-spectrum-fits" title="Link to this heading"></a></h3>
+<h2>Root Finding Process in Spectrum Fits<a class="headerlink" href="#root-finding-process-in-spectrum-fits" title="Link to this heading"></a></h2>
 <p>The spectrum fitting methodology involves solving the quantization condition Ω(E_cm) = 0 through root finding to predict energy shifts. The implementation has been optimized to work directly in the center-of-mass frame to eliminate redundant coordinate transformations.</p>
 </section>
 <section id="key-implementation-components">
-<h3>Key Implementation Components<a class="headerlink" href="#key-implementation-components" title="Link to this heading"></a></h3>
+<h2>Key Implementation Components<a class="headerlink" href="#key-implementation-components" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p><strong>BoxQuantization::getDeltaEnergyPredictionsOptimized()</strong> (<code class="docutils literal notranslate"><span class="pre">source/twohadronsinabox/box_quant.h:523-533</span></code>)</p>
 <ul class="simple">
@@ -3403,7 +3394,7 @@
 </ol>
 </section>
 <section id="optimization-details">
-<h3>Optimization Details<a class="headerlink" href="#optimization-details" title="Link to this heading"></a></h3>
+<h2>Optimization Details<a class="headerlink" href="#optimization-details" title="Link to this heading"></a></h2>
 <p><strong>Before Optimization:</strong></p>
 <ul class="simple">
 <li><p>Root finding called <code class="docutils literal notranslate"><span class="pre">getDeltaElabPredictionsInElabInterval()</span></code> working in lab frame</p></li>
@@ -3421,7 +3412,7 @@
 </ul>
 </section>
 <section id="root-finding-chain">
-<h3>Root Finding Chain<a class="headerlink" href="#root-finding-chain" title="Link to this heading"></a></h3>
+<h2>Root Finding Chain<a class="headerlink" href="#root-finding-chain" title="Link to this heading"></a></h2>
 <p>The optimized root finding follows this call chain:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">SpectrumFit::evalResidualsAndInvCovCholesky()</span></code> - Main fitting method</p></li>
@@ -3432,7 +3423,7 @@
 </ol>
 </section>
 <section id="performance-impact">
-<h3>Performance Impact<a class="headerlink" href="#performance-impact" title="Link to this heading"></a></h3>
+<h2>Performance Impact<a class="headerlink" href="#performance-impact" title="Link to this heading"></a></h2>
 <p>The CM frame optimization significantly reduces computational cost by:</p>
 <ul class="simple">
 <li><p>Eliminating repeated coordinate transformations in the hot path</p></li>
@@ -3443,7 +3434,7 @@
 </ul>
 </section>
 <section id="physics-consistency">
-<h3>Physics Consistency<a class="headerlink" href="#physics-consistency" title="Link to this heading"></a></h3>
+<h2>Physics Consistency<a class="headerlink" href="#physics-consistency" title="Link to this heading"></a></h2>
 <p>The optimization maintains physics accuracy by:</p>
 <ul class="simple">
 <li><p>Performing all root finding in the natural CM frame where the quantization condition is defined</p></li>
@@ -3451,33 +3442,33 @@
 <li><p>Preserving the exact mathematical relationship between CM and lab frames</p></li>
 <li><p>Ensuring identical numerical results with improved computational efficiency</p></li>
 </ul>
-</section>
-</section>
 <section id="mathematical-framework">
-<h2>Mathematical Framework<a class="headerlink" href="#mathematical-framework" title="Link to this heading"></a></h2>
+<h3>Mathematical Framework<a class="headerlink" href="#mathematical-framework" title="Link to this heading"></a></h3>
+</section>
+</section>
 <section id="box-matrix-definition">
-<h3>Box Matrix Definition<a class="headerlink" href="#box-matrix-definition" title="Link to this heading"></a></h3>
+<h2>Box Matrix Definition<a class="headerlink" href="#box-matrix-definition" title="Link to this heading"></a></h2>
 <p>The box matrix computed by KBfit is defined by:</p>
 <div class="math notranslate nohighlight">
 \[\langle J',m_J';L',S',a' | B(P) | J,m_J;L,S,a \rangle = -i \delta[a',a] \delta[S',S] \left(\frac{2\pi u_a}{m_{ref} \cdot L_v}\right)^{L'+L+1} \times W(Pa)[L',m_L';L,m_L] \langle J',m_J'|L',m_L';S,m_S \rangle \langle L,m_L;S,m_S|J,m_J \rangle\]</div>
 </section>
 <section id="k-matrix-relationship">
-<h3>K-matrix Relationship<a class="headerlink" href="#k-matrix-relationship" title="Link to this heading"></a></h3>
+<h2>K-matrix Relationship<a class="headerlink" href="#k-matrix-relationship" title="Link to this heading"></a></h2>
 <p>The box matrix is related to the scattering K-matrix through:</p>
 <div class="math notranslate nohighlight">
 \[K_{inv}[aL',bL] = \left(\frac{q_{cm,a}}{m_{ref}}\right)^{L'+1/2} \tilde{K}_{inv}[aL',bL] \times \left(\frac{q_{cm,b}}{m_{ref}}\right)^{L+1/2}\]</div>
 </section>
 <section id="cayley-transformed-matrices">
-<h3>Cayley Transformed Matrices<a class="headerlink" href="#cayley-transformed-matrices" title="Link to this heading"></a></h3>
+<h2>Cayley Transformed Matrices<a class="headerlink" href="#cayley-transformed-matrices" title="Link to this heading"></a></h2>
 <p>The Cayley transformed matrices are defined by:</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}CB &amp;= (1 + i \cdot B) \cdot (1 - i \cdot B)^{-1}\\\tilde{S} &amp;= (1 + i \cdot \tilde{K}) \cdot (1 - i \cdot \tilde{K})^{-1}\\&amp;= -(1 - i \cdot \tilde{K}_{inverse}) \cdot (1 + i \cdot \tilde{K}_{inverse})^{-1}\end{aligned}\end{align} \]</div>
-</section>
-</section>
 <section id="computational-considerations">
-<h2>Computational Considerations<a class="headerlink" href="#computational-considerations" title="Link to this heading"></a></h2>
+<h3>Computational Considerations<a class="headerlink" href="#computational-considerations" title="Link to this heading"></a></h3>
+</section>
+</section>
 <section id="performance-hotspots">
-<h3>Performance Hotspots<a class="headerlink" href="#performance-hotspots" title="Link to this heading"></a></h3>
+<h2>Performance Hotspots<a class="headerlink" href="#performance-hotspots" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>The <code class="docutils literal notranslate"><span class="pre">chisq_fit</span></code> class is performance-critical, especially in the <code class="docutils literal notranslate"><span class="pre">fit_spectrum</span></code> method</p></li>
 <li><p>The minimizer calls <code class="docutils literal notranslate"><span class="pre">evalResidualsAndInvCholesky</span></code> for each sample iteration</p></li>
@@ -3486,7 +3477,7 @@
 </ul>
 </section>
 <section id="memory-access-optimization">
-<h3>Memory Access Optimization<a class="headerlink" href="#memory-access-optimization" title="Link to this heading"></a></h3>
+<h2>Memory Access Optimization<a class="headerlink" href="#memory-access-optimization" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Pre-allocated temporary vectors to avoid repeated memory allocations</p></li>
 <li><p>Cache-friendly memory access patterns in critical loops</p></li>
@@ -3495,18 +3486,17 @@
 </ul>
 </section>
 <section id="numerical-stability">
-<h3>Numerical Stability<a class="headerlink" href="#numerical-stability" title="Link to this heading"></a></h3>
+<h2>Numerical Stability<a class="headerlink" href="#numerical-stability" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Center-of-mass frame operations improve numerical stability</p></li>
 <li><p>Appropriate tolerance settings balance accuracy with performance</p></li>
 <li><p>Careful handling of poles and singularities in root finding</p></li>
 <li><p>Robust bracket expansion algorithms for root finding</p></li>
 </ul>
-</section>
-</section>
 <section id="summary">
-<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
 <p>This physics background provides the theoretical foundation for understanding KBfit’s implementation and the recent optimizations that significantly improve computational efficiency while maintaining full physics accuracy.</p>
+</section>
 </section>
 </section>
 
@@ -3522,7 +3512,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2025, KBfit Development Team.
-      <span class="lastupdated">Last updated on Jul 18, 2025.
+      <span class="lastupdated">Last updated on Jul 19, 2025.
       </span></p>
   </div>
 
