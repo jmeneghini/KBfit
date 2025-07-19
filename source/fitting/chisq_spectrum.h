@@ -189,6 +189,8 @@ private:
   mutable std::vector<uint> fn_calls; ///< Cached function call counts
   mutable std::vector<std::pair<double, double>>
       decay_channel_masses; ///< Cached decay channel masses
+  mutable uint total_omega_evaluations; ///< Total omega evaluations for current sample
+  mutable uint current_resampling_idx; ///< Track current resampling index for counter reset
   /// @}
 
 public:
@@ -248,6 +250,18 @@ public:
    * @param xmlout XML handler for output
    */
   void do_output(XMLHandler& xmlout) const override;
+
+  /**
+   * @brief Get total omega function evaluations from the last residual evaluation
+   * @return Total number of omega function evaluations
+   */
+  uint getTotalOmegaEvaluations() const;
+
+  /**
+   * @brief Override to reset omega evaluation counter when resampling index changes
+   * @param sampindex New resampling index
+   */
+  void setResamplingIndex(uint sampindex) override;
   /// @}
 
 private:

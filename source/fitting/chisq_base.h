@@ -127,7 +127,7 @@ public:
    * @brief Set the current resampling index
    * @param in_resampling_index Index for bootstrap/jackknife (0 = full sample)
    */
-  void setResamplingIndex(uint in_resampling_index);
+  virtual void setResamplingIndex(uint in_resampling_index);
   /// @}
 
   /// @name Output Functions

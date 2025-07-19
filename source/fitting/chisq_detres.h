@@ -385,6 +385,12 @@ public:
    * @return Reference to vector of fit parameter information
    */
   const std::vector<KFitParamInfo>& getFitParamInfos() const;
+
+  /**
+   * @brief Override to maintain consistency with SpectrumFit interface
+   * @param sampindex New resampling index
+   */
+  void setResamplingIndex(uint sampindex) override;
   /// @}
 
 private:

@@ -27,6 +27,7 @@
 #include "chisq_spectrum.h"
 #include "task_utils.h"
 #include <limits>
+#include <climits>
 
 // **************************************************************************
 // *                         SPECTRUM FITTING METHODOLOGY                   *
@@ -104,7 +105,7 @@ using namespace std;
 
 SpectrumFit::SpectrumFit()
     : ChiSquare(), KBOH(nullptr), Kmat(nullptr), Kinv(nullptr),
-      n_kmat_params(0), n_decay_channels(0), omega_mu(-1.0) {
+      n_kmat_params(0), n_decay_channels(0), omega_mu(-1.0), total_omega_evaluations(0), current_resampling_idx(UINT_MAX) {
   // Initialize to default/empty state - will be populated by clone method
 }
 
@@ -113,6 +114,8 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
   KBOH = kboh;
   Kmat = 0;
   Kinv = 0;
+  total_omega_evaluations = 0;
+  current_resampling_idx = UINT_MAX;
   try {
     XMLHandler xmlf(xmlin, "SpectrumFit");
 
@@ -726,6 +729,9 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
 
     // Initialize decay channel masses vector
     decay_channel_masses.resize(n_decay_channels);
+    
+    // Initialize omega evaluation counter
+    total_omega_evaluations = 0;
 
     // Pre-allocate temporary vectors for performance (estimate max size)
     uint max_energies_per_block = 0;
@@ -839,6 +845,8 @@ std::unique_ptr<SpectrumFit> SpectrumFit::clone(KBObsHandler* new_kboh) const {
   cloned->energy_shift_predictions.clear();
   cloned->fn_calls.clear();
   cloned->decay_channel_masses.resize(this->decay_channel_masses.size());
+  cloned->total_omega_evaluations = 0;
+  cloned->current_resampling_idx = UINT_MAX;
 
   return cloned;
 }
@@ -913,6 +921,21 @@ void SpectrumFit::do_output(XMLHandler& xmlout) const {
     Kinv->output(xmlK);
   xmlout.put_child(xmlK);
   // TODO: Add any other SpectrumFit specific outputs if necessary
+}
+
+uint SpectrumFit::getTotalOmegaEvaluations() const {
+  return total_omega_evaluations;
+}
+
+void SpectrumFit::setResamplingIndex(uint sampindex) {
+  // Check if this is a new resampling - reset omega counter if so
+  if (sampindex != current_resampling_idx) {
+    total_omega_evaluations = 0;
+    current_resampling_idx = sampindex;
+  }
+  
+  // Call base class implementation
+  ChiSquare::setResamplingIndex(sampindex);
 }
 
 /**
@@ -1089,6 +1112,11 @@ void SpectrumFit::evalResidualsAndInvCovCholesky(
           omega_mu, Ecm_min, Ecm_max, qctype_enum, root_finder_config,
           shift_obs_w_NIs, energy_shift_predictions, fn_calls,
           /* output_in_lab_frame = */ true);
+
+      // Accumulate omega function evaluations for this block
+      for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
+        total_omega_evaluations += fn_calls[energy_index];
+      }
 
       // Residuals are computed as: observed_shift - predicted_shift
       for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {

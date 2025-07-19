@@ -681,4 +681,10 @@ DeterminantResidualFit::getFitParamInfos() const {
     return Kinv->getFitParameterInfos();
 }
 
+void DeterminantResidualFit::setResamplingIndex(uint sampindex) {
+  // DeterminantResidualFit doesn't track omega evaluations like SpectrumFit,
+  // but we maintain the override for consistent interface behavior
+  ChiSquare::setResamplingIndex(sampindex);
+}
+
 // *********************************************************************
