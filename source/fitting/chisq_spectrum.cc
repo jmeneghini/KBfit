@@ -351,31 +351,11 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
       double auto_margin = 0.0;
       if (!(cm_frame_min_given && cm_frame_max_given)) {
         bool auto_bounds =
-            xmlreadifchild(*it, "AutoEcmBoundsMargin", auto_margin);
+            xmlreadifchild(*it, "CMFrameEnergyAutoRangeMargin", auto_margin);
         if (!auto_bounds)
           throw(std::invalid_argument("CMFrameEnergyMin/Max missing and "
-                                      "AutoEcmBoundsMargin not provided"));
-
-        size_t start_idx = ensemble_fit_data[ensemble_idmap[mcens]]
-                               .non_interacting_pairs.size() -
-                           nres;
-        const auto& pairs =
-            ensemble_fit_data[ensemble_idmap[mcens]].non_interacting_pairs;
-        double emin = std::numeric_limits<double>::infinity();
-        double emax = 0.0;
-        for (uint jj = 0; jj < nres; ++jj) {
-          const NonInteractingPair& ni = pairs[start_idx + jj];
-          const EcmTransform& et =
-              bqptr->getDecayChannelEcmTransform(ni.decay_channel_idx);
-          double efree = et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
-          emin = std::min(emin, efree);
-          emax = std::max(emax, efree);
-        }
-        Ecm_min = emin - auto_margin;
-        Ecm_max = emax + auto_margin;
+                                      "CMFrameEnergyAutoRangeMargin not provided"));
       }
-      ensemble_fit_data[ensemble_idmap[mcens]]
-          .Ecm_bounds_per_block.emplace_back(Ecm_min, Ecm_max);
       ensemble_fit_data[ensemble_idmap[mcens]]
           .auto_margin_per_block.push_back(auto_margin);
       ensemble_fit_data[ensemble_idmap[mcens]].n_energies_per_block.push_back(
@@ -666,15 +646,63 @@ SpectrumFit::SpectrumFit(XMLHandler& xmlin, KBObsHandler* kboh,
         for (uint sample = 0; sample <= nsamplings; ++sample) {
           double emin = std::numeric_limits<double>::infinity();
           double emax = 0.0;
+
+          // Set sample-specific mref and anisotropy for this block
+          double mref_sample = ens_data.mref_samples[sample];
+          double anisotropy_sample = ens_data.is_anisotropy_fixed ? 
+              ens_data.fixed_anisotropy_value : ens_data.anisotropy_samples[sample];
+          double length_sample = mref_sample * double(ens_data.Llat) * anisotropy_sample;
+          bq_block->setRefMassL(length_sample);
           
-          // Calculate bounds from non-interacting energies for this sample
+          // Set sample-specific masses for all decay channels
+          uint mass_sample_idx = 0;
+          for (uint decay_channel = 0; decay_channel < n_decay_channels; ++decay_channel) {
+            const uint mass_base_idx = decay_channel * 2;
+            double mass1, mass2;
+
+            // Get mass1 (first particle in decay channel)
+            if (ens_data.is_mass_fixed[mass_base_idx]) {
+              mass1 = ens_data.fixed_mass_values[mass_base_idx];
+            } else {
+              mass1 = ens_data.mass_samples[mass_sample_idx][sample];
+              mass_sample_idx++;
+            }
+
+            // Get mass2 (second particle in decay channel)
+            if (are_decay_channels_identical[decay_channel]) {
+              mass2 = mass1;
+            } else {
+              const uint mass2_idx = mass_base_idx + 1;
+              if (ens_data.is_mass_fixed[mass2_idx]) {
+                mass2 = ens_data.fixed_mass_values[mass2_idx];
+              } else {
+                mass2 = ens_data.mass_samples[mass_sample_idx][sample];
+                mass_sample_idx++;
+              }
+            }
+            
+            // Set the masses for this decay channel
+            bq_block->setMassesOverRef(decay_channel, mass1, mass2);
+          }
+          
+          // Calculate bounds from interacting energies for this sample
           for (uint energy_index = 0; energy_index < n_energies; ++energy_index) {
             const uint global_energy_idx = energy_offset + energy_index;
             const NonInteractingPair& ni = ens_data.non_interacting_pairs[global_energy_idx];
             const EcmTransform& et = bq_block->getDecayChannelEcmTransform(ni.decay_channel_idx);
-            double efree = et.getFreeTwoParticleEnergyInEcm(ni.d1_sqr, ni.d2_sqr);
-            emin = std::min(emin, efree);
-            emax = std::max(emax, efree);
+            
+            // Get the observed energy shift for this sample
+            double dElab = ens_data.dElab_samples[global_energy_idx][sample];
+            
+            // Calculate non-interacting energy with current sample masses
+            double Elab_free = et.getFreeTwoParticleEnergyInElab(ni.d1_sqr, ni.d2_sqr);
+            
+            // Calculate interacting energy and convert to CM frame
+            double Elab_int = Elab_free + dElab;
+            double Ecm_int = et.getEcmOverMref(Elab_int);
+            
+            emin = std::min(emin, Ecm_int);
+            emax = std::max(emax, Ecm_int);
           }
           
           // Apply margin

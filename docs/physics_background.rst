@@ -1,17 +1,7 @@
 Physics Background
 ==================
 
-Quantum Mechanics Context
---------------------------
-
-KBfit implements finite-volume scattering theory for lattice QCD using the Lüscher method.
-
-Primary Reference
-^^^^^^^^^^^^^^^^^
-
-**Comprehensive physics background**: ``morningstar_physics.md`` - Detailed physics reference from Morningstar et al.
-
-**Original Source**: ``Morningstar-Two-particle_multi-channel_systems_in_finite_volume_with_arbitrary_spin_key_points.pdf``
+KBfit implements the finite-volume quantization condition for two-particle systems with arbitrary spin using the
 
 Fundamental Quantization Condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

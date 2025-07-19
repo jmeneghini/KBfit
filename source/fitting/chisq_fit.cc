@@ -40,11 +40,19 @@ void show_progress(std::size_t i, std::size_t total) {
   // Use a static total to detect when a new fit with a different number of
   // samples starts.
   static std::size_t bar_total = 0;
+  // Track last update for SLURM buffering
+  static std::size_t last_update = 0;
 
   // (Re)initialize if this is the first call, or if the total number of samples
   // has changed.
   if (!bar_ptr || bar_total != total) {
     bar_total = total;
+    last_update = 0;
+    
+    // SLURM FIX: Force immediate flush on initialization
+    std::cerr << "Starting fit with " << total << " samples..." << std::endl;
+    std::cerr.flush();
+    
     bar_ptr = std::make_unique<indicators::ProgressBar>(
         indicators::option::BarWidth{50}, indicators::option::Start{"["},
         indicators::option::Fill{"="}, indicators::option::Lead{">"},
@@ -53,22 +61,63 @@ void show_progress(std::size_t i, std::size_t total) {
         indicators::option::ShowRemainingTime{true},
         indicators::option::MaxProgress{total},
         indicators::option::ForegroundColor{indicators::Color::cyan});
+        
+    // SLURM FIX: Force initial display
+    bar_ptr->set_option(indicators::option::PrefixText{
+        "Sample 0/" + std::to_string(total) + " "});
+    bar_ptr->set_progress(0);
+    std::cerr.flush();
   }
 
   if (bar_ptr) {
-    // Update the prefix to show the current sample count.
-    bar_ptr->set_option(indicators::option::PrefixText{
-        "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "});
+    // SLURM FIX: Update more frequently and force flush
+    // Update every 5% or every 10 samples, whichever is smaller
+    std::size_t update_interval = std::min<std::size_t>(total / 20, 10);
+    update_interval = std::max<std::size_t>(update_interval, 1);
+    
+    bool should_update = (i == 0) || (i >= total) || 
+                        ((i - last_update) >= update_interval) ||
+                        ((i % update_interval) == 0);
+    
+    if (should_update) {
+      // Update the prefix to show the current sample count.
+      bar_ptr->set_option(indicators::option::PrefixText{
+          "Sample " + std::to_string(i) + "/" + std::to_string(total) + " "});
 
-    bar_ptr->set_progress(i);
+      bar_ptr->set_progress(i);
+      
+      // SLURM FIX: Force flush after each update
+      std::cerr.flush();
+      last_update = i;
+    }
 
     // When the loop is finished, mark as complete and clean up.
     if (i >= total) {
-      bar_ptr->set_option(
-          indicators::option::ForegroundColor{indicators::Color::green});
+      // SLURM FIX: Clear cyan bar first, then show completion message
       bar_ptr->mark_as_completed();
-      // Reset the pointer to ensure a new bar is created for any subsequent
-      // fits. The ProgressBar destructor handles the final newline.
+      std::cerr << "\r"; // Clear current line
+      std::cerr.flush();
+
+      // Create a green completion bar to replace the cyan one
+      auto completion_bar = std::make_unique<indicators::ProgressBar>(
+          indicators::option::BarWidth{50}, indicators::option::Start{"["},
+          indicators::option::Fill{"="}, indicators::option::Lead{"="},
+          indicators::option::Remainder{" "}, indicators::option::End{"]"},
+          indicators::option::ShowElapsedTime{false},
+          indicators::option::ShowRemainingTime{false},
+          indicators::option::MaxProgress{100},
+          indicators::option::PrefixText{"Finished "},
+          indicators::option::ForegroundColor{indicators::Color::green});
+
+      completion_bar->set_progress(100);
+      completion_bar->mark_as_completed();
+      std::cerr.flush();
+      
+      // Print finished message after green bar
+      std::cerr << "Fit completed successfully!" << std::endl;
+      std::cerr.flush();
+      
+      // Reset the pointer to ensure a new bar is created for any subsequent fits
       bar_ptr.reset();
     }
   }
@@ -500,6 +549,11 @@ void doChiSquareFittingMPI(
       std::size_t global_est =
           std::min<std::size_t>(completed_local * size, nsamplings);
       show_progress(global_est, nsamplings);
+      
+      // SLURM FIX: Additional flush and periodic sync check
+      if (completed_local % 5 == 0) {
+        std::cerr.flush();
+      }
     }
   }
 
@@ -589,8 +643,11 @@ void doChiSquareFittingMPI(
   }
 
   if (rank == 0) {
+    // SLURM FIX: Ensure progress bar shows completion
+    show_progress(nsamplings, nsamplings);
     std::cerr << "\nAll ranks completed resampling fits. Finalizing results..."
               << std::endl;
+    std::cerr.flush();
   }
 
   // Collect logger strings from all ranks for combined output
