@@ -37,11 +37,12 @@
  * @brief Display progress bar for fitting operations
  * @param i Current iteration number
  * @param total Total number of iterations
+ * @param is_slurm True if running in SLURM environment, false otherwise
  *
  * Shows a visual progress bar with elapsed time and estimated time remaining.
  * Used during bootstrap/jackknife resampling to provide user feedback.
  */
-void show_progress(std::size_t i, std::size_t total);
+void show_progress(std::size_t i, std::size_t total, bool is_slurm = false);
 
 /// @name Main Fitting Functions
 /// @{
